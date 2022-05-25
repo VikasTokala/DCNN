@@ -1,0 +1,6 @@
+[submodule "pysoundloc"]
+	path = pysoundloc
+	url = https://github.com/***/pysoundloc
+[submodule "sydra"]
+	path = sydra
+	url = https://github.com/***/sydra

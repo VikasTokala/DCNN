@@ -1,0 +1,4 @@
+defaults:
+  - model
+  - training
+  - dataset: distributed_ssl_dataset

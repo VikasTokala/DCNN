@@ -1,0 +1,41 @@
+model:
+  # Input params
+  n_input_channels: 4
+  n_fft: 1024
+  window: hann
+  use_onesided_fft: True
+
+  # Output and optimization settings
+  target: source_coordinates # model target: azimuth_2d_point | normalized_tdoa | source_coordinates
+  loss: l1 # angular | magnitude | l1
+
+  # Convolutional layer settings
+  pool_size: [2, 2] # [1, 1] = No pooling | [1, 2] = Frequency pooling | [2, 2] = Time and frequency pooling
+  kernel_size: [2, 2] # [1, 1] = "Beamforming" convolution | [2, 1] = Time averaging | [1, 2] = Frequency averaging
+  conv_layers_config:
+    - layer_1:
+      type: double # single: one layer | double: two layers
+      n_channels: 64
+      dropout_rate: 0.0
+    - layer_2:
+      type: double
+      n_channels: 128
+      dropout_rate: 0.0
+    - layer_3:
+      type: double
+      n_channels: 256
+      dropout_rate: 0.0
+    - layer_4:
+      type: double
+      n_channels: 512
+      dropout_rate: 0.0
+
+  # Miscellaneous model settings
+  fc_layer_dropout_rate: 0.0
+  activation: relu # tanh | relu | prelu | amp_tanh
+  pool_type: avg # max | avg
+  init_layers: True
+  is_metadata_aware: True
+  is_early_fusion: False
+
+  use_room_dims_and_rt60: True
