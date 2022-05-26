@@ -33,13 +33,12 @@ class BaseDataset(torch.utils.data.Dataset):
         return len(audio_files)
 
     def __getitem__(self, index):
-        clean_audio_sample_path = self._get_audio_sample_path(index,self.target_dataset_dir)
-        noisy_audio_sample_path = self._get_audio_sample_path(index,self.noisy_dataset_dir)
+        clean_audio_sample_path = self._get_audio_sample_path(index, self.target_dataset_dir)
+        noisy_audio_sample_path = self._get_audio_sample_path(index, self.noisy_dataset_dir)
         #path = os.path.dirname(self.audio_dir)
         clean_signal, _ = torchaudio.load(clean_audio_sample_path)
         noisy_signal, _ = torchaudio.load(noisy_audio_sample_path)
-
-        return (noisy_signal, clean_signal)
+        return (noisy_signal[0], clean_signal[0])
 
     def _get_audio_sample_path(self, index,dataset_dir):
         audio_files = sorted(os.listdir(dataset_dir))

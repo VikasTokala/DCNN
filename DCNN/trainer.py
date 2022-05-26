@@ -4,7 +4,7 @@ import torch
 from torch.optim.lr_scheduler import MultiStepLR
 
 from DCNN.model import DCNN
-from DCNN.loss import LOSS_NAME_TO_CLASS_MAP
+from DCNN.loss import Loss
 from DCNN.utils.base_trainer import (
     BaseTrainer, BaseLightningModule
 )
@@ -34,18 +34,9 @@ class DCNNLightniningModule(BaseLightningModule):
         config = OmegaConf.to_container(config)
         self.config = config
 
-        n_sources = self.config["dataset"]["n_max_sources"]
+        model = DCNN()
 
-        stft_config = {
-            "n_fft": config["model"]["n_fft"],
-            "use_onesided_fft": config["model"]["use_onesided_fft"]
-        }
-
-        model = DCNN(n_sources=n_sources,
-                        stft_config=stft_config,
-                        **config["model"])
-
-        loss = LOSS_NAME_TO_CLASS_MAP[self.config["model"]["loss"]]()
+        loss = Loss(loss_mode=self.config["model"]["loss_mode"])
 
         super().__init__(model, loss)
 

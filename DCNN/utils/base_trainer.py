@@ -65,7 +65,6 @@ class BaseLightningModule(pl.LightningModule):
               log_labels=False):
 
         x, y = batch
-
         # 1. Compute model output and loss
         output = self.model(x)
         loss = self.loss(output, y)
@@ -78,11 +77,8 @@ class BaseLightningModule(pl.LightningModule):
         # 2. Log model output
         if log_model_output:
             output_dict["model_output"] = output
-        # 3. Log ground truth labels
-        if log_labels:
-            output_dict.update(y)
         
-        # 4. Log step metrics
+        # 3. Log step metrics
         self.log("loss_step", output_dict["loss"], on_step=True, prog_bar=False)
 
         return output_dict

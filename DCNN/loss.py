@@ -13,9 +13,7 @@ class Loss(Module):
             fix = True):
         super().__init__()
         self.loss_mode = loss_mode
-        self.stft = ConvSTFT(win_len, win_inc, fft_len, win_type, 'complex',fix=fix)
-        
-        
+        self.stft = ConvSTFT(win_len, win_inc, fft_len, win_type, 'complex', fix=fix)
 
     def forward(self, model_output, targets):
         if self.loss_mode == 'MSE':
@@ -34,18 +32,9 @@ class Loss(Module):
             return torch.mean(torch.abs(model_output - gth_spec)) * d
 
 
-
-LOSS_NAME_TO_CLASS_MAP = {
-    "l1": Loss,
-}
-
-
- 
-
 def l2_norm(s1, s2):
     # norm = torch.sqrt(torch.sum(s1*s2, 1, keepdim=True))
     # norm = torch.norm(s1*s2, 1, keepdim=True)
-
     norm = torch.sum(s1 * s2, -1, keepdim=True)
     return norm
 

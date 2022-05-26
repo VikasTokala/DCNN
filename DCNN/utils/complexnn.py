@@ -99,7 +99,7 @@ class ComplexConv2d(nn.Module):
                     otherwise both
 
         '''
-        super(ComplexConv2d, self).__init__()
+        super().__init__()
         self.in_channels = in_channels//2
         self.out_channels = out_channels//2
         self.kernel_size = kernel_size
