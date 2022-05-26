@@ -10,7 +10,7 @@ from DCNN.utils.conv_block import (
 from DCNN.utils.di_crnn import DICRNN
 
 
-class DISSLNET(nn.Module):
+class DCNN(nn.Module):
     def __init__(self, n_input_channels=4,
                  pool_type="avg", pool_size=(1,2), kernel_size=(2, 2),
                  conv_layers_config=DEFAULT_CONV_CONFIG,

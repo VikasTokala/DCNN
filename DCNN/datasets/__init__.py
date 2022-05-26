@@ -1,6 +1,6 @@
 import torch
 
-from .distributed_ssl_dataset import DistributedSSLDataset
+from .base_dataset import BaseDataset
 
 
 def create_torch_dataloaders(config):
@@ -13,24 +13,19 @@ def create_torch_dataloaders(config):
 
 def create_torch_dataloader(config, mode, stack_parameters=True):
     if mode == "training":
-        dataset_path = config["dataset"]["training_dataset_dir"]
-        metadata_path = config["dataset"]["metadata_training_dataset_dir"]
+        noisy_dataset_path = config["dataset"]["noisy_training_dataset_dir"]
+        target_dataset_path = config["dataset"]["target_training_dataset_dir"]
         shuffle = True
     elif mode == "validation":
-        dataset_path = config["dataset"]["validation_dataset_dir"]
-        metadata_path = config["dataset"]["metadata_validation_dataset_dir"]
+        noisy_dataset_path = config["dataset"]["noisy_validation_dataset_dir"]
+        target_dataset_path = config["dataset"]["target_validation_dataset_dir"]
         shuffle = False
     elif mode == "test":
-        dataset_path = config["dataset"]["test_dataset_dir"]
-        metadata_path = config["dataset"]["metadata_test_dataset_dir"]
+        noisy_dataset_path = config["dataset"]["noisy_test_dataset_dir"]
+        target_dataset_path = config["dataset"]["target_test_dataset_dir"]
         shuffle = False
 
-    dataset = DistributedSSLDataset(dataset_path,
-                            config["model"]["is_metadata_aware"],
-                            stack_parameters=stack_parameters,
-                            use_room_dims_and_rt60=config["model"]["use_room_dims_and_rt60"],
-                            is_early_fusion=config["model"]["is_early_fusion"],
-                            metadata_dataset_dir=metadata_path)
+    dataset = BaseDataset(noisy_dataset_path, target_dataset_path)
 
 
     return torch.utils.data.DataLoader(

@@ -10,8 +10,8 @@ SR = 16000
 
 class BaseDataset(torch.utils.data.Dataset):
     def __init__(self,
-                 clean_dataset_dir,
                  noisy_dataset_dir,
+                 target_dataset_dir,
                  sr=SR,
                 #  n_microphone_seconds=N_MICROPHONE_SECONDS,
                 #  n_mics=N_MICS,
@@ -23,17 +23,17 @@ class BaseDataset(torch.utils.data.Dataset):
         # self.sample_duration = self.sr*self.n_microphone_seconds
         # self.n_mics = n_mics
         # self.metadata_dir = metadata_dir
-        self.clean_dataset_dir = clean_dataset_dir
+        self.target_dataset_dir = target_dataset_dir
         self.noisy_dataset_dir = noisy_dataset_dir
 
         # self.df = _load_dataframe(dataset_dir, metadata_dir)
 
     def __len__(self):
-        audio_files = os.listdir(self.clean_dataset_dir)
+        audio_files = os.listdir(self.target_dataset_dir)
         return len(audio_files)
 
     def __getitem__(self, index):
-        clean_audio_sample_path = self._get_audio_sample_path(index,self.clean_dataset_dir)
+        clean_audio_sample_path = self._get_audio_sample_path(index,self.target_dataset_dir)
         noisy_audio_sample_path = self._get_audio_sample_path(index,self.noisy_dataset_dir)
         #path = os.path.dirname(self.audio_dir)
         clean_signal, _ = torchaudio.load(clean_audio_sample_path)

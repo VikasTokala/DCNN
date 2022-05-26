@@ -1,29 +1,63 @@
+import torch
 from torch.nn import Module, L1Loss
-from torch.nn import Module
+from DCNN.utils.conv_stft import ConvSTFT
+import torch.functional as F
 
 
-class CustomL1Loss(Module):
-    def __init__(self, is_metadata_aware=True):
+
+class Loss(Module):
+    def __init__(self, loss_mode='SI-SNR',win_len=400,
+            win_inc=100,
+            fft_len=512,
+            win_type='hanning',
+            fix = True):
         super().__init__()
-
-        self.loss = L1Loss(reduction="none")
-        self.target_key = "source_coordinates"
-        self.is_metadata_aware = is_metadata_aware
-
-    def forward(self, model_output, targets, mean_reduce=True):
-        targets = targets[self.target_key]
-        if model_output.shape != targets.shape:
-            raise ValueError(
-                "Model output's shape is {}, target's is {}".format(
-                    model_output.shape, targets.shape
-            ))
-        loss = self.loss(model_output, targets)
-        if mean_reduce:
-            loss = loss.mean()
+        self.loss_mode = loss_mode
+        self.stft = ConvSTFT(win_len, win_inc, fft_len, win_type, 'complex',fix=fix)
         
-        return loss
+        
+
+    def forward(self, model_output, targets):
+        if self.loss_mode == 'MSE':
+            b, d, t = model_output.shape
+            targets[:, 0, :] = 0
+            targets[:, d // 2, :] = 0
+            return F.mse_loss(model_output, targets, reduction='mean') * d
+
+        elif self.loss_mode == 'SI-SNR':
+            # return -torch.mean(si_snr(model_output, targets))
+            return -(si_snr(model_output, targets))
+        
+        elif self.loss_mode == 'MAE':
+            gth_spec, gth_phase = self.stft(targets)
+            b, d, t = model_output.shape
+            return torch.mean(torch.abs(model_output - gth_spec)) * d
+
 
 
 LOSS_NAME_TO_CLASS_MAP = {
-    "l1": CustomL1Loss,
+    "l1": Loss,
 }
+
+
+ 
+
+def l2_norm(s1, s2):
+    # norm = torch.sqrt(torch.sum(s1*s2, 1, keepdim=True))
+    # norm = torch.norm(s1*s2, 1, keepdim=True)
+
+    norm = torch.sum(s1 * s2, -1, keepdim=True)
+    return norm
+
+
+def si_snr(s1, s2, eps=1e-8):
+    # s1 = remove_dc(s1)
+    # s2 = remove_dc(s2)
+    s1_s2_norm = l2_norm(s1, s2)
+    s2_s2_norm = l2_norm(s2, s2)
+    s_target = s1_s2_norm / (s2_s2_norm + eps) * s2
+    e_nosie = s1 - s_target
+    target_norm = l2_norm(s_target, s_target)
+    noise_norm = l2_norm(e_nosie, e_nosie)
+    snr = 10 * torch.log10((target_norm) / (noise_norm + eps) + eps)
+    return torch.mean(snr)

@@ -3,7 +3,7 @@ import hydra
 from omegaconf import DictConfig
 
 from DCNN.datasets import create_torch_dataloaders
-from DCNN.trainer import DISSLNETTrainer
+from DCNN.trainer import DCNNTrainer
 
 
 @hydra.main(config_path="config", config_name="config", version_base="1.1")
@@ -18,7 +18,7 @@ def train(config: DictConfig):
 
     dataset_train, dataset_val, dataset_test = create_torch_dataloaders(config)
     
-    trainer = DISSLNETTrainer(config)
+    trainer = DCNNTrainer(config)
 
     trainer.fit(dataset_train, val_dataloaders=dataset_val)
     trainer.test(dataset_test)

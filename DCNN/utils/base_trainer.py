@@ -68,10 +68,10 @@ class BaseLightningModule(pl.LightningModule):
 
         # 1. Compute model output and loss
         output = self.model(x)
-        loss = self.loss(output, y, mean_reduce=False)
+        loss = self.loss(output, y)
 
         output_dict = {
-            "loss_vector": loss
+            "loss": loss
         }
 
         # TODO: Add these to a callback
@@ -81,9 +81,6 @@ class BaseLightningModule(pl.LightningModule):
         # 3. Log ground truth labels
         if log_labels:
             output_dict.update(y)
-
-        output_dict["loss"] = output_dict["loss_vector"].mean()
-        output_dict["loss_vector"] = output_dict["loss_vector"].detach().cpu()
         
         # 4. Log step metrics
         self.log("loss_step", output_dict["loss"], on_step=True, prog_bar=False)

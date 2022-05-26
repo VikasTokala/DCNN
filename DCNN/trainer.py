@@ -3,16 +3,16 @@ import torch
 
 from torch.optim.lr_scheduler import MultiStepLR
 
-from DCNN.di_ssl_net import DISSLNET
+from DCNN.model import DCNN
 from DCNN.loss import LOSS_NAME_TO_CLASS_MAP
 from DCNN.utils.base_trainer import (
     BaseTrainer, BaseLightningModule
 )
 
 
-class DISSLNETTrainer(BaseTrainer):
+class DCNNTrainer(BaseTrainer):
     def __init__(self, config):
-        lightning_module = DISSLNETLightniningModule(config)
+        lightning_module = DCNNLightniningModule(config)
         super().__init__(lightning_module,
                          config["training"]["n_epochs"])
 
@@ -24,10 +24,10 @@ class DISSLNETTrainer(BaseTrainer):
         super().test(self._lightning_module, test_dataloaders, ckpt_path="best")
 
 
-class DISSLNETLightniningModule(BaseLightningModule):
+class DCNNLightniningModule(BaseLightningModule):
     """This class abstracts the
        training/validation/testing procedures
-       used for training a DISSLNET
+       used for training a DCNN
     """
 
     def __init__(self, config):
@@ -41,7 +41,7 @@ class DISSLNETLightniningModule(BaseLightningModule):
             "use_onesided_fft": config["model"]["use_onesided_fft"]
         }
 
-        model = DISSLNET(n_sources=n_sources,
+        model = DCNN(n_sources=n_sources,
                         stft_config=stft_config,
                         **config["model"])
 
