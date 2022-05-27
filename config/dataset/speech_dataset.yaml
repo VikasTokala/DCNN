@@ -1,11 +1,11 @@
-sr: 8000
-noisy_training_dataset_dir: /kaggle/working/Pytorch_tutorials//Dataset/noisy_trainset_1f
-noisy_validation_dataset_dir: /kaggle/working/Pytorch_tutorials//Dataset/noisy_valset_1f
-noisy_test_dataset_dir: /kaggle/working/Pytorch_tutorials//Dataset/noisy_testset_1f
+sr: 16000
+noisy_training_dataset_dir: /kaggle/working/DCNN/Dataset/noisy_trainset_1f
+noisy_validation_dataset_dir: /kaggle/working/DCNN/Dataset/noisy_valset_1f
+noisy_test_dataset_dir: /kaggle/working/DCNN/Dataset/noisy_testset_1f
 
-target_training_dataset_dir: /kaggle/working/Pytorch_tutorials//Dataset/clean_trainset_1f
-target_validation_dataset_dir: /kaggle/working/Pytorch_tutorials//Dataset/clean_valset_1f
-target_test_dataset_dir: /kaggle/working/Pytorch_tutorials//Dataset/clean_testset_1f
+target_training_dataset_dir: /kaggle/working/DCNN/Dataset/clean_trainset_1f
+target_validation_dataset_dir: /kaggle/working/DCNN/Dataset/clean_valset_1f
+target_test_dataset_dir: /kaggle/working/DCNN/Dataset/clean_testset_1f
 
 
 name: "speech_dataset"
