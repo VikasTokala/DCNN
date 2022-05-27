@@ -2,7 +2,7 @@ import torch
 import torchaudio
 import os
 
-SR = 16000
+SR = 8000
 # N_MICROPHONE_SECONDS = 1
 # N_MICS = 4
 
