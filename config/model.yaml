@@ -1,2 +1,2 @@
 model:
-  loss_mode: MSE
+  loss_mode: SI-SNR
