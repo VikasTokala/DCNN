@@ -34,7 +34,7 @@ class DCNNLightniningModule(BaseLightningModule):
         config = OmegaConf.to_container(config)
         self.config = config
 
-        model = DCNN()
+        model = DCNN(use_clstm=True,use_cbn=True)
 
         loss = Loss(loss_mode=self.config["model"]["loss_mode"])
 
