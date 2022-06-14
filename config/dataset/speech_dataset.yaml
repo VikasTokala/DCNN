@@ -1,9 +1,10 @@
 sr: 16000
-noisy_training_dataset_dir: /kaggle/input/dcnn-wgn/Noisy_trainset
-noisy_validation_dataset_dir: /kaggle/input/dcnn-wgn/Noisy_valset
-noisy_test_dataset_dir: /kaggle/input/dcnn-wgn/Noisy_testset
-target_training_dataset_dir: /kaggle/input/dcnn-wgn/Clean_trainset
-target_validation_dataset_dir: /kaggle/input/dcnn-wgn/Clean_valset
-target_test_dataset_dir: /kaggle/input/dcnn-wgn/Clean_testset
+noisy_training_dataset_dir: /kaggle/input/dcnn-mnoise/Dataset_DCNN_DMND/Noisy_trainset
+noisy_validation_dataset_dir: /kaggle/input/dcnn-mnoise/Dataset_DCNN_DMND/Noisy_valset
+noisy_test_dataset_dir: /kaggle/input/dcnn-mnoise/Dataset_DCNN_DMND/Noisy_testset
+target_training_dataset_dir: /kaggle/input/dcnn-mnoise/Dataset_DCNN_DMND/Clean_trainset
+target_validation_dataset_dir: /kaggle/input/dcnn-mnoise/Dataset_DCNN_DMND/Clean_valset
+target_test_dataset_dir: /kaggle/input/dcnn-mnoise/Dataset_DCNN_DMND/Clean_testset
 
 name: "speech_dataset"
+
