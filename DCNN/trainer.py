@@ -36,7 +36,8 @@ class DCNNLightniningModule(BaseLightningModule):
 
         model = DCNN(use_clstm=True,use_cbn=True)
 
-        loss = Loss(loss_mode=self.config["model"]["loss_mode"])
+        loss = Loss(loss_mode=self.config["model"]["loss_mode"], STOI_weight=self.config["model"]["STOI_weight"],
+            SNR_weight=self.config["model"]["SNR_weight"])
 
         super().__init__(model, loss)
 

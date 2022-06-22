@@ -11,12 +11,15 @@ class Loss(Module):
             win_inc=100,
             fft_len=512,
             win_type='hanning',
-            fix = True,sr=16000):
+            fix = True,sr=16000,
+            STOI_weight=1,
+            SNR_weight=0.1):
         super().__init__()
         self.loss_mode = loss_mode
         self.stft = ConvSTFT(win_len, win_inc, fft_len, win_type, 'complex', fix=fix)
         self.stoiLoss = NegSTOILoss(sample_rate=sr)
-
+        self.STOI_weight= STOI_weight
+        self.SNR_weight= SNR_weight
     def forward(self, model_output, targets):
         if self.loss_mode == 'MSE':
             b, d, t = model_output.shape
@@ -35,7 +38,7 @@ class Loss(Module):
         
         elif self.loss_mode == 'STOI-SNR':
             loss_batch = self.stoiLoss(model_output,targets)
-            return -(si_snr(model_output, targets)) + loss_batch.mean()
+            return -(self.SNR_weight*si_snr(model_output, targets)) + self.STOI_weight*loss_batch.mean()
 
 
 
