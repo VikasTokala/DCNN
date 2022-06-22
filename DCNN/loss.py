@@ -34,7 +34,8 @@ class Loss(Module):
             return torch.mean(torch.abs(model_output - gth_spec)) * d
         
         elif self.loss_mode == 'STOI-SNR':
-            return -(si_snr(model_output, targets)) + self.stoiLoss(model_output,targets)
+            loss_batch = self.stoiLoss(model_output,targets)
+            return -(si_snr(model_output, targets)) + loss_batch.mean()
 
 
 
