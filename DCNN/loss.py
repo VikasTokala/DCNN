@@ -2,6 +2,7 @@ import torch
 from torch.nn import Module, L1Loss
 from DCNN.utils.conv_stft import ConvSTFT
 import torch.functional as F
+from torch_stoi import NegSTOILoss
 
 
 
@@ -10,10 +11,11 @@ class Loss(Module):
             win_inc=100,
             fft_len=512,
             win_type='hanning',
-            fix = True):
+            fix = True,sr=16000):
         super().__init__()
         self.loss_mode = loss_mode
         self.stft = ConvSTFT(win_len, win_inc, fft_len, win_type, 'complex', fix=fix)
+        self.stoiLoss = NegSTOILoss(sample_rate=sr)
 
     def forward(self, model_output, targets):
         if self.loss_mode == 'MSE':
@@ -30,6 +32,10 @@ class Loss(Module):
             gth_spec, gth_phase = self.stft(targets)
             b, d, t = model_output.shape
             return torch.mean(torch.abs(model_output - gth_spec)) * d
+        
+        elif self.loss_mode == 'STOI-SNR':
+            return -(si_snr(model_output, targets)) + self.stoiLoss(model_output,targets)
+
 
 
 def l2_norm(s1, s2):
@@ -50,3 +56,6 @@ def si_snr(s1, s2, eps=1e-8):
     noise_norm = l2_norm(e_nosie, e_nosie)
     snr = 10 * torch.log10((target_norm) / (noise_norm + eps) + eps)
     return torch.mean(snr)
+
+
+#stoi(x, y, fs_sig, extended=False)

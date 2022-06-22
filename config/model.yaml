@@ -1,2 +1,2 @@
 model:
-  loss_mode: SI-SNR
+  loss_mode: STOI-SNR 
