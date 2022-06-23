@@ -1,4 +1,4 @@
 model:
   loss_mode: STOI-SNR 
-  SNR_weight : 0.1
+  SNR_weight : 1
   STOI_weight : 1
