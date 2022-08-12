@@ -1,0 +1,116 @@
+4
+/rds/general/user/dtj20/home/mac/hpc/rtf_estimators/fblms/
+['/rds/general/user/dtj20/home/signals/NUANCE_SIGNALS/all/D1_3570-5694-0012.wav', '/rds/general/user/dtj20/home/signals/NUANCE_SIGNALS/all/P1_1995-1826-0017.wav', '/rds/general/user/dtj20/home/signals/NUANCE_SIGNALS/all/D1_1995-1826-0015.wav', '/rds/general/user/dtj20/home/signals/NUANCE_SIGNALS/all/D1_1995-1826-0009.wav']
+[12, 6, 0, -6]
+
+Signal Model set up
+
+
+testing fblms rtf estimation
+mse between y and y_hat = [-44.25746714 -46.53921247 -49.03180046 -47.29827675 -44.15970307
+ -42.8709344  -41.78858084] dB
+
+Signal Model set up
+
+
+testing fblms rtf estimation
+mse between y and y_hat = [-45.53509567 -47.6457711  -52.15042001 -49.39121546 -45.90280694
+ -43.8667282  -42.58230043] dB
+
+Signal Model set up
+
+
+testing fblms rtf estimation
+mse between y and y_hat = [-44.90453068 -47.375982   -50.79303192 -48.58355657 -45.49143128
+ -43.13864764 -41.75238565] dB
+
+Signal Model set up
+
+
+testing fblms rtf estimation
+mse between y and y_hat = [-41.28238651 -43.7854179  -46.88721594 -45.0395014  -43.05131795
+ -41.38448679 -40.40556098] dB
+
+Signal Model set up
+
+
+testing fblms rtf estimation
+mse between y and y_hat = [-44.24563915 -45.85999609 -48.11193781 -46.32754687 -44.80533741
+ -42.49782406 -42.07452227] dB
+
+Signal Model set up
+
+
+testing fblms rtf estimation
+mse between y and y_hat = [-45.31342183 -47.80513037 -52.3091717  -49.41975755 -45.83594211
+ -43.96947439 -42.80396209] dB
+
+Signal Model set up
+
+
+testing fblms rtf estimation
+mse between y and y_hat = [-45.13910897 -47.08997863 -50.41847713 -48.0639338  -45.12442259
+ -42.91652476 -41.76221982] dB
+
+Signal Model set up
+
+
+testing fblms rtf estimation
+mse between y and y_hat = [-40.90266785 -43.28383587 -45.89138673 -44.23099752 -42.73787729
+ -40.95462711 -39.83045008] dB
+
+Signal Model set up
+
+
+testing fblms rtf estimation
+mse between y and y_hat = [-44.18346062 -44.57698746 -46.56812998 -45.62314503 -43.35233836
+ -43.21565901 -41.58259394] dB
+
+Signal Model set up
+
+
+testing fblms rtf estimation
+mse between y and y_hat = [-45.29586363 -47.21475032 -51.20924239 -48.98821023 -45.76077099
+ -43.94337522 -42.55981228] dB
+
+Signal Model set up
+
+
+testing fblms rtf estimation
+mse between y and y_hat = [-44.64550561 -45.6413812  -49.17071212 -47.26095453 -44.24468966
+ -42.38180863 -41.43219803] dB
+
+Signal Model set up
+
+
+testing fblms rtf estimation
+mse between y and y_hat = [-40.72990476 -43.02465343 -45.12532372 -43.21705281 -42.09863419
+ -40.49655143 -39.69469645] dB
+
+Signal Model set up
+
+
+testing fblms rtf estimation
+mse between y and y_hat = [-42.18045089 -42.79535118 -45.01532447 -44.76400389 -43.32172369
+ -40.84955929 -41.11721288] dB
+
+Signal Model set up
+
+
+testing fblms rtf estimation
+mse between y and y_hat = [-44.8332139  -46.74999542 -49.25997303 -47.46655065 -45.45159022
+ -43.67338111 -42.87847308] dB
+
+Signal Model set up
+
+
+testing fblms rtf estimation
+mse between y and y_hat = [-42.41249906 -44.03673946 -44.60247025 -44.14369578 -42.69736411
+ -41.12892438 -40.53538516] dB
+
+Signal Model set up
+
+
+testing fblms rtf estimation
+mse between y and y_hat = [-40.78343797 -41.51923748 -42.76185163 -41.87518681 -40.60715233
+ -40.75991656 -40.51186152] dB

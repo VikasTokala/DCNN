@@ -1,0 +1,7 @@
+*.vscode*
+/datasets/*/*.wav
+/datasets/MNIST
+*DS_Store*
+*_pycache__*
+.pytest_cache/
+*.torch*

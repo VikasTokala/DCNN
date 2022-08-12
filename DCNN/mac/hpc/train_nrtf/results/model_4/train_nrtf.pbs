@@ -1,0 +1,6 @@
+#PBS -lwalltime=12:00:00
+#PBS -lselect=1:ncpus=8:mem=8gb:ngpus=1:gpu_type=RTX6000
+cd $PBS_O_WORKDIR
+module load anaconda3/personal
+source activate ml 
+python3 /rds/general/user/dtj20/home/mac/hpc/train_nrtf/train_nrtf.py

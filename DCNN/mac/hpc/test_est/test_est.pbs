@@ -1,0 +1,5 @@
+#PBS -lwalltime=01:00:00
+#PBS -lselect=1:ncpus=1:mem=8gb
+module load anaconda3/personal
+source activate ml 
+python3 /rds/general/user/dtj20/home/mac/test/test_est.py

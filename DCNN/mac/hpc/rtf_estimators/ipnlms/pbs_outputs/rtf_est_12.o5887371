@@ -1,0 +1,116 @@
+4
+/rds/general/user/dtj20/home/mac/hpc/rtf_estimators/ipnlms/
+['/rds/general/user/dtj20/home/signals/NUANCE_SIGNALS/all/D1_237-126133-0008.wav', '/rds/general/user/dtj20/home/signals/NUANCE_SIGNALS/all/P1_3575-170457-0020.wav', '/rds/general/user/dtj20/home/signals/NUANCE_SIGNALS/all/D2_121-121726-0004.wav', '/rds/general/user/dtj20/home/signals/NUANCE_SIGNALS/all/D2_3570-5694-0011.wav']
+[12, 6, 0, -6]
+
+Signal Model set up
+
+
+testing ipnlms based rtf estimation
+mse between y and y_hat = [-46.58917396 -48.34793135 -51.61762268 -51.058816   -47.42772793
+ -45.10789809 -44.02730123] dB
+
+Signal Model set up
+
+
+testing ipnlms based rtf estimation
+mse between y and y_hat = [-40.57515358 -42.97697596 -47.68112065 -45.58638939 -41.60981094
+ -39.33493476 -38.36775349] dB
+
+Signal Model set up
+
+
+testing ipnlms based rtf estimation
+mse between y and y_hat = [-41.63061617 -42.69201413 -46.91374824 -48.11955441 -45.43591421
+ -43.58050234 -43.39455914] dB
+
+Signal Model set up
+
+
+testing ipnlms based rtf estimation
+mse between y and y_hat = [-37.88986371 -40.05809581 -44.22852491 -47.98158596 -44.27898809
+ -41.8882351  -40.35114056] dB
+
+Signal Model set up
+
+
+testing ipnlms based rtf estimation
+mse between y and y_hat = [-46.79953244 -48.06430753 -51.50446461 -50.94753559 -47.34476369
+ -44.84279573 -44.02480982] dB
+
+Signal Model set up
+
+
+testing ipnlms based rtf estimation
+mse between y and y_hat = [-40.47753141 -42.83824472 -47.07873006 -45.6666134  -41.56215034
+ -39.35359722 -38.3560468 ] dB
+
+Signal Model set up
+
+
+testing ipnlms based rtf estimation
+mse between y and y_hat = [-41.64569765 -42.95823162 -46.96434567 -48.56313749 -45.34948505
+ -43.38353704 -43.30860474] dB
+
+Signal Model set up
+
+
+testing ipnlms based rtf estimation
+mse between y and y_hat = [-37.96886579 -39.89995871 -44.89891324 -48.06742232 -44.91355597
+ -42.01877899 -40.40576891] dB
+
+Signal Model set up
+
+
+testing ipnlms based rtf estimation
+mse between y and y_hat = [-46.40119913 -48.20636883 -52.14603556 -50.61033985 -47.07729061
+ -44.68518112 -44.08078104] dB
+
+Signal Model set up
+
+
+testing ipnlms based rtf estimation
+mse between y and y_hat = [-40.35974989 -42.78914066 -46.85612073 -45.25253744 -41.52527532
+ -39.32246506 -38.31133889] dB
+
+Signal Model set up
+
+
+testing ipnlms based rtf estimation
+mse between y and y_hat = [-41.30993863 -42.48702699 -46.34991773 -48.00656529 -44.96683797
+ -43.73150247 -42.79158432] dB
+
+Signal Model set up
+
+
+testing ipnlms based rtf estimation
+mse between y and y_hat = [-37.92565888 -39.97433709 -43.51652017 -45.64733433 -43.20436491
+ -40.9615236  -39.4237688 ] dB
+
+Signal Model set up
+
+
+testing ipnlms based rtf estimation
+mse between y and y_hat = [-46.47395529 -48.03251107 -51.54781364 -50.07479191 -47.1329733
+ -45.04680627 -44.01610045] dB
+
+Signal Model set up
+
+
+testing ipnlms based rtf estimation
+mse between y and y_hat = [-40.57708836 -42.68423185 -46.58902979 -44.69902015 -41.42206225
+ -39.28351648 -38.40540227] dB
+
+Signal Model set up
+
+
+testing ipnlms based rtf estimation
+mse between y and y_hat = [-41.40896567 -42.82256134 -45.98543365 -47.84699669 -44.98627941
+ -43.55139757 -43.17219455] dB
+
+Signal Model set up
+
+
+testing ipnlms based rtf estimation
+mse between y and y_hat = [-37.88363834 -39.37942481 -42.21763194 -44.98523602 -43.57084623
+ -41.64947821 -40.57418945] dB

@@ -32,6 +32,7 @@ class NavieComplexLSTM(nn.Module):
         self.rnn_units = hidden_size//2
         self.real_lstm = nn.LSTM(self.input_dim, self.rnn_units, num_layers=1, bidirectional=bidirectional, batch_first=False)
         self.imag_lstm = nn.LSTM(self.input_dim, self.rnn_units, num_layers=1, bidirectional=bidirectional, batch_first=False)
+        
         if bidirectional:
             bidirectional=2
         else:
@@ -212,7 +213,7 @@ class ComplexConvTranspose2d(nn.Module):
         
         return out
 
-
+# Complexpytorch - wavefrontshaping
 
 # Source: https://github.com/ChihebTrabelsi/deep_complex_networks/tree/pytorch 
 # from https://github.com/IMLHF/SE_DCUNet/blob/f28bf1661121c8901ad38149ea827693f1830715/models/layers/complexnn.py#L55
