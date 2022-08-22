@@ -26,6 +26,8 @@ def test_ipnlms_rtf(sm, ref_ch=1):
 
     mse = mac.eval.mse_db(sm.y[:,encoded_channels], d_hat[:,encoded_channels])
     print('mse between y and y_hat = ' + str(mse) + ' dB')
+    print('Signal shape - ', sm.y.shape)
+    print('RTF shape - ',rtf.shape)
 
     return rtf, d_hat, mse
 
@@ -44,11 +46,14 @@ def test_fblms_rtf(sm, ref_ch=1):
 
     mse = mac.eval.mse_db(sm.y[:,encoded_channels], y_hat[:,encoded_channels])
     print('mse between y and y_hat = ' + str(mse) + ' dB')
+    print(sm.y.shape)
+    print(encoded_channels)
 
     rtf_td = np.zeros((M, sm.Nch, N_segs))
     for n in range(N_segs):
        rtf_td[:,:,n] = np.real(np.fft.ifft(rtf_f[:,:,n], axis=0))[:M,:]
 
+    print(rtf_td.shape)
     return rtf_td, y_hat, mse
 
 def test_gevd_rtf(sm, ref_ch=1):
@@ -220,7 +225,7 @@ def sim_test_main():
 
         sm = mac.sm.TestSignalModel(ir_type=ir, Ts=0.5, len_w=1024, overlap=None, SNR_db=6)
 
-        rtf_fblms, y_hat_fblms, mse_fblms = test_fblms_rtf(sm)
+        rtf_fblms, y_hat_fblms, mse_fblms = test_ipnlms_rtf(sm)
         # rtf_gevd , y_hat_gevd, mse_gevd = test_gevd_rtf(sm)
         # rtf_pm_gevd , y_hat_pm_gevd, mse_pm_gevd = test_pm_gevd_rtf(sm)
         # rtf_pevd, y_hat_pevd, mse_pevd = test_pm_pevd_rtf(sm)    
@@ -235,8 +240,8 @@ def sim_test_main():
         # plt.title(ir)
         # plt.legend()
 
-        # plt.figure()
-        # plt.plot(rtf_fblms[:,1,-1])
+        plt.figure()
+        plt.plot(rtf_fblms[:,1,-1])
         # plt.plot(rtf_ipnlms[:,1,-1])
         # plt.plot(rtf_pevd[:,1,-1])
         # plt.plot(rtf_pm_gevd[:,1,-1])
