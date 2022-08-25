@@ -148,3 +148,6 @@ training_dataset/
 test_dataset/
 tests/temp
 outputs/
+Enhanced_Signals/
+Noisy_binaural_signals/
+Clean_binaural_signals/

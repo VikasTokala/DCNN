@@ -3,7 +3,7 @@ import pytorch_lightning as pl
 import torch
 
 from pytorch_lightning.callbacks import (
-    ModelCheckpoint, TQDMProgressBar
+    ModelCheckpoint, TQDMProgressBar, EarlyStopping
 )
 from pytorch_lightning import loggers as pl_loggers
 
@@ -12,12 +12,18 @@ from DCNN.utils.model_utilities import merge_list_of_dicts
 SAVE_DIR = "logs/"
 
 class BaseTrainer(pl.Trainer):
-    def __init__(self, lightning_module, n_epochs, use_checkpoint_callback=True):
+    def __init__(self, lightning_module, n_epochs, use_checkpoint_callback=True, early_stopping_config=None):
 
         gpus = 1 if torch.cuda.is_available() else 0
 
         progress_bar = CustomProgressBar()
+        early_stopping = EarlyStopping(early_stopping_config["key_to_monitor"],
 
+                              early_stopping_config["min_delta"],
+
+                              early_stopping_config["patience_in_epochs"]
+
+                )
         checkpoint_callback = ModelCheckpoint(
             monitor="validation_loss",
             save_last=True,
@@ -28,7 +34,7 @@ class BaseTrainer(pl.Trainer):
         tb_logger = pl_loggers.TensorBoardLogger(save_dir=SAVE_DIR)
         csv_logger = pl_loggers.CSVLogger(save_dir=SAVE_DIR)
 
-        callbacks=[progress_bar] # feature_map_callback],
+        callbacks=[progress_bar,early_stopping] # feature_map_callback],
         if use_checkpoint_callback:
             callbacks.append(checkpoint_callback)
 

@@ -2,3 +2,4 @@ defaults:
   - model
   - training
   - dataset: speech_dataset
+  - test_rtf

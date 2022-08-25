@@ -24,8 +24,14 @@ def create_torch_dataloader(config, mode, stack_parameters=True):
         noisy_dataset_path = config["dataset"]["noisy_test_dataset_dir"]
         target_dataset_path = config["dataset"]["target_test_dataset_dir"]
         shuffle = False
+    elif mode == "test_rtf":
+        noisy_dataset_path = config["test_rtf"]["noisy_dir"]
+        target_dataset_path = config["test_rtf"]["target_dir"]
+        shuffle = False
+    
+    mono = mode != "test_rtf"
 
-    dataset = BaseDataset(noisy_dataset_path, target_dataset_path)
+    dataset = BaseDataset(noisy_dataset_path, target_dataset_path, mono=mono)
 
 
     return torch.utils.data.DataLoader(

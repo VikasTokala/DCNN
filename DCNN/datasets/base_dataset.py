@@ -13,6 +13,7 @@ class BaseDataset(torch.utils.data.Dataset):
                  noisy_dataset_dir,
                  target_dataset_dir,
                  sr=SR,
+                 mono=True,
                 #  n_microphone_seconds=N_MICROPHONE_SECONDS,
                 #  n_mics=N_MICS,
                 #  metadata_dir=None
@@ -26,6 +27,7 @@ class BaseDataset(torch.utils.data.Dataset):
         self.target_dataset_dir = target_dataset_dir
         self.noisy_dataset_dir = noisy_dataset_dir
 
+        self.mono = mono
         # self.df = _load_dataframe(dataset_dir, metadata_dir)
 
     def __len__(self):
@@ -38,7 +40,11 @@ class BaseDataset(torch.utils.data.Dataset):
         #path = os.path.dirname(self.audio_dir)
         clean_signal, _ = torchaudio.load(clean_audio_sample_path)
         noisy_signal, _ = torchaudio.load(noisy_audio_sample_path)
-        return (noisy_signal[0], clean_signal[0])
+
+        if self.mono:
+            return (noisy_signal[0], clean_signal[0])
+        else:
+            return (noisy_signal, clean_signal)
 
     def _get_audio_sample_path(self, index,dataset_dir):
         audio_files = sorted(os.listdir(dataset_dir))

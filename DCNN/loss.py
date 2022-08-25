@@ -10,7 +10,7 @@ class Loss(Module):
     def __init__(self, loss_mode='SI-SNR',win_len=400,
             win_inc=100,
             fft_len=512,
-            win_type='hanning',
+            win_type='hann',
             fix = True,sr=16000,
             STOI_weight=1,
             SNR_weight=0.1):

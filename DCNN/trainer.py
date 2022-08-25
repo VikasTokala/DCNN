@@ -14,7 +14,7 @@ class DCNNTrainer(BaseTrainer):
     def __init__(self, config):
         lightning_module = DCNNLightniningModule(config)
         super().__init__(lightning_module,
-                         config["training"]["n_epochs"])
+                         config["training"]["n_epochs"], early_stopping_config=config["training"]["early_stopping"])
 
     def fit(self, train_dataloaders, val_dataloaders=None):
         super().fit(self._lightning_module, train_dataloaders,
