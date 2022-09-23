@@ -11,7 +11,9 @@ def create_torch_dataloaders(config):
     )
 
 
-def create_torch_dataloader(config, mode, stack_parameters=True):
+def create_torch_dataloader(config, mode):
+    is_binaural = config["model"]["binaural"]
+
     if mode == "training":
         noisy_dataset_path = config["dataset"]["noisy_training_dataset_dir"]
         target_dataset_path = config["dataset"]["target_training_dataset_dir"]
@@ -29,10 +31,12 @@ def create_torch_dataloader(config, mode, stack_parameters=True):
         target_dataset_path = config["test_rtf"]["target_dir"]
         shuffle = False
     
-    mono = mode != "test_rtf"
+    if is_binaural or mode == "test_rtf":
+        mono = False
+    else:
+        mono = True
 
     dataset = BaseDataset(noisy_dataset_path, target_dataset_path, mono=mono)
-
 
     return torch.utils.data.DataLoader(
         dataset,

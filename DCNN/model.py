@@ -150,7 +150,7 @@ class DCNN(nn.Module):
         if isinstance(self.enhance, nn.LSTM):
             self.enhance.flatten_parameters()
 
-    def forward(self, inputs, lens=None):
+    def forward(self, inputs, output_mode="time"):
         specs = self.stft(inputs)
         real = specs[:, :self.fft_len // 2 + 1]
         imag = specs[:, self.fft_len // 2 + 1:]
@@ -229,12 +229,13 @@ class DCNN(nn.Module):
             real, imag = real * mask_real, imag * mask_imag
 
         out_spec = torch.cat([real, imag], 1)
-        out_wav = self.istft(out_spec)
-
-        out_wav = torch.squeeze(out_wav, 1)
-        # out_wav = torch.tanh(out_wav)
-        out_wav = torch.clamp_(out_wav, -1, 1)
-        return out_wav #out_spec, out_wav
+        if output_mode == "cspec":
+            return out_spec
+        else:
+            out_wav = self.istft(out_spec)
+            out_wav = torch.squeeze(out_wav, 1)
+            out_wav = torch.clamp_(out_wav, -1, 1)
+            return out_wav
 
     def get_params(self, weight_decay=0.0):
         # add L2 penalty
@@ -253,14 +254,11 @@ class DCNN(nn.Module):
         }]
         return params
 
-   
 
 def remove_dc(data):
     mean = torch.mean(data, -1, keepdim=True)
     data = data - mean
     return data
-
-
 
 
 def test_complex():

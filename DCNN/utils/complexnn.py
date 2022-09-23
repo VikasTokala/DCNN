@@ -421,5 +421,32 @@ if __name__ == '__main__':
     nnet2 = ComplexConvTranspose2d(12,12,kernel_size=(3,2),padding=(2,1))
     print(torch.mean(nnet1(inputs)-onet1(inputs))) 
 
-        
 
+def complex_div(z_0, z_1):
+    a, b = z_0[:, 0], z_0[:, 1]
+    c, d = z_1[:, 0], z_1[:, 1]
+
+    real = (a*c + b*d)
+    imag = (b*c - a*d)
+
+    output = torch.stack([real, imag], dim=1)/(c**2 + d**2)
+    return output
+
+
+def complex_mul(z_0, z_1):
+    a, b = z_0[:, 0], z_0[:, 1]
+    c, d = z_1[:, 0], z_1[:, 1]
+
+    real = (a*c - b*d)
+    imag = (b*c + a*d)
+
+    output = torch.stack([real, imag], dim=1)
+    return output
+
+
+def complex_pow(z, exponent):
+    result = z
+    for i in range(exponent - 1):
+        result = complex_mul(result, z)
+    
+    return result

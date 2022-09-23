@@ -16,22 +16,43 @@ import mac
 SR = 16000
 
 
-def rtf_function(sig_in, ref_ch=1, N_rtf=1024):
-    rtf_f, e, y_hat = mac.est.fblms_est(sig_in, ref_ch, N_rtf)
-    _, _, N_segs = np.shape(rtf_f)
+def rtf_function(sig_in, ref_ch=1, N_rtf=256):
+    rtf_f_l, e_l, y_hat_l = mac.est.fblms_est(sig_in, ref_ch, N_rtf)
+    _, _, N_segs = np.shape(rtf_f_l)
     M = N_rtf  # length of the rtf
     Nch = 2
-    rtf_td = np.zeros((M, Nch, N_segs))
+    rtf_td_l = np.zeros((M, Nch, N_segs))
 
     for n in range(N_segs):
-        rtf_td[:, :, n] = np.real(np.fft.ifft(rtf_f[:, :, n], axis=0))[:M, :]
+        rtf_td_l[:, :, n] = np.real(np.fft.ifft(rtf_f_l[:, :, n], axis=0))[:M, :]
 
     # breakpoint()
-    rtf_td = rtf_td[:, 1, 1]
+    rtf_td_l = rtf_td_l[:, 1, 1]
+    ref_ch=2
+
+    rtf_f_r, e_r, y_hat_r = mac.est.fblms_est(sig_in, ref_ch, N_rtf)
+    _, _, N_segs = np.shape(rtf_f_r)
+    M = N_rtf  # length of the rtf
+    Nch = 2
+    rtf_td_r = np.zeros((M, Nch, N_segs))
+
+    for n in range(N_segs):
+        rtf_td_r[:, :, n] = np.real(np.fft.ifft(rtf_f_r[:, :, n], axis=0))[:M, :]
+
+    # breakpoint()
+    rtf_td_r = rtf_td_r[:, 1, 1]
+    # breakpoint()
     # rtf_td = np.mean(rtf, axis=1)
-    plt.figure()
-    plt.plot(rtf_td)
-    plt.show
+    # plt.figure()
+    # plt.plot(rtf_td)
+    # plt.show
+    if np.mean(e_l[:,1])>np.mean(e_r[:,1]):
+        rtf_td = rtf_td_l
+        y_hat = y_hat_l
+    else:
+        rtf_td = rtf_td_r
+        y_hat = y_hat_r
+        
     return rtf_td, y_hat
 
 

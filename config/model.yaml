@@ -1,4 +1,8 @@
 model:
-  loss_mode: STOI-SNR 
+  binaural: true
+  loss_mode: RTF
   SNR_weight : 1
   STOI_weight : 1
+
+  use_clstm: True
+  use_cbn: True

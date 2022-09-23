@@ -62,8 +62,8 @@ class ConvSTFT(nn.Module):
             phase = torch.atan2(imag, real)
             return mags, phase
 
-class ConviSTFT(nn.Module):
 
+class ConviSTFT(nn.Module):
     def __init__(self, win_len, win_inc, fft_len=None, win_type='hamming', feature_type='real', fix=True):
         super(ConviSTFT, self).__init__() 
         if fft_len == None:

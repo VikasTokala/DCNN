@@ -2,9 +2,10 @@ from omegaconf import OmegaConf
 import torch
 
 from torch.optim.lr_scheduler import MultiStepLR
+from DCNN.binaural_model import BinauralDCNN
 
 from DCNN.model import DCNN
-from DCNN.loss import Loss
+from DCNN.loss import BinauralLoss, Loss
 from DCNN.utils.base_trainer import (
     BaseTrainer, BaseLightningModule
 )
@@ -14,7 +15,8 @@ class DCNNTrainer(BaseTrainer):
     def __init__(self, config):
         lightning_module = DCNNLightniningModule(config)
         super().__init__(lightning_module,
-                         config["training"]["n_epochs"], early_stopping_config=config["training"]["early_stopping"])
+                         config["training"]["n_epochs"],
+                         early_stopping_config=config["training"]["early_stopping"])
 
     def fit(self, train_dataloaders, val_dataloaders=None):
         super().fit(self._lightning_module, train_dataloaders,
@@ -34,10 +36,15 @@ class DCNNLightniningModule(BaseLightningModule):
         config = OmegaConf.to_container(config)
         self.config = config
 
-        model = DCNN(use_clstm=True,use_cbn=True)
+        if config["model"]["binaural"]:
+            model = BinauralDCNN(**self.config["model"])
+            loss = BinauralLoss(loss_mode=self.config["model"]["loss_mode"])
+        else:    
+            model = DCNN(**self.config["model"])
 
-        loss = Loss(loss_mode=self.config["model"]["loss_mode"], STOI_weight=self.config["model"]["STOI_weight"],
-            SNR_weight=self.config["model"]["SNR_weight"])
+            loss = Loss(loss_mode=self.config["model"]["loss_mode"],
+                        STOI_weight=self.config["model"]["STOI_weight"],
+                        SNR_weight=self.config["model"]["SNR_weight"])
 
         super().__init__(model, loss)
 
