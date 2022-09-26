@@ -6,7 +6,7 @@ from DCNN.utils.complexnn import complex_div, complex_pow
 from DCNN.utils.conv_stft import ConvSTFT
 from torch_stoi import NegSTOILoss
 
-EPS = 1e-7
+EPS = 1e-6
 
 class BinauralLoss(Module):
     def __init__(self, loss_mode="RTF", win_len=400,
@@ -24,7 +24,7 @@ class BinauralLoss(Module):
             output_stft_l = self.stft(model_output[:, 0])
             output_stft_r = self.stft(model_output[:, 1])
             
-            error = (output_stft_l/(output_stft_r + EPS) - target_stft_l/(target_stft_r + EPS))**2
+            error = (output_stft_l/(output_stft_r + EPS) - target_stft_l/(target_stft_r + EPS))*output_stft_r*target_stft_r
 
             return error.abs().mean()
 
