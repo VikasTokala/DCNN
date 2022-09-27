@@ -15,7 +15,7 @@ class BaseDataset(torch.utils.data.Dataset):
                  noisy_dataset_dir,
                  target_dataset_dir,
                  sr=SR,
-                 mono=True):
+                 mono=False):
 
         self.sr = sr
         self.target_dataset_dir = target_dataset_dir
