@@ -2,9 +2,11 @@ import torch
 import torch.functional as F
 
 from torch.nn import Module
+from DCNN.datasets.base_dataset import SR
 from DCNN.utils.complexnn import complex_div, complex_pow
 from DCNN.utils.conv_stft import ConvSTFT
 from torch_stoi import NegSTOILoss
+from mbstoi import mbstoi
 
 EPS = 1e-6
 
@@ -25,8 +27,10 @@ class BinauralLoss(Module):
             output_stft_r = self.stft(model_output[:, 1])
             
             error = (output_stft_l/(output_stft_r + EPS) - target_stft_l/(target_stft_r + EPS))*output_stft_r*target_stft_r
+            bstoi = - mbstoi(targets.detach().numpy()[:, 0],targets.detach().numpy()[:, 1],
+                model_output.detach().numpy()[:, 0],model_output.detach().numpy()[:, 1],fsi=16000)
 
-            return error.abs().mean()
+            return error.abs().mean()+bstoi
 
         else:
             raise NotImplementedError("Only loss available for binaural enhancement is 'RTF'")

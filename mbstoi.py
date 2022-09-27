@@ -70,7 +70,7 @@ def mbstoi(xl, xr, yl, yr, fsi, gridcoarseness=1,):
     # Resample signals to 10 kHz
     if fs_signal != fs:
 
-        logging.debug(f"Resampling signals with sr={fs} for MBSTOI calculation.")
+        # logging.debug(f"Resampling signals with sr={fs} for MBSTOI calculation.")
         # Assumes fs_signal is 44.1 kHz
         l = len(xl)
         xl = resample(xl, int(l * (fs / fs_signal) + 1))
@@ -111,7 +111,7 @@ def mbstoi(xl, xr, yl, yr, fsi, gridcoarseness=1,):
     yr_hat = yr_hat[0:idx, :]
 
     # Compute intermediate correlation via EC search
-    logging.info(f"Starting EC evaluation")
+    # logging.info(f"Starting EC evaluation")
     # Here intermeduiate correlation coefficients are evaluated for a discrete set of
     # gamma and tau values (a "grid") and the highest value is chosen.
     d = np.zeros((J, np.shape(xl_hat)[1] - N + 1))
@@ -128,7 +128,7 @@ def mbstoi(xl, xr, yl, yr, fsi, gridcoarseness=1,):
     gammas = gammas / 20
     sigma_delta = np.sqrt(2) * sigma_delta_0 * (1 + (abs(taus) / tau_0))
 
-    logging.info(f"Processing EC stage")
+    # logging.info(f"Processing EC stage")
     d, p_ec_max = MBSTOI.ec(
         xl_hat,
         xr_hat,
@@ -149,7 +149,7 @@ def mbstoi(xl, xr, yl, yr, fsi, gridcoarseness=1,):
     )
 
     # Compute the better ear STOI
-    logging.info(f"Computing better ear intermediate correlation coefficients")
+    # logging.info(f"Computing better ear intermediate correlation coefficients")
     # Arrays for the 1/3 octave envelope
     Xl = np.zeros((J, np.shape(xl_hat)[1]))
     Xr = np.zeros((J, np.shape(xl_hat)[1]))
@@ -209,6 +209,6 @@ def mbstoi(xl, xr, yl, yr, fsi, gridcoarseness=1,):
     d[idx] = dbe_interm[idx]
     sii = np.mean(d)
 
-    logging.info("MBSTOI processing complete")
+    # logging.info("MBSTOI processing complete")
 
     return sii
