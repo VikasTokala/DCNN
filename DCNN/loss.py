@@ -1,5 +1,6 @@
 import torch
 import torch.functional as F
+from torch.nn.functional import normalize
 
 from torch.nn import Module
 from DCNN.datasets.base_dataset import SR
@@ -30,7 +31,12 @@ class BinauralLoss(Module):
             bstoi = - mbstoi(targets.detach().numpy()[:, 0],targets.detach().numpy()[:, 1],
                 model_output.detach().numpy()[:, 0],model_output.detach().numpy()[:, 1],fsi=16000)
 
-            return error.abs().mean()+bstoi
+            snr_l = si_snr(model_output[:, 0], targets[:, 0])
+            snr_r = si_snr(model_output[:, 1], targets[:, 1])
+
+            snr = (snr_l + snr_r)/2
+
+            return 0.25*error.abs().mean()+ 0.25* bstoi+ 0.5 * snr
 
         else:
             raise NotImplementedError("Only loss available for binaural enhancement is 'RTF'")
@@ -89,7 +95,8 @@ def si_snr(s1, s2, eps=1e-8):
     target_norm = l2_norm(s_target, s_target)
     noise_norm = l2_norm(e_nosie, e_nosie)
     snr = 10 * torch.log10((target_norm) / (noise_norm + eps) + eps)
-    return torch.mean(snr)
+    snr_norm = normalize(snr)
+    return torch.mean(snr_norm)
 
 
 #stoi(x, y, fs_sig, extended=False)
