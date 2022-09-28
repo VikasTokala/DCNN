@@ -28,15 +28,15 @@ class BinauralLoss(Module):
             output_stft_r = self.stft(model_output[:, 1])
             
             error = (output_stft_l/(output_stft_r + EPS) - target_stft_l/(target_stft_r + EPS))*output_stft_r*target_stft_r
-            bstoi = - mbstoi(targets.detach().to('cpu').numpy()[:, 0],targets.detach().to('cpu').numpy()[:, 1],
-                model_output.detach().to('cpu').numpy()[:, 0],model_output.detach().to('cpu').numpy()[:, 1],fsi=16000)
+            # bstoi = - mbstoi(targets.detach().to('cpu').numpy()[:, 0],targets.detach().to('cpu').numpy()[:, 1],
+            #     model_output.detach().to('cpu').numpy()[:, 0],model_output.detach().to('cpu').numpy()[:, 1],fsi=16000)
 
             snr_l = si_snr(model_output[:, 0], targets[:, 0])
             snr_r = si_snr(model_output[:, 1], targets[:, 1])
 
             snr = (snr_l + snr_r)/2
 
-            return 0.25*error.abs().mean()+ 0.25* bstoi+ 0.5 * snr
+            return 0.25*error.abs().mean()+ 0.7 * snr
 
         else:
             raise NotImplementedError("Only loss available for binaural enhancement is 'RTF'")
