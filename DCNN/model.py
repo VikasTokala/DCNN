@@ -143,7 +143,7 @@ class DCNN(nn.Module):
                 )
 
         # show_model(self)
-        show_params(self)
+        # show_params(self)
         self.flatten_parameters()
 
     def flatten_parameters(self):
