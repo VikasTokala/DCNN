@@ -4,7 +4,8 @@ from omegaconf import DictConfig
 
 from DCNN.datasets import create_torch_dataloaders
 from DCNN.trainer import DCNNTrainer
-
+import warnings
+warnings.simplefilter('ignore')
 
 
 @hydra.main(config_path="config", config_name="config", version_base="1.1")
