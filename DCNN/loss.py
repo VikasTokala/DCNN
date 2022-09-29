@@ -10,7 +10,7 @@ from torch_stoi import NegSTOILoss
 from mbstoi import mbstoi
 import matplotlib.pyplot as plt
 
-EPS = 1e-6
+EPS = 1e-8
 
 class BinauralLoss(Module):
     def __init__(self, loss_mode="RTF", win_len=400,
@@ -63,7 +63,7 @@ class BinauralLoss(Module):
             
             epsilon = target_rtf_td - ((target_rtf_td@(torch.transpose(output_rtf_td,0,1)))/(output_rtf_td@torch.transpose(output_rtf_td,0,1)))@output_rtf_td
             
-            npm_error = torch.norm(epsilon)/torch.norm(target_rtf_td)
+            npm_error = torch.norm(normalize(epsilon))/torch.norm(normalize(target_rtf_td))
             
             
             # error = (target_stft_l_hat/(target_stft_r_hat + EPS) - target_stft_l/(target_stft_r + EPS))
@@ -140,8 +140,8 @@ def si_snr(s1, s2, eps=1e-8):
     target_norm = l2_norm(s_target, s_target)
     noise_norm = l2_norm(e_nosie, e_nosie)
     snr = 10 * torch.log10((target_norm) / (noise_norm + eps) + eps)
-    # snr_norm = normalize(snr)
-    return torch.mean(snr)
+    snr_norm = normalize(snr)
+    return torch.mean(snr_norm)
 
 
 #stoi(x, y, fs_sig, extended=False)
