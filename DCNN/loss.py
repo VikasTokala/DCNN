@@ -8,6 +8,7 @@ from DCNN.utils.complexnn import complex_div, complex_pow
 from DCNN.utils.conv_stft import ConvSTFT
 from torch_stoi import NegSTOILoss
 from mbstoi import mbstoi
+import matplotlib.pyplot as plt
 
 EPS = 1e-6
 
@@ -19,20 +20,59 @@ class BinauralLoss(Module):
         self.loss_mode = loss_mode
         self.stft = STFT(win_len, win_inc, fft_len)
         self.stoiLoss = NegSTOILoss(sample_rate=sr)
+        self.istft = ISTFT(win_len, win_inc, fft_len)
 
     def forward(self, model_output, targets):
         if self.loss_mode == "RTF":
+
+            
             target_stft_l = self.stft(targets[:, 0])
             target_stft_r = self.stft(targets[:, 1])
 
             output_stft_l = self.stft(model_output[:, 0])
             output_stft_r = self.stft(model_output[:, 1])
+
+            # target_l_psd = target_stft_l.abs()**2
+            # target_r_psd = target_stft_r.abs()**2
+
+            # output_l_psd = output_stft_l.abs()**2
+            # output_r_psd = output_stft_r.abs()**2
+
+            # noise_l_psd_hat =  output_l_psd - target_l_psd
+            # noise_r_psd_hat =  output_r_psd - target_r_psd
+
+            # target_l_psd_hat = output_l_psd - noise_l_psd_hat
+            # target_r_psd_hat = output_r_psd - noise_r_psd_hat
+
+            # # v,h = torch.linalg.eig(ta)
+
+            # noise_stft_l_hat = output_stft_l - target_stft_l
+            # noise_stft_r_hat = output_stft_r - target_stft_r
+
+            # target_stft_l_hat = output_stft_l - noise_stft_l_hat
+            # target_stft_r_hat = output_stft_r - noise_stft_r_hat
+
+            target_rtf_td_full = self.istft(target_stft_l/(target_stft_r + EPS))
+            output_rtf_td_full = self.istft(output_stft_l/(output_stft_r + EPS))
+
+            target_rtf_td = target_rtf_td_full[:,0:2047]
+            output_rtf_td = output_rtf_td_full[:,0:2047]
+
+            # breakpoint()
             
-            error = (output_stft_l/(output_stft_r + EPS) - target_stft_l/(target_stft_r + EPS))*output_stft_r*target_stft_r
+            
+            epsilon = target_rtf_td - ((target_rtf_td@(torch.transpose(output_rtf_td,0,1)))/(output_rtf_td@torch.transpose(output_rtf_td,0,1)))@output_rtf_td
+            
+            npm_error = torch.norm(epsilon)/torch.norm(target_rtf_td)
+            
+            
+            # error = (target_stft_l_hat/(target_stft_r_hat + EPS) - target_stft_l/(target_stft_r + EPS))
             # bstoi = - mbstoi(targets.detach().to('cpu').numpy()[:, 0],targets.detach().to('cpu').numpy()[:, 1],
             #     model_output.detach().to('cpu').numpy()[:, 0],model_output.detach().to('cpu').numpy()[:, 1],fsi=16000)
             stoi_l = self.stoiLoss(model_output[:, 0], targets[:, 0])
             stoi_r = self.stoiLoss(model_output[:, 1], targets[:, 1])
+            
+            
 
             stoi_loss = (stoi_l+stoi_r)/2
 
@@ -41,7 +81,7 @@ class BinauralLoss(Module):
 
             snr = (snr_l + snr_r)/2
             # breakpoint()
-            return 0.25*error.abs().mean()+ 0.5 * snr + 0.25*stoi_loss.mean()
+            return 0.5*npm_error + 0.7 * snr + 0*stoi_loss.mean()
 
         else:
             raise NotImplementedError("Only loss available for binaural enhancement is 'RTF'")
@@ -100,8 +140,8 @@ def si_snr(s1, s2, eps=1e-8):
     target_norm = l2_norm(s_target, s_target)
     noise_norm = l2_norm(e_nosie, e_nosie)
     snr = 10 * torch.log10((target_norm) / (noise_norm + eps) + eps)
-    snr_norm = normalize(snr)
-    return torch.mean(snr_norm)
+    # snr_norm = normalize(snr)
+    return torch.mean(snr)
 
 
 #stoi(x, y, fs_sig, extended=False)
@@ -119,3 +159,17 @@ class STFT(Module):
         stft = torch.stft(x, self.fft_len, hop_length=self.win_inc,
                           win_length=self.win_len, return_complex=True)
         return stft
+
+class ISTFT(Module):
+    def __init__(self, win_len=400, win_inc=100,
+                 fft_len=512):
+        self.win_len = win_len
+        self.win_inc = win_inc
+        self.fft_len = fft_len
+
+        super().__init__()
+
+    def forward(self, x):
+        istft = torch.istft(x, self.fft_len, hop_length=self.win_inc,
+                          win_length=self.win_len, return_complex=False)
+        return istft
