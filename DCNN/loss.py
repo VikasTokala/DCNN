@@ -81,7 +81,7 @@ class BinauralLoss(Module):
 
             snr = (snr_l + snr_r)/2
             # breakpoint()
-            return 0.5*npm_error + 0.7 * snr + 0*stoi_loss.mean()
+            return 0*npm_error + 1 * snr + 0*stoi_loss.mean()
 
         else:
             raise NotImplementedError("Only loss available for binaural enhancement is 'RTF'")
