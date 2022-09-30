@@ -3,6 +3,8 @@ model:
   loss_mode: RTF
   SNR_weight : 1
   STOI_weight : 1
+  rtf_weight : 0.3
+  snr_weight : 0.7
 
   use_clstm: True
   use_cbn: True

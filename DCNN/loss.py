@@ -14,13 +14,16 @@ EPS = 1e-8
 
 class BinauralLoss(Module):
     def __init__(self, loss_mode="RTF", win_len=400,
-                 win_inc=100, fft_len=512,sr=16000):
+                 win_inc=100, fft_len=512,sr=16000,rtf_weight=0.3,snr_weight=0.7):
 
         super().__init__()
         self.loss_mode = loss_mode
         self.stft = STFT(win_len, win_inc, fft_len)
         self.stoiLoss = NegSTOILoss(sample_rate=sr)
         self.istft = ISTFT(win_len, win_inc, fft_len)
+        self.rtf_weight = rtf_weight
+        self.snr_weight=snr_weight
+
 
     def forward(self, model_output, targets):
         if self.loss_mode == "RTF":
@@ -62,8 +65,8 @@ class BinauralLoss(Module):
             
             
             epsilon = target_rtf_td - ((target_rtf_td@(torch.transpose(output_rtf_td,0,1)))/(output_rtf_td@torch.transpose(output_rtf_td,0,1)))@output_rtf_td
-            
-            npm_error = torch.norm(normalize(epsilon))/torch.norm(normalize(target_rtf_td))
+            # breakpoint()
+            npm_error = torch.norm((epsilon/torch.max(epsilon)))/torch.norm((target_rtf_td)/torch.max(target_rtf_td))
             
             
             # error = (target_stft_l_hat/(target_stft_r_hat + EPS) - target_stft_l/(target_stft_r + EPS))
@@ -79,9 +82,9 @@ class BinauralLoss(Module):
             snr_l = si_snr(model_output[:, 0], targets[:, 0])
             snr_r = si_snr(model_output[:, 1], targets[:, 1])
 
-            snr = (snr_l + snr_r)/2
+            snr = -(snr_l + snr_r)/2
             # breakpoint()
-            return 0*npm_error + 1 * snr + 0*stoi_loss.mean()
+            return self.rtf_weight *npm_error + self.snr_weight * snr + 0*stoi_loss.mean()
 
         else:
             raise NotImplementedError("Only loss available for binaural enhancement is 'RTF'")
@@ -140,7 +143,7 @@ def si_snr(s1, s2, eps=1e-8):
     target_norm = l2_norm(s_target, s_target)
     noise_norm = l2_norm(e_nosie, e_nosie)
     snr = 10 * torch.log10((target_norm) / (noise_norm + eps) + eps)
-    snr_norm = normalize(snr)
+    snr_norm = snr/max(snr)
     return torch.mean(snr_norm)
 
 
