@@ -3,7 +3,7 @@ import pytorch_lightning as pl
 import torch
 
 from pytorch_lightning.callbacks import (
-    ModelCheckpoint, TQDMProgressBar, EarlyStopping
+    ModelCheckpoint, EarlyStopping
 )
 from pytorch_lightning import loggers as pl_loggers
 
@@ -16,7 +16,7 @@ class BaseTrainer(pl.Trainer):
 
         gpus = 1 if torch.cuda.is_available() else 0
 
-        progress_bar = CustomProgressBar()
+        # progress_bar = CustomProgressBar()
         early_stopping = EarlyStopping(early_stopping_config["key_to_monitor"],
 
                               early_stopping_config["min_delta"],
@@ -27,25 +27,24 @@ class BaseTrainer(pl.Trainer):
         checkpoint_callback = ModelCheckpoint(
             monitor="validation_loss",
             save_last=True,
-            filename='weights-{epoch:02d}-{validation_loss:.2f}',
             save_weights_only=True
         )
 
         tb_logger = pl_loggers.TensorBoardLogger(save_dir=SAVE_DIR)
         csv_logger = pl_loggers.CSVLogger(save_dir=SAVE_DIR)
 
-        callbacks=[progress_bar,early_stopping] # feature_map_callback],
+        callbacks=[early_stopping] # feature_map_callback],
         if use_checkpoint_callback:
             callbacks.append(checkpoint_callback)
 
         super().__init__(
             max_epochs=n_epochs,
             callbacks=[
-                checkpoint_callback, progress_bar, # feature_map_callback
+                checkpoint_callback # feature_map_callback
             ],
             logger=[tb_logger, csv_logger],
             gpus=gpus,
-            log_every_n_steps=25
+            log_every_n_steps=25, enable_progress_bar=False
         )
         
         self._lightning_module = lightning_module
@@ -139,9 +138,9 @@ class BaseLightningModule(pl.LightningModule):
         super().test(self.model, dataset_test, ckpt_path=ckpt_path)
 
 
-class CustomProgressBar(TQDMProgressBar):
-    def get_metrics(self, trainer, model):
-        # don't show the version number
-        items = super().get_metrics(trainer, model)
-        items.pop("v_num", None)
-        return items
+# class CustomProgressBar(TQDMProgressBar):
+#     def get_metrics(self, trainer, model):
+#         # don't show the version number
+#         items = super().get_metrics(trainer, model)
+#         items.pop("v_num", None)
+#         return items
