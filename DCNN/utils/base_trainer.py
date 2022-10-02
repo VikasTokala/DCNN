@@ -2,7 +2,7 @@ import pickle
 import pytorch_lightning as pl
 import torch
 
-from pytorch_lightning.callbacks import (
+from pytorch_lightning.callbacks import (TQDMProgressBar,
     ModelCheckpoint, EarlyStopping
 )
 from pytorch_lightning import loggers as pl_loggers
@@ -16,7 +16,7 @@ class BaseTrainer(pl.Trainer):
 
         gpus = 1 if torch.cuda.is_available() else 0
 
-        # progress_bar = CustomProgressBar()
+        progress_bar = CustomProgressBar()
         early_stopping = EarlyStopping(early_stopping_config["key_to_monitor"],
 
                               early_stopping_config["min_delta"],
@@ -39,13 +39,12 @@ class BaseTrainer(pl.Trainer):
 
         super().__init__(
             max_epochs=n_epochs,
-            callbacks=[
+            callbacks=[progress_bar,
                 checkpoint_callback # feature_map_callback
             ],
             logger=[tb_logger, csv_logger],
             gpus=gpus,
-            log_every_n_steps=25, enable_progress_bar=False
-        )
+            log_every_n_steps=25, enable_progress_bar=True        )
         
         self._lightning_module = lightning_module
 
@@ -138,9 +137,9 @@ class BaseLightningModule(pl.LightningModule):
         super().test(self.model, dataset_test, ckpt_path=ckpt_path)
 
 
-# class CustomProgressBar(TQDMProgressBar):
-#     def get_metrics(self, trainer, model):
-#         # don't show the version number
-#         items = super().get_metrics(trainer, model)
-#         items.pop("v_num", None)
-#         return items
+class CustomProgressBar(TQDMProgressBar):
+    def get_metrics(self, trainer, model):
+        # don't show the version number
+        items = super().get_metrics(trainer, model)
+        items.pop("v_num", None)
+        return items
