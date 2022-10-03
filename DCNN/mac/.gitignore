@@ -1,7 +1,10 @@
 *.vscode*
 /datasets/*/*.wav
 /datasets/MNIST
+/datasets/ace_librispeech/*
 *DS_Store*
 *_pycache__*
 .pytest_cache/
 *.torch*
+*.e*
+*.o*

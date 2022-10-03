@@ -9,12 +9,12 @@ import math
 import warnings
 import matplotlib.pyplot as plt
 
-def ipnlms_est(sig_in, ref_ch, alpha, mu, L_rtf, L_frame, caus_delay, vad=[], eps=2**-50):
+def ipnlms_est(y, x, ref_ch, alpha, mu, L_rtf, L_frame, caus_delay, vad=[], eps=2**-50):
 
     if vad == []:
-        vad = np.ones_like(sig_in)
+        vad = np.ones_like(y)
 
-    L, Nch = np.shape(sig_in)
+    L, Nch = np.shape(y)
     L = L + caus_delay 
     N_frames = int(np.ceil((L)/L_frame))
     L_pad = int(N_frames*L_rtf - (L))
@@ -24,24 +24,28 @@ def ipnlms_est(sig_in, ref_ch, alpha, mu, L_rtf, L_frame, caus_delay, vad=[], ep
     encoded_channels = list(range(Nch))
     encoded_channels.remove(ref_ind)
 
-    des = np.zeros((L + caus_delay, Nch))
-    des = np.concatenate(( np.zeros((caus_delay, Nch)), sig_in, np.zeros((L_pad, Nch)) ))    
+    d = np.zeros((L + caus_delay, Nch))
+    d = np.concatenate(( np.zeros((caus_delay, Nch)), y, np.zeros((L_pad, Nch)) ))    
     
     vad = np.concatenate(( np.zeros((caus_delay, Nch)), vad, np.zeros((L_pad, Nch)) ))  
 
-    ref = np.zeros((L, 1))
-    ref = np.concatenate(( sig_in[:, ref_ind], np.zeros((caus_delay + L_pad,)) ))
+    y_ref = np.zeros((L, 1))
+    y_ref = np.concatenate(( y[:, ref_ind], np.zeros((caus_delay + L_pad,)) ))
+    x_ref = np.zeros((L, 1))
+    x_ref = np.concatenate(( x[:, ref_ind], np.zeros((caus_delay + L_pad,)) ))
 
-    des_hat = np.zeros_like(des)
-    des_hat_ave = np.zeros_like(des)
+    y_hat = np.zeros_like(d)
+    y_hat_ave = np.zeros_like(d)
+    x_hat_ave = np.zeros_like(y_hat_ave)
 
     h = np.zeros((L_rtf, Nch))
     h_ave = np.zeros((L_rtf, Nch, N_frames))
 
-    e = np.zeros_like(des) 
+    e = np.zeros_like(d) 
     e_ave = np.zeros((L, Nch))
 
-    ref_toeplitz = np.zeros((L_rtf, L_frame))
+    ref_y_toeplitz = np.zeros((L_rtf, L_frame))
+    ref_x_toeplitz = np.zeros((L_rtf, L_frame))
 
     start_stop_bank = np.zeros((2*N_frames,1))
 
@@ -50,13 +54,17 @@ def ipnlms_est(sig_in, ref_ch, alpha, mu, L_rtf, L_frame, caus_delay, vad=[], ep
         start = k*L_frame # if in doubt review python indexing
         stop = start + L_frame # if in doubt review python indexing
 
-        epsilon = np.sum(ref[start:stop]**2)/len(ref[start:stop])
+        epsilon = np.sum(y_ref[start:stop]**2)/len(y_ref[start:stop])
         epsilon = epsilon*(1-alpha)/(2*L_rtf) + eps
 
         # Generate toeplitz matrix for the convolution operations
-        col0 = np.concatenate(( np.expand_dims(np.array(ref[start]), 0), ref_toeplitz[:-1,-1] )) # ref_toeplitz will be 0 for first loop and consistent aftwerwards
-        row0 = ref[start:stop]
-        ref_toeplitz[:,:] = linalg.toeplitz(col0, row0)
+        col0_y = np.concatenate(( np.expand_dims(np.array(y_ref[start]), 0), ref_y_toeplitz[:-1,-1] )) # ref_toeplitz will be 0 for first loop and consistent aftwerwards
+        row0_y = y_ref[start:stop]
+        ref_y_toeplitz[:,:] = linalg.toeplitz(col0_y, row0_y)
+
+        col0_x = np.concatenate(( np.expand_dims(np.array(x_ref[start]), 0), ref_x_toeplitz[:-1,-1] )) # ref_toeplitz will be 0 for first loop and consistent aftwerwards
+        row0_x = x_ref[start:stop]
+        ref_x_toeplitz[:,:] = linalg.toeplitz(col0_x, row0_x)
 
         start_stop_bank[2*k] = start
         start_stop_bank[2*k+1] = stop
@@ -65,9 +73,9 @@ def ipnlms_est(sig_in, ref_ch, alpha, mu, L_rtf, L_frame, caus_delay, vad=[], ep
 
             n = start + l
 
-            x_frame = np.expand_dims(ref_toeplitz[:,l], 1)
-            des_hat[n, :] = (x_frame.T)@h # estimate based on current weights
-            e[n, :] = des[n,:] - des_hat[n,:] # error based on current weights 
+            x_frame = np.expand_dims(ref_y_toeplitz[:,l], 1)
+            y_hat[n, :] = (x_frame.T)@h # estimate based on current weights
+            e[n, :] = d[n,:] - y_hat[n,:] # error based on current weights 
             # Sparsity coefficients 
             K = ( 1 / (2*L_rtf)) * (1-alpha) * np.ones((L_rtf, Nch)) + (1+alpha)*np.abs(h) / (2*np.sum(np.abs(h)) + eps)
             # Calculation of new weights 
@@ -76,14 +84,15 @@ def ipnlms_est(sig_in, ref_ch, alpha, mu, L_rtf, L_frame, caus_delay, vad=[], ep
             h_ave[:,:,k] += h/L_frame
 
         # calculation of frame based estimated signal and error 
-        des_hat_ave[start:stop,:] = (ref_toeplitz).T@h_ave[:,:,k] # estimate based on averaged weights
-        e_ave[start:stop,:] = des[start:stop,:] - des_hat_ave[start:stop,:]
+        y_hat_ave[start:stop,:] = (ref_y_toeplitz).T@h_ave[:,:,k] # estimate based on averaged weights
+        x_hat_ave[start:stop,:] = (ref_x_toeplitz).T@h_ave[:,:,k] # estimate based on averaged weights
+        e_ave[start:stop,:] = d[start:stop,:] - y_hat_ave[start:stop,:]
 
     if L_pad != 0:
-        des_hat_ave = des_hat_ave[:-L_pad,:] 
+        y_hat_ave = y_hat_ave[:-L_pad,:] 
         e_ave = e_ave[:-L_pad,:]
 
-    return h_ave, e_ave, des_hat_ave
+    return h_ave, e_ave, y_hat_ave, x_hat_ave
 
 def gevd_rtf(ns_psd, n_psd, ref_ch):
     """
@@ -108,7 +117,7 @@ def pm_gevd_rtf(ns_psd, n_psd, u0, ref_ch):
     A function that implements the GEVD based RTF estimator from Marcovich 2009 paper for an individual STFT bin.
     It's an STFT domain estimator that requires estimates of the noisy signal PSD, noise PSD and the source activity.
     
-    Input: 
+    Input:
 
     noisy_psd      -> MxM array containing the noisy signal PSD matrix
     noise_psd      -> MxM array containing the noise signal PSD matrix
@@ -124,14 +133,7 @@ def pm_gevd_rtf(ns_psd, n_psd, u0, ref_ch):
 
 def pm_pevd_rtf(RXX, ref_ch=1, N_iter=10):
     """
-    A function that implements the GEVD based RTF estimator from Marcovich 2009 paper for an individual STFT bin.
-    It's an STFT domain estimator that requires estimates of the noisy signal PSD, noise PSD and the source activity.
-    
-    Input: 
-
-    noisy_psd      -> MxM array containing the noisy signal PSD matrix
-    noise_psd      -> MxM array containing the noise signal PSD matrix
-    ref            -> channel to be used as reference channel for the RTF
+    implements pm_pevd_rtf
     """
 
     ref_ind = ref_ch - 1 
@@ -247,7 +249,7 @@ def fblms_est(sig_in, ref_ch, M, alpha=0.7, gamma=0.1, vad=[]):
     ref_ind = ref_ch - 1
     encoded_channels = list(range(Nch))
     encoded_channels.remove(ref_ind)
-    
+
     if vad == []:
         vad = np.ones_like(sig_in)
     else: 

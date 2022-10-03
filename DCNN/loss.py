@@ -10,6 +10,8 @@ from torch_stoi import NegSTOILoss
 from mbstoi import mbstoi
 import matplotlib.pyplot as plt
 
+from . import mac
+
 EPS = 1e-8
 
 class BinauralLoss(Module):
@@ -28,54 +30,46 @@ class BinauralLoss(Module):
     def forward(self, model_output, targets):
         if self.loss_mode == "RTF":
 
-            
             target_stft_l = self.stft(targets[:, 0])
             target_stft_r = self.stft(targets[:, 1])
+            target_stft =  self.stft(targets)
 
             output_stft_l = self.stft(model_output[:, 0])
             output_stft_r = self.stft(model_output[:, 1])
+            output_stft =  self.stft(model_output)
+            
+            _, N_freq, N_segs = torch.size(target_stft)[-1]
+            L_seg = self.stft.win_len
+            M = 2
+            alpha = 0.9
+            ns_stcov = mac.est.rec_stcov_est(targets, L_seg, alpha)
 
-            # target_l_psd = target_stft_l.abs()**2
-            # target_r_psd = target_stft_r.abs()**2
+            Nch = 2
+ 
+            output_rtf_td = torch.zeros((L_seg, 2*Nch, N_segs))
+            output_rtf = torch.zeros((L_seg//2 + 1, 2*Nch, N_segs), 'complex')
 
-            # output_l_psd = output_stft_l.abs()**2
-            # output_r_psd = output_stft_r.abs()**2
+            target_rtf_td = torch.zeros((L_seg, 2*Nch, N_segs))
+            target_rtf = torch.zeros((L_seg//2 + 1, 2*Nch, N_segs), 'complex')
 
-            # noise_l_psd_hat =  output_l_psd - target_l_psd
-            # noise_r_psd_hat =  output_r_psd - target_r_psd
+            for s in range(N_segs):
+                output_rtf[:,0:1,s], output_rtf_td[:,:,s] = mac.est.pm_pevd_rtf(ns_stcov[:,:,:,s], ref_ch=0, N_iter=1)
+                output_rtf[:,2:3,s], output_rtf_td[:,:,s] = mac.est.pm_pevd_rtf(ns_stcov[:,:,:,s], ref_ch=1, N_iter=1)
 
-            # target_l_psd_hat = output_l_psd - noise_l_psd_hat
-            # target_r_psd_hat = output_r_psd - noise_r_psd_hat
-
-            # # v,h = torch.linalg.eig(ta)
-
-            # noise_stft_l_hat = output_stft_l - target_stft_l
-            # noise_stft_r_hat = output_stft_r - target_stft_r
-
-            # target_stft_l_hat = output_stft_l - noise_stft_l_hat
-            # target_stft_r_hat = output_stft_r - noise_stft_r_hat
-
-            target_rtf_td_full = self.istft(target_stft_l/(target_stft_r + EPS))
-            output_rtf_td_full = self.istft(output_stft_l/(output_stft_r + EPS))
-
-            target_rtf_td = target_rtf_td_full[:,0:2047]
-            output_rtf_td = output_rtf_td_full[:,0:2047]
+            target_rtf_td_crop = target_rtf_td[:,0:2047]
+            output_rtf_td_crop = output_rtf_td[:,0:2047]
 
             # breakpoint()
-            
-            
-            epsilon = target_rtf_td - ((target_rtf_td@(torch.transpose(output_rtf_td,0,1)))/(output_rtf_td@torch.transpose(output_rtf_td,0,1)))@output_rtf_td
+
+            epsilon = target_rtf_td_crop - ((target_rtf_td_crop@(torch.transpose(output_rtf_td_crop,0,1)))/(output_rtf_td_crop@torch.transpose(output_rtf_td_crop,0,1)))@output_rtf_td_crop
             # breakpoint()
-            npm_error = torch.norm((epsilon/torch.max(epsilon)))/torch.norm((target_rtf_td)/torch.max(target_rtf_td))
-            
-            
+            npm_error = torch.norm((epsilon/torch.max(epsilon)))/torch.norm((target_rtf_td_crop)/torch.max(target_rtf_td_crop))
+
             # error = (target_stft_l_hat/(target_stft_r_hat + EPS) - target_stft_l/(target_stft_r + EPS))
             # bstoi = - mbstoi(targets.detach().to('cpu').numpy()[:, 0],targets.detach().to('cpu').numpy()[:, 1],
             #     model_output.detach().to('cpu').numpy()[:, 0],model_output.detach().to('cpu').numpy()[:, 1],fsi=16000)
             stoi_l = self.stoiLoss(model_output[:, 0], targets[:, 0])
             stoi_r = self.stoiLoss(model_output[:, 1], targets[:, 1])
-            
-            
 
             stoi_loss = (stoi_l+stoi_r)/2
 

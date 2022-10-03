@@ -1,0 +1,3 @@
+import os
+command = 'module load anaconda3/personal; source activate ml; python3 /rds/general/user/dtj20/home/mac/hpc/rtf_estimators/ssn/fblms/fblms_exp.py 5 /rds/general/user/dtj20/home/mac/datasets/ace_librispeech/rir1//6313-76958-0007.wav /rds/general/user/dtj20/home/mac/datasets/ace_librispeech/rir1//8230-279154-0033.wav /rds/general/user/dtj20/home/mac/datasets/ace_librispeech/rir1//4507-16021-0053.wav /rds/general/user/dtj20/home/mac/datasets/ace_librispeech/rir1//8224-274384-0000.wav /rds/general/user/dtj20/home/mac/datasets/ace_librispeech/rir1//2094-142345-0016.wav 12 6 0 -6 /rds/general/user/dtj20/home/mac/hpc/rtf_estimators/ssn/fblms/rir1/'
+os.system(command)

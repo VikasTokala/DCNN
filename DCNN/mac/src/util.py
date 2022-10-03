@@ -1,7 +1,10 @@
 import numpy as np 
 import string 
 import random 
-import math
+import os
+import soundfile as sf
+import scipy.signal as sig
+import pickle
 
 fs = 16000
 
@@ -87,8 +90,67 @@ def causality_pad(y, N_rtf, ref_ch):
         y_pad[:, ch] = np.roll(y_pad[:,ch], N_rtf//2)
     return y_pad
 
-def casuality_unpad(y, N_rtf, ref_ch):
+def causality_unpad(y, N_rtf, ref_ch):
     return 0
 
 def rotate_list(l, n):
     return l[n:] + l[:n]
+
+def calc_ave_spec(sig_dir, Nch, len_w, ave_spec_name=[], ave_ir_name=[]):
+
+    sigs_list = []
+
+    for file in os.listdir(sig_dir):
+        if file.endswith('.wav'):
+            sigs_list.append(sig_dir + '/' + file)
+
+    N_sigs = len(sigs_list)
+
+    ave_spec = np.zeros((len_w, Nch), 'complex')
+
+    for s in sigs_list:
+        x, _ = sf.read(s)
+        _, _, X = sig.stft(x, axis=0, nperseg=len_w)
+        ave_spec = np.mean(X, axis=-1)
+
+        ave_spec = ave_spec/np.sum(ave_spec**2, axis=0)
+
+        ave_ir = np.fft.irfft(ave_spec, axis=0)
+
+    if ave_spec_name != []:
+        pickle.dump(ave_spec, open(ave_spec_name, 'wb'))
+
+    if ave_ir_name != []:
+        pickle.dump(ave_ir, open(ave_ir_name, 'wb'))
+
+    return ave_spec, ave_ir
+
+def gen_ltas_noise(ave_ir, noise_power, noise_shape):
+    if type(noise_shape) != tuple or len(noise_shape) != 2:
+        raise ValueError('shape should be a two dimensional tuple length, channels')
+    
+    v_white = np.random.normal(0, noise_power, noise_shape)
+    v_ltas = np.zeros_like(v_white)
+
+    if type(ave_ir) == str:
+        ave_ir_path = ave_ir
+        pickle_file = open(ave_ir, 'rb')
+        ave_ir = pickle.load(pickle_file)
+    if type(ave_ir) == np.ndarray:
+        pass
+    else:
+        raise ValueError('ave_ir is wrong not path to file or array')
+
+    L, Nch = noise_shape
+
+    for ch in range(Nch):
+        v_ltas[:, ch] = np.convolve(v_white[:,ch], ave_ir[:,ch])[:L]
+
+    ltas_power = np.mean(v_ltas**2, axis=0)
+    norm_gain = noise_power/ltas_power
+
+    v_ltas = v_ltas*norm_gain
+
+    pickle_file.close()
+
+    return v_ltas

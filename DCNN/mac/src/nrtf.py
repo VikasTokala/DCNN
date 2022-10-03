@@ -29,8 +29,9 @@ def RTF_graph_cycles(Nch, path_order):
     graph_path = home+'/mac/datasets/graphs/'+str(Nch)+'ch_'+str(path_order)+'e.pickle'
 
     if os.path.isfile(graph_path):
-        cycles_sorted = pickle.load(open(graph_path, 'rb'))
+        paths_sorted = pickle.load(open(graph_path, 'rb'))
         print('loading graph from file')
+        N_cycles = Nch*paths_sorted[0]
 
     else:
 
@@ -39,18 +40,18 @@ def RTF_graph_cycles(Nch, path_order):
         if path_order > Nch:
             raise ValueError('path order can not be greater than the number of microphones')
         G = nx.complete_graph(Nch, create_using=nx.DiGraph())
-        cycles = sorted(nx.simple_cycles(G))
-        for ii, c in enumerate(cycles):
+        paths = sorted(nx.simple_cycles(G))
+        for ii, c in enumerate(paths):
 
             if len(c) > path_order:
-                del cycles[ii]
+                del paths[ii]
 
-        cycles_sorted = []
+        paths_sorted = []
 
         for ch in range(Nch):
-            cycles_sorted.append([])
+            paths_sorted.append([])
 
-        for c in cycles:
+        for c in paths:
             for i in range(len(c)):
 
                     c_rot = mac.util.rotate_list(c,i)
@@ -58,12 +59,14 @@ def RTF_graph_cycles(Nch, path_order):
                     c_rot_comp = c_rot.copy()
                     c_rot_comp.append(c_rot[0])
 
-                    cycles_sorted[c_rot[0]].append(c_rot)
-                    cycles_sorted[c_rot[0]].append(c_rot_comp)
+                    paths_sorted[c_rot[0]].append(c_rot)
+                    paths_sorted[c_rot[0]].append(c_rot_comp)
 
-        pickle.dump(cycles_sorted, open(graph_path, 'wb'))
+        pickle.dump(paths_sorted, open(graph_path, 'wb'))
 
-    return cycles_sorted
+        N_cycles = 2*len(paths)
+
+    return paths_sorted, N_cycles
 
 def Reciprocity_Cost(X, RTF_bank, path_order, device, domain='freq'):
 
@@ -72,7 +75,7 @@ def Reciprocity_Cost(X, RTF_bank, path_order, device, domain='freq'):
 
     cycles = RTF_graph_cycles(Nch, path_order)
 
-    J = torch.zeros((N_batch,), dtype=X.dtype, device=device)
+    J = torch.zeros((N_batch,), dtype=X.dtype, device=device, requires_grad=True)
 
     if domain=='freq':
         for b in range(N_batch):

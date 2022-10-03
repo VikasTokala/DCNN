@@ -1,4 +1,0 @@
-/rds/general/user/dtj20/home/anaconda3/envs/ml/lib/python3.8/site-packages/numpy/core/fromnumeric.py:3474: RuntimeWarning: Mean of empty slice.
-  return _methods._mean(a, axis=axis, dtype=dtype,
-/rds/general/user/dtj20/home/anaconda3/envs/ml/lib/python3.8/site-packages/numpy/core/_methods.py:189: RuntimeWarning: invalid value encountered in double_scalars
-  ret = ret.dtype.type(ret / rcount)

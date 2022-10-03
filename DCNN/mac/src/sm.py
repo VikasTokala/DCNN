@@ -3,7 +3,11 @@ import scipy.signal as sig
 import matplotlib.pyplot as plt 
 import pyroomacoustics as pra
 from . import est
+from . import util
 import soundfile as sf
+import socket
+import os
+home = os.path.expanduser('~')
 
 class TestSignalModel():
     def __init__(self, ir_type, len_w, fs=16000, Ts=4, overlap=None, SNR_db=20, Nch=2, alpha=0.9, plot=False):
@@ -130,7 +134,7 @@ class TestSignalModel():
 
 class NuanceSignalModel():
     
-    def __init__(self, sig_path, noise_type, len_w, fs=16000, Ts=4, overlap=None, SNR_db=20, alpha=0.9, plot=False):
+    def __init__(self, sig_path, len_w, noise_type='white', fs=16000, Ts=4, overlap=None, SNR_db=20, alpha=0.9, plot=False):
 
             self.len_w = len_w
             self.fs = fs
@@ -157,14 +161,26 @@ class NuanceSignalModel():
             L_pad = self.Lx_pad - self.Lx
 
             self.x = np.concatenate((self.x, np.zeros((L_pad, self.Nch))))
+            self.v = np.zeros_like(self.x)
 
-            pow_x = np.mean(self.x**2)
-            SNR_factor = 10**(SNR_db/10)
-            pow_v = pow_x/SNR_factor
+            for ch in range(self.Nch):
 
-            if noise_type == 'white':
-                self.v = np.random.normal(0, pow_v, (self.Lx_pad, self.Nch)) # noise signal
-            
+                pow_x = np.mean(self.x[:,ch]**2)
+                SNR_factor = 10**(SNR_db/10)
+                pow_v = pow_x/SNR_factor
+
+                if noise_type == 'white':
+                    self.v[:, ch] = np.random.normal(0, pow_v, (self.Lx_pad,1)) # noise signal
+                elif noise_type == 'ssn':
+                    ave_ir = home + '/mac/hpc/rtf_estimators/ssn/noise_ir.pickle'
+                    self.v[:, ch] = np.squeeze(util.gen_ltas_noise(ave_ir, pow_v, (self.Lx_pad,1)))
+                else:
+                    raise ValueError('noise type must be white or ssn')
+
+                wrong_pow = np.mean(self.v[:, ch]**2)
+                gain = (pow_v/wrong_pow)**0.5
+                self.v[:, ch] = gain*self.v[:, ch]
+
             self.y = self.x + self.v
         
             f, t, self.Y = sig.stft(self.y, fs=fs, nperseg=len_w, axis=0, padded=False, noverlap=self.overlap)
@@ -182,9 +198,13 @@ class NuanceSignalModel():
             self.RVV_ave = np.moveaxis(est.static_stcov(self.v),0,-1)
             self.RVV_rec = est.rec_stcov_est(self.v, self.len_w, alpha)
 
-            print('\nSignal Model set up\n')
+            print('\nlibri-ace signal model set up with ' + noise_type + ' noise\n')
 
-
-class PingPongSignalModel():
-    def __init__(self, ir_type, len_w, ping_pong_T=2, fs=16000, Ts=4, overlap=None, SNR_db=20, Nch=2, alpha=0.9, plot=False):
-        return 0 
+            if plot != False:
+                for ch in range(self.Nch):
+                    plt.figure()
+                    plt.plot(self.y[:,ch], label='y')
+                    plt.plot(self.x[:,ch], label='x')
+                    plt.plot(self.v[:,ch], label='v')
+                    plt.legend()
+                plt.show()
