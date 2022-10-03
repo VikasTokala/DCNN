@@ -4,7 +4,7 @@ import scipy.linalg as linalg
 import sys
 import os
 home = os.path.expanduser('~')
-import mac
+from . import util
 import math
 import warnings
 import matplotlib.pyplot as plt
@@ -215,7 +215,7 @@ def rec_stcov_est(x, len_w, alpha, overlap=None, w=None):
         x = x.T
         Nch, L = x.shape
 
-    x_framed, N_frames = mac.util.td_framing(x, len_w, overlap=overlap)
+    x_framed, N_frames = util.td_framing(x, len_w, overlap=overlap)
     L_frames, _, _ = np.shape(x_framed)
     
     zRxx = np.zeros([Nch, Nch, 2 * L_frames, N_frames], dtype=complex)

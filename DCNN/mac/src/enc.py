@@ -5,7 +5,8 @@ import sys
 import os
 home = os.path.expanduser('~')
 sys.path.append(home)
-import mac
+from . import util
+from . import est
 import math
 import soundfile as sf 
 import tempfile as tmp
@@ -14,13 +15,13 @@ import tempfile as tmp
 def ipnlms_mac(input_signal, output_signal, ref_ch, vad, L_RTF, alpha, mu, mode = 'e_diff_ave_opus'):
     
     # Create an empty directory
-    tmp_suffix = mac.util.randStr()
+    tmp_suffix = util.randStr()
     tmpdir = tmp.mkdtemp(dir=output_signal, suffix=tmp_suffix)    
     os.mkdir(tmpdir)
 
     # Read signals 
     ref_ind = ref_ch - 1 
-    input_signal, _, fs = mac.util.clever_load(input_signal)
+    input_signal, _, fs = util.clever_load(input_signal)
     ref_signal = np.copy(input_signal[:, ref_ind])
 
     # Split signals into frames and pad if not multiple of frame length     
@@ -47,7 +48,7 @@ def ipnlms_mac(input_signal, output_signal, ref_ch, vad, L_RTF, alpha, mu, mode 
         input_frame = input_signal[start_window:stop_window+1, :]
     
         # Estimate RTFs, returns RTFs and errors 
-        h_frame, e_frame, e0 = mac.est.ipnlms_frame_est(ref_frame, input_frame, h0, [], alpha, mu, L_RTF)
+        h_frame, e_frame, e0 = est.ipnlms_frame_est(ref_frame, input_frame, h0, [], alpha, mu, L_RTF)
 
         # Check if re-transmission is needed.        
         if mode == 'e_diff_ave_opus':
