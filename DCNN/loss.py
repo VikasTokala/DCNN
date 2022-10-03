@@ -10,7 +10,7 @@ from torch_stoi import NegSTOILoss
 from mbstoi import mbstoi
 import matplotlib.pyplot as plt
 
-from . import mac
+import DCNN.mac as mac
 
 EPS = 1e-8
 
