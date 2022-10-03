@@ -41,6 +41,9 @@ def analyze_batch(batch, model):
     enhanced_signals = model(noisy_signals)
 
     # 1. Compute SNR for noisy and enhanced signal
+    snr_l_n = si_snr(noisy_signals[:, 0], clean_signals[:, 0])
+    snr_r_n = si_snr(noisy_signals[:, 1], clean_signals[:, 1])
+
     snr_noisy = si_snr(noisy_signals, clean_signals, reduce_mean=False).detach().cpu().numpy()
     snr_enhanced = si_snr(enhanced_signals, clean_signals, reduce_mean=False).detach().cpu().numpy()
     
