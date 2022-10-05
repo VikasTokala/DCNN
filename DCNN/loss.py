@@ -128,16 +128,14 @@ def si_snr(s1, s2, eps=EPS, reduce_mean=True):
 
 
 def ild_db(s1, s2, eps=EPS, avg_mode=None):
+    s1 = _avg_signal(s1, avg_mode)
+    s2 = _avg_signal(s1, avg_mode)
+
     l1 = 20*torch.log10(s1 + eps)
     l2 = 20*torch.log10(s2 + eps)
 
     ild_value = (l1 - l2).abs()
 
-    # ild_value has shape (batch_size, freqs, time)
-    if avg_mode == "freq":
-        ild_value = ild_value.mean(dim=1)
-    elif avg_mode == "time":
-        ild_value = ild_value.mean(dim=2)
 
     return ild_value
 
@@ -152,13 +150,10 @@ def ild_loss_db(target_stft_l, target_stft_r,
 
 
 def ipd_rad(s1, s2, eps=EPS, avg_mode=None):
-    ipd_value = ((s1 + eps)/(s2 + eps)).angle()
+    s1 = _avg_signal(s1, avg_mode)
+    s2 = _avg_signal(s1, avg_mode)
 
-    # ipd_value has shape (batch_size, freqs, time)
-    if avg_mode == "freq":
-        ipd_value = ipd_value.mean(dim=1)
-    elif avg_mode == "time":
-        ipd_value = ipd_value.mean(dim=2)
+    ipd_value = ((s1 + eps)/(s2 + eps)).angle()
 
     return ipd_value
 
@@ -170,6 +165,15 @@ def ipd_loss_rads(target_stft_l, target_stft_r,
 
     ild_loss = ((target_ild - output_ild).abs()).mean()
     return ild_loss
+
+
+def _avg_signal(s, avg_mode):
+    if avg_mode == "freq":
+        return s.mean(dim=1)
+    elif avg_mode == "time":
+        return s.mean(dim=2)
+    elif avg_mode == None:
+        return s
 
 
 class STFT(Module):
