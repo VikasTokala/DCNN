@@ -39,7 +39,8 @@ class DCNNLightniningModule(BaseLightningModule):
         if config["model"]["binaural"]:
             model = BinauralDCNN(**self.config["model"])
             loss = BinauralLoss(loss_mode=self.config["model"]["loss_mode"],
-                rtf_weight=self.config["model"]["rtf_weight"],snr_weight=self.config["model"]["snr_weight"])
+                rtf_weight=self.config["model"]["rtf_weight"],snr_weight=self.config["model"]["snr_weight"],
+                ild_weight=self.config["model"]["ild_weight"])
         else:    
             model = DCNN(**self.config["model"])
 

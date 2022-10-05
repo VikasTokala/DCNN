@@ -1,10 +1,11 @@
 model:
   binaural: true
-  loss_mode: RTF
+  loss_mode: ILD-SNR
   SNR_weight : 1
   STOI_weight : 1
   rtf_weight : 0.3
   snr_weight : 0.7
+  ild_weight : 0.1
 
   use_clstm: True
   use_cbn: True

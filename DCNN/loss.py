@@ -11,7 +11,7 @@ EPS = 1e-6
 
 class BinauralLoss(Module):
     def __init__(self, loss_mode="RTF", win_len=400,
-                 win_inc=100, fft_len=512,sr=16000,rtf_weight=0.3,snr_weight=0.7):
+                 win_inc=100, fft_len=512,sr=16000,rtf_weight=0.3,snr_weight=0.7, ild_weight=0.1):
 
         super().__init__()
         self.loss_mode = loss_mode
@@ -19,7 +19,8 @@ class BinauralLoss(Module):
         self.stoiLoss = NegSTOILoss(sample_rate=sr)
         self.istft = ISTFT(win_len, win_inc, fft_len)
         self.rtf_weight = rtf_weight
-        self.snr_weight=snr_weight
+        self.snr_weight = snr_weight
+        self.ild_weight = ild_weight
 
 
     def forward(self, model_output, targets):
@@ -53,13 +54,14 @@ class BinauralLoss(Module):
         elif self.loss_mode == "ILD-SNR":
             snr_l = si_snr(model_output[:, 0], targets[:, 0])
             snr_r = si_snr(model_output[:, 1], targets[:, 1])
+            snr_loss = - (snr_l + snr_r)/2
 
-            target_ild = ild_db(targets[:, 0], targets[:, 0])
-            output_ild = ild_db(model_output[:, 0], model_output[:, 0])
+            target_ild = ild_db(target_stft_l, target_stft_r)
+            output_ild = ild_db(output_stft_l, output_stft_r)
 
-            ild_loss = ((target_ild - output_ild)**2).mean()
+            ild_loss = ((target_ild - output_ild).abs()).mean()
 
-            return snr_l + snr_r + ild_loss
+            return snr_loss + self.ild_weight*ild_loss
 
         else:
             raise NotImplementedError("Only loss available for binaural enhancement is 'RTF'")
@@ -116,7 +118,7 @@ def si_snr(s1, s2, eps=EPS):
     target_norm = l2_norm(s_target, s_target)
     noise_norm = l2_norm(e_nosie, e_nosie)
     snr = 10 * torch.log10((target_norm) / (noise_norm + eps) + eps)
-    snr_norm = snr/max(snr)
+    snr_norm = snr #/max(snr)
     return torch.mean(snr_norm)
 
 
@@ -124,7 +126,7 @@ def ild_db(s1, s2, eps=EPS):
     l1 = 20*torch.log10(s1 + eps)
     l2 = 20*torch.log10(s2 + eps)
 
-    ild_value = (l1 - l2).abs().mean(dim=1)
+    ild_value = (l1 - l2).abs()
 
     return ild_value
 
