@@ -1,16 +1,13 @@
 import torch
 import torch.functional as F
-from torch.nn.functional import normalize
 
 from torch.nn import Module
-from DCNN.datasets.base_dataset import SR
-from DCNN.utils.complexnn import complex_div, complex_pow
 from DCNN.utils.conv_stft import ConvSTFT
 from torch_stoi import NegSTOILoss
-from mbstoi import mbstoi
 import matplotlib.pyplot as plt
 
-EPS = 1e-8
+EPS = 1e-6
+
 
 class BinauralLoss(Module):
     def __init__(self, loss_mode="RTF", win_len=400,
@@ -26,65 +23,43 @@ class BinauralLoss(Module):
 
 
     def forward(self, model_output, targets):
+        target_stft_l = self.stft(targets[:, 0])
+        target_stft_r = self.stft(targets[:, 1])
+
+        output_stft_l = self.stft(model_output[:, 0])
+        output_stft_r = self.stft(model_output[:, 1])
+
         if self.loss_mode == "RTF":
-
-            
-            target_stft_l = self.stft(targets[:, 0])
-            target_stft_r = self.stft(targets[:, 1])
-
-            output_stft_l = self.stft(model_output[:, 0])
-            output_stft_r = self.stft(model_output[:, 1])
-
-            # target_l_psd = target_stft_l.abs()**2
-            # target_r_psd = target_stft_r.abs()**2
-
-            # output_l_psd = output_stft_l.abs()**2
-            # output_r_psd = output_stft_r.abs()**2
-
-            # noise_l_psd_hat =  output_l_psd - target_l_psd
-            # noise_r_psd_hat =  output_r_psd - target_r_psd
-
-            # target_l_psd_hat = output_l_psd - noise_l_psd_hat
-            # target_r_psd_hat = output_r_psd - noise_r_psd_hat
-
-            # # v,h = torch.linalg.eig(ta)
-
-            # noise_stft_l_hat = output_stft_l - target_stft_l
-            # noise_stft_r_hat = output_stft_r - target_stft_r
-
-            # target_stft_l_hat = output_stft_l - noise_stft_l_hat
-            # target_stft_r_hat = output_stft_r - noise_stft_r_hat
 
             target_rtf_td_full = self.istft(target_stft_l/(target_stft_r + EPS))
             output_rtf_td_full = self.istft(output_stft_l/(output_stft_r + EPS))
 
             target_rtf_td = target_rtf_td_full[:,0:2047]
             output_rtf_td = output_rtf_td_full[:,0:2047]
-
-            # breakpoint()
-            
             
             epsilon = target_rtf_td - ((target_rtf_td@(torch.transpose(output_rtf_td,0,1)))/(output_rtf_td@torch.transpose(output_rtf_td,0,1)))@output_rtf_td
-            # breakpoint()
             npm_error = torch.norm((epsilon/torch.max(epsilon)))/torch.norm((target_rtf_td)/torch.max(target_rtf_td))
-            
-            
-            # error = (target_stft_l_hat/(target_stft_r_hat + EPS) - target_stft_l/(target_stft_r + EPS))
-            # bstoi = - mbstoi(targets.detach().to('cpu').numpy()[:, 0],targets.detach().to('cpu').numpy()[:, 1],
-            #     model_output.detach().to('cpu').numpy()[:, 0],model_output.detach().to('cpu').numpy()[:, 1],fsi=16000)
+
             stoi_l = self.stoiLoss(model_output[:, 0], targets[:, 0])
             stoi_r = self.stoiLoss(model_output[:, 1], targets[:, 1])
             
-            
-
             stoi_loss = (stoi_l+stoi_r)/2
 
             snr_l = si_snr(model_output[:, 0], targets[:, 0])
             snr_r = si_snr(model_output[:, 1], targets[:, 1])
 
             snr = -(snr_l + snr_r)/2
-            # breakpoint()
             return self.rtf_weight *npm_error + self.snr_weight * snr + 0*stoi_loss.mean()
+        elif self.loss_mode == "ILD-SNR":
+            snr_l = si_snr(model_output[:, 0], targets[:, 0])
+            snr_r = si_snr(model_output[:, 1], targets[:, 1])
+
+            target_ild = ild_db(targets[:, 0], targets[:, 0])
+            output_ild = ild_db(model_output[:, 0], model_output[:, 0])
+
+            ild_loss = ((target_ild - output_ild)**2).mean()
+
+            return snr_l + snr_r + ild_loss
 
         else:
             raise NotImplementedError("Only loss available for binaural enhancement is 'RTF'")
@@ -133,9 +108,7 @@ def l2_norm(s1, s2):
     return norm
 
 
-def si_snr(s1, s2, eps=1e-8):
-    # s1 = remove_dc(s1)
-    # s2 = remove_dc(s2)
+def si_snr(s1, s2, eps=EPS):
     s1_s2_norm = l2_norm(s1, s2)
     s2_s2_norm = l2_norm(s2, s2)
     s_target = s1_s2_norm / (s2_s2_norm + eps) * s2
@@ -147,7 +120,14 @@ def si_snr(s1, s2, eps=1e-8):
     return torch.mean(snr_norm)
 
 
-#stoi(x, y, fs_sig, extended=False)
+def ild_db(s1, s2, eps=EPS):
+    l1 = 20*torch.log10(s1 + eps)
+    l2 = 20*torch.log10(s2 + eps)
+
+    ild_value = (l1 - l2).abs().mean(dim=1)
+
+    return ild_value
+
 
 class STFT(Module):
     def __init__(self, win_len=400, win_inc=100,
