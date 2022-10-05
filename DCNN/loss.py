@@ -112,7 +112,7 @@ def l2_norm(s1, s2):
     return norm
 
 
-def si_snr(s1, s2, eps=EPS):
+def si_snr(s1, s2, eps=EPS, reduce_mean=True):
     s1_s2_norm = l2_norm(s1, s2)
     s2_s2_norm = l2_norm(s2, s2)
     s_target = s1_s2_norm / (s2_s2_norm + eps) * s2
@@ -121,7 +121,10 @@ def si_snr(s1, s2, eps=EPS):
     noise_norm = l2_norm(e_nosie, e_nosie)
     snr = 10 * torch.log10((target_norm) / (noise_norm + eps) + eps)
     snr_norm = snr #/max(snr)
-    return torch.mean(snr_norm)
+    if reduce_mean:
+        snr_norm = torch.mean(snr_norm) 
+    
+    return snr_norm
 
 
 def ild_db(s1, s2, eps=EPS, avg_mode=None):

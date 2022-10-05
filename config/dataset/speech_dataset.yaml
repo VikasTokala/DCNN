@@ -11,7 +11,7 @@ sr: 16000
 # sr: 16000
 noisy_training_dataset_dir: /Users/vtokala/Documents/Research/di_nn/Dataset/noisy_trainset_1f
 noisy_validation_dataset_dir: /Users/vtokala/Documents/Research/di_nn/Dataset/noisy_valset_1f
-noisy_test_dataset_dir: /Users/vtokala/Documents/Research/di_nn/DCNN/Noisy_binaural_signals
+noisy_test_dataset_dir: /Users/vtokala/Documents/Research/di_nn/Dataset/noisy_testset_1f
 target_training_dataset_dir: /Users/vtokala/Documents/Research/di_nn/Dataset/clean_trainset_1f
 target_validation_dataset_dir: /Users/vtokala/Documents/Research/di_nn/Dataset/clean_valset_1f
-target_test_dataset_dir: /Users/vtokala/Documents/Research/di_nn/DCNN/Clean_binaural_signals
+target_test_dataset_dir: /Users/vtokala/Documents/Research/di_nn/Dataset/clean_testset_1f

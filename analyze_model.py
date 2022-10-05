@@ -6,7 +6,7 @@ import torch
 from omegaconf import DictConfig
 from pystoi import stoi
 from tqdm import tqdm
-import mbstoi
+from mbstoi import mbstoi
 
 from DCNN.trainer import DCNNLightniningModule
 from DCNN.datasets.base_dataset import BaseDataset
@@ -32,7 +32,7 @@ def load_model(config, model_checkpoint_path):
 
 def analyze_batch(batch, model):
     noisy_signals, clean_signals = batch
-    
+
     if torch.cuda.is_available():
         noisy_signals, clean_signals = noisy_signals.cuda(), clean_signals.cuda()
 
@@ -41,27 +41,35 @@ def analyze_batch(batch, model):
     enhanced_signals = model(noisy_signals)
 
     # 1. Compute SNR for noisy and enhanced signal
-    snr_l_n = si_snr(noisy_signals[:, 0], clean_signals[:, 0])
-    snr_r_n = si_snr(noisy_signals[:, 1], clean_signals[:, 1])
+    snr_l_n = si_snr(noisy_signals[:, 0],
+                     clean_signals[:, 0], reduce_mean=False).detach().cpu().numpy()
+    snr_r_n = si_snr(noisy_signals[:, 1],
+                     clean_signals[:, 1], reduce_mean=False).detach().cpu().numpy()
+    snr_noisy = (snr_l_n + snr_r_n)/2
 
-    snr_noisy = si_snr(noisy_signals, clean_signals, reduce_mean=False).detach().cpu().numpy()
-    snr_enhanced = si_snr(enhanced_signals, clean_signals, reduce_mean=False).detach().cpu().numpy()
-    
+    snr_l_n = si_snr(enhanced_signals[:, 0],
+                     clean_signals[:, 0], reduce_mean=False).detach().cpu().numpy()
+    snr_r_n = si_snr(enhanced_signals[:, 1],
+                     clean_signals[:, 1], reduce_mean=False).detach().cpu().numpy()
+    snr_enhanced = (snr_l_n + snr_r_n)/2
+
     # 2. Compute MBSTOI for noisy and enhanced signals
 
     noisy_signals = noisy_signals.detach().cpu().numpy()
     clean_signals = clean_signals.detach().cpu().numpy()
     enhanced_signals = enhanced_signals.detach().cpu().numpy()
     mbstoi_noisy = np.array([
-        mbstoi(clean_signals[i][:,1],clean_signals[i][:,2],noisy_signals[i][:,1],noisy_signals[i][:,2], fsi=SR)
+        mbstoi(clean_signals[i, 0], clean_signals[i, 1],
+               noisy_signals[i, 0], noisy_signals[i, 1], fsi=SR)
         for i in range(batch_size)
     ])
     mbstoi_enhanced = np.array([
         # stoi(clean_signals[i], enhanced_signals[i], SR
-        mbstoi(clean_signals[i][:,1],clean_signals[i][:,2],enhanced_signals[i][:,1], enhanced_signals[i][:,2], fsi=SR)
+        mbstoi(clean_signals[i, 0], clean_signals[i, 1],
+               enhanced_signals[i, 0], enhanced_signals[i, 1], fsi=SR)
         for i in range(batch_size)
     ])
-    
+
     return {
         "snr_noisy": snr_noisy,
         "snr_enhanced": snr_enhanced,
@@ -95,7 +103,7 @@ def analyze_dataset(config: DictConfig):
         analyze_batch(batch, model)
         for i, batch in tqdm(enumerate(dataloader))
     ]
-    
+
     results = _merge_dicts(results)
 
     _plot_scatter_graphs(results)
@@ -112,10 +120,12 @@ def _merge_dicts(dicts):
 def _plot_scatter_graphs(results, savefig=True):
     fig, axs = plt.subplots(nrows=2, ncols=2, figsize=(10, 10))
 
+    breakpoint()
     n_points = len(results["snr_enhanced"])
 
     # 2. Plot original SNR versus STOI of noisy signals
-    axs[0, 0].scatter(results["snr_noisy"], results["mbstoi_enhanced"] - results["mbstoi_noisy"])
+    axs[0, 0].scatter(results["snr_noisy"],
+                      results["mbstoi_enhanced"] - results["mbstoi_noisy"])
     axs[0, 0].set_title("MBSTOI improvement for every SNR")
     axs[0, 0].set_xlabel("SNR")
     axs[0, 0].set_ylabel("MBSTOI improvement")
