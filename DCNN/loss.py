@@ -57,9 +57,14 @@ class BinauralLoss(Module):
 
             target_rtf_td_full = self.istft(target_stft_l/(target_stft_r + EPS))
             output_rtf_td_full = self.istft(output_stft_l/(output_stft_r + EPS))
-
+            plt.figure()
+            # plt.plot(target_rtf_td_full[1,:])
+            plt.plot(output_rtf_td_full[1,:])
+            plt.pause(1)
+            breakpoint()
             target_rtf_td = target_rtf_td_full[:,0:2047]
             output_rtf_td = output_rtf_td_full[:,0:2047]
+            plt.plot(target_rtf_td_full[1,:])
 
             # breakpoint()
             
