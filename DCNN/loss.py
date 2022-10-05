@@ -11,7 +11,8 @@ EPS = 1e-6
 
 class BinauralLoss(Module):
     def __init__(self, loss_mode="RTF", win_len=400,
-                 win_inc=100, fft_len=512,sr=16000,rtf_weight=0.3,snr_weight=0.7, ild_weight=0.1):
+                 win_inc=100, fft_len=512,sr=16000,rtf_weight=0.3,snr_weight=0.7,
+                 ild_weight=0.1, ipd_weight=1, avg_mode="freq"):
 
         super().__init__()
         self.loss_mode = loss_mode
@@ -21,6 +22,8 @@ class BinauralLoss(Module):
         self.rtf_weight = rtf_weight
         self.snr_weight = snr_weight
         self.ild_weight = ild_weight
+        self.ipd_weight = ipd_weight
+        self.avg_mode = avg_mode
 
 
     def forward(self, model_output, targets):
@@ -29,6 +32,10 @@ class BinauralLoss(Module):
 
         output_stft_l = self.stft(model_output[:, 0])
         output_stft_r = self.stft(model_output[:, 1])
+
+        snr_l = si_snr(model_output[:, 0], targets[:, 0])
+        snr_r = si_snr(model_output[:, 1], targets[:, 1])
+        snr_loss = - (snr_l + snr_r)/2
 
         if self.loss_mode == "RTF":
 
@@ -46,23 +53,20 @@ class BinauralLoss(Module):
             
             stoi_loss = (stoi_l+stoi_r)/2
 
-            snr_l = si_snr(model_output[:, 0], targets[:, 0])
-            snr_r = si_snr(model_output[:, 1], targets[:, 1])
+            return self.rtf_weight *npm_error + self.snr_weight * snr_loss + 0*stoi_loss.mean()
 
-            snr = -(snr_l + snr_r)/2
-            return self.rtf_weight *npm_error + self.snr_weight * snr + 0*stoi_loss.mean()
         elif self.loss_mode == "ILD-SNR":
-            snr_l = si_snr(model_output[:, 0], targets[:, 0])
-            snr_r = si_snr(model_output[:, 1], targets[:, 1])
-            snr_loss = - (snr_l + snr_r)/2
-
-            target_ild = ild_db(target_stft_l, target_stft_r)
-            output_ild = ild_db(output_stft_l, output_stft_r)
-
-            ild_loss = ((target_ild - output_ild).abs()).mean()
-
+            ild_loss = ild_loss_db(target_stft_l, target_stft_r,
+                                   output_stft_l, output_stft_r, avg_mode=self.avg_mode)
             return snr_loss + self.ild_weight*ild_loss
 
+        elif self.loss_mode == "ILD-IPD-SNR":
+            ild_loss = ild_loss_db(target_stft_l, target_stft_r,
+                                   output_stft_l, output_stft_r, avg_mode=self.avg_mode)
+            ipd_loss = ipd_loss_rads(target_stft_l, target_stft_r,
+                                     output_stft_l, output_stft_r, avg_mode=self.avg_mode)
+            
+            return self.snr_weight*snr_loss + self.ild_weight*ild_loss + self.ipd_weight*ipd_loss
         else:
             raise NotImplementedError("Only loss available for binaural enhancement is 'RTF'")
 
@@ -104,8 +108,6 @@ class Loss(Module):
 
 
 def l2_norm(s1, s2):
-    # norm = torch.sqrt(torch.sum(s1*s2, 1, keepdim=True))
-    # norm = torch.norm(s1*s2, 1, keepdim=True)
     norm = torch.sum(s1 * s2, -1, keepdim=True)
     return norm
 
@@ -122,13 +124,49 @@ def si_snr(s1, s2, eps=EPS):
     return torch.mean(snr_norm)
 
 
-def ild_db(s1, s2, eps=EPS):
+def ild_db(s1, s2, eps=EPS, avg_mode=None):
     l1 = 20*torch.log10(s1 + eps)
     l2 = 20*torch.log10(s2 + eps)
 
     ild_value = (l1 - l2).abs()
 
+    # ild_value has shape (batch_size, freqs, time)
+    if avg_mode == "freq":
+        ild_value = ild_value.mean(dim=1)
+    elif avg_mode == "time":
+        ild_value = ild_value.mean(dim=2)
+
     return ild_value
+
+
+def ild_loss_db(target_stft_l, target_stft_r,
+                output_stft_l, output_stft_r, avg_mode=None):
+    target_ild = ild_db(target_stft_l, target_stft_r, avg_mode=avg_mode)
+    output_ild = ild_db(output_stft_l, output_stft_r, avg_mode=avg_mode)
+
+    ild_loss = ((target_ild - output_ild).abs()).mean()
+    return ild_loss
+
+
+def ipd_rad(s1, s2, eps=EPS, avg_mode=None):
+    ipd_value = ((s1 + eps)/(s2 + eps)).angle()
+
+    # ipd_value has shape (batch_size, freqs, time)
+    if avg_mode == "freq":
+        ipd_value = ipd_value.mean(dim=1)
+    elif avg_mode == "time":
+        ipd_value = ipd_value.mean(dim=2)
+
+    return ipd_value
+
+
+def ipd_loss_rads(target_stft_l, target_stft_r,
+                  output_stft_l, output_stft_r, avg_mode=None):
+    target_ild = ipd_rad(target_stft_l, target_stft_r, avg_mode=avg_mode)
+    output_ild = ipd_rad(output_stft_l, output_stft_r, avg_mode=avg_mode)
+
+    ild_loss = ((target_ild - output_ild).abs()).mean()
+    return ild_loss
 
 
 class STFT(Module):
