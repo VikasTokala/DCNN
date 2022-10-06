@@ -10,7 +10,7 @@ EPS = 1e-6
 
 class BinauralLoss(Module):
     def __init__(self, loss_mode="RTF", win_len=400,
-                 win_inc=100, fft_len=512,sr=16000,rtf_weight=0.3, snr_weight=0.7,
+                 win_inc=100, fft_len=512, sr=16000, rtf_weight=0.3, snr_weight=0.7,
                  ild_weight=0.1, ipd_weight=1, stoi_weight=0, avg_mode="freq"):
 
         super().__init__()
@@ -24,7 +24,6 @@ class BinauralLoss(Module):
         self.ipd_weight = ipd_weight
         self.stoi_weight = stoi_weight
         self.avg_mode = avg_mode
-
 
     def forward(self, model_output, targets):
         target_stft_l = self.stft(targets[:, 0])
@@ -44,7 +43,7 @@ class BinauralLoss(Module):
         if self.stoi_weight > 0:
             stoi_l = self.stoi_loss(model_output[:, 0], targets[:, 0])
             stoi_r = self.stoi_loss(model_output[:, 1], targets[:, 1])
-            
+
             stoi_loss = (stoi_l+stoi_r)/2
             loss += self.stoi_weight*stoi_loss.mean()
 
@@ -57,23 +56,22 @@ class BinauralLoss(Module):
             ipd_loss = ipd_loss_rads(target_stft_l, target_stft_r,
                                      output_stft_l, output_stft_r, avg_mode=self.avg_mode)
             loss += self.ipd_weight*ipd_loss
-            
+
         if self.rtf_weight > 0:
-            target_rtf_td_full = self.istft(target_stft_l/(target_stft_r + EPS))
-            output_rtf_td_full = self.istft(output_stft_l/(output_stft_r + EPS))
+            target_rtf_td_full = self.istft(
+                target_stft_l/(target_stft_r + EPS))
+            output_rtf_td_full = self.istft(
+                output_stft_l/(output_stft_r + EPS))
 
-            target_rtf_td = target_rtf_td_full[:,0:2047]
-            output_rtf_td = output_rtf_td_full[:,0:2047]
-            
-            epsilon = target_rtf_td - ((target_rtf_td@(torch.transpose(output_rtf_td,0,1)))/(output_rtf_td@torch.transpose(output_rtf_td,0,1)))@output_rtf_td
-            npm_error = torch.norm((epsilon/torch.max(epsilon)))/torch.norm((target_rtf_td)/torch.max(target_rtf_td))
+            target_rtf_td = target_rtf_td_full[:, 0:2047]
+            output_rtf_td = output_rtf_td_full[:, 0:2047]
 
-            stoi_l = self.stoi_loss(model_output[:, 0], targets[:, 0])
-            stoi_r = self.stoi_loss(model_output[:, 1], targets[:, 1])
-            
-            stoi_loss = (stoi_l+stoi_r)/2
+            epsilon = target_rtf_td - ((target_rtf_td@(torch.transpose(output_rtf_td, 0, 1)))/(
+                output_rtf_td@torch.transpose(output_rtf_td, 0, 1)))@output_rtf_td
+            npm_error = torch.norm((epsilon/torch.max(epsilon))) / \
+                torch.norm((target_rtf_td)/torch.max(target_rtf_td))
 
-            return self.rtf_weight *npm_error + self.snr_weight * snr_loss + 0*stoi_loss.mean()
+            loss += self.rtf_weight*npm_error
 
         return loss
 
@@ -128,10 +126,10 @@ def si_snr(s1, s2, eps=EPS, reduce_mean=True):
     target_norm = l2_norm(s_target, s_target)
     noise_norm = l2_norm(e_nosie, e_nosie)
     snr = 10 * torch.log10((target_norm) / (noise_norm + eps) + eps)
-    snr_norm = snr #/max(snr)
+    snr_norm = snr  # /max(snr)
     if reduce_mean:
-        snr_norm = torch.mean(snr_norm) 
-    
+        snr_norm = torch.mean(snr_norm)
+
     return snr_norm
 
 
@@ -143,7 +141,6 @@ def ild_db(s1, s2, eps=EPS, avg_mode=None):
     l2 = 20*torch.log10(s2 + eps)
 
     ild_value = (l1 - l2).abs()
-
 
     return ild_value
 
@@ -198,6 +195,7 @@ class STFT(Module):
                           win_length=self.win_len, return_complex=True)
         return stft
 
+
 class ISTFT(Module):
     def __init__(self, win_len=400, win_inc=100,
                  fft_len=512):
@@ -209,5 +207,5 @@ class ISTFT(Module):
 
     def forward(self, x):
         istft = torch.istft(x, self.fft_len, hop_length=self.win_inc,
-                          win_length=self.win_len, return_complex=False)
+                            win_length=self.win_len, return_complex=False)
         return istft

@@ -98,7 +98,7 @@ def analyze_dataset(config: DictConfig):
         num_workers=config["training"]["n_workers"]
     )
 
-    model = load_model(config, config["training"]["checkpoint_path"])
+    model = load_model(config, config["training"]["test_checkpoint_path"])
     results = [
         analyze_batch(batch, model)
         for i, batch in tqdm(enumerate(dataloader))
@@ -120,7 +120,6 @@ def _merge_dicts(dicts):
 def _plot_scatter_graphs(results, savefig=True):
     fig, axs = plt.subplots(nrows=2, ncols=2, figsize=(10, 10))
 
-    breakpoint()
     n_points = len(results["snr_enhanced"])
 
     # 2. Plot original SNR versus STOI of noisy signals

@@ -270,36 +270,3 @@ def test_complex():
     print(out.shape)
     out = tconv(out)
     print(out.shape)
-
-
-if __name__ == '__main__':
-    torch.manual_seed(10)
-    torch.autograd.set_detect_anomaly(True)
-    inputs = torch.randn([200, 16000 * 4]).clamp_(-1, 1)
-    labels = torch.randn([200, 16000 * 4]).clamp_(-1, 1)
-
-    '''
-    # DCCRN-E
-    net = DCCRN(rnn_units=256,masking_mode='E')
-    outputs = net(inputs)[1]
-    loss = net.loss(outputs, labels, loss_mode='SI-SNR')
-    print(loss)
-    
-    # DCCRN-R
-    net = DCCRN(rnn_units=256,masking_mode='R')
-    outputs = net(inputs)[1]
-    loss = net.loss(outputs, labels, loss_mode='SI-SNR')
-    print(loss)
-    
-    # DCCRN-C
-    net = DCCRN(rnn_units=256,masking_mode='C')
-    outputs = net(inputs)[1]
-    loss = net.loss(outputs, labels, loss_mode='SI-SNR')
-    print(loss)
-    
-    '''
-    # DCCRN-CL
-    net = DCCRN(rnn_units=256, masking_mode='E', use_clstm=True, kernel_num=[32, 64, 128, 256, 256, 256])
-    outputs = net(inputs)[1]
-    loss = net.loss(outputs, labels, loss_mode='SI-SNR')
-    print(loss)

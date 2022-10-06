@@ -1,29 +1,28 @@
+from codecs import ignore_errors
 import pickle
 import pytorch_lightning as pl
 import torch
 
 from pytorch_lightning.callbacks import (TQDMProgressBar,
-    ModelCheckpoint, EarlyStopping
-)
+                                         ModelCheckpoint, EarlyStopping
+                                         )
 from pytorch_lightning import loggers as pl_loggers
 
 from DCNN.utils.model_utilities import merge_list_of_dicts
 
 SAVE_DIR = "logs/"
 
+
 class BaseTrainer(pl.Trainer):
-    def __init__(self, lightning_module, n_epochs, use_checkpoint_callback=True, early_stopping_config=None):
+    def __init__(self, lightning_module, n_epochs, use_checkpoint_callback=True, checkpoint_path=None, early_stopping_config=None):
 
         gpus = 1 if torch.cuda.is_available() else 0
 
         progress_bar = CustomProgressBar()
         early_stopping = EarlyStopping(early_stopping_config["key_to_monitor"],
-
-                              early_stopping_config["min_delta"],
-
-                              early_stopping_config["patience_in_epochs"]
-
-                )
+                                       early_stopping_config["min_delta"],
+                                       early_stopping_config["patience_in_epochs"]
+                                       )
         checkpoint_callback = ModelCheckpoint(
             monitor="validation_loss",
             save_last=True,
@@ -33,19 +32,23 @@ class BaseTrainer(pl.Trainer):
         tb_logger = pl_loggers.TensorBoardLogger(save_dir=SAVE_DIR)
         csv_logger = pl_loggers.CSVLogger(save_dir=SAVE_DIR)
 
-        callbacks=[early_stopping] # feature_map_callback],
+        callbacks = [early_stopping]  # feature_map_callback],
         if use_checkpoint_callback:
             callbacks.append(checkpoint_callback)
 
         super().__init__(
             max_epochs=n_epochs,
             callbacks=[progress_bar,
-                checkpoint_callback # feature_map_callback
-            ],
+                       checkpoint_callback  # feature_map_callback
+                       ],
             logger=[tb_logger, csv_logger],
             gpus=gpus,
-            log_every_n_steps=25, enable_progress_bar=True        )
-        
+            log_every_n_steps=25, enable_progress_bar=True)
+
+        if checkpoint_path is not None:
+            _load_checkpoint(lightning_module.model, checkpoint_path)
+
+
         self._lightning_module = lightning_module
 
 
@@ -81,23 +84,24 @@ class BaseLightningModule(pl.LightningModule):
         # 2. Log model output
         if log_model_output:
             output_dict["model_output"] = output
-        
+
         # 3. Log step metrics
-        self.log("loss_step", output_dict["loss"], on_step=True, prog_bar=False)
+        self.log("loss_step", output_dict["loss"],
+                 on_step=True, prog_bar=False)
 
         return output_dict
 
     def training_step(self, batch, batch_idx):
         return self._step(batch, batch_idx)
-  
+
     def validation_step(self, batch, batch_idx):
         return self._step(batch, batch_idx,
                           log_model_output=True, log_labels=True)
-    
+
     def test_step(self, batch, batch_idx):
         return self._step(batch, batch_idx,
                           log_model_output=True, log_labels=True)
-    
+
     def _epoch_end(self, outputs, epoch_type="train", save_pickle=False):
         # 1. Compute epoch metrics
         outputs = merge_list_of_dicts(outputs)
@@ -117,7 +121,7 @@ class BaseLightningModule(pl.LightningModule):
                 pickle.dump(outputs, f)
 
         return epoch_stats
-    
+
     def training_epoch_end(self, outputs):
         self._epoch_end(outputs)
 
@@ -129,7 +133,7 @@ class BaseLightningModule(pl.LightningModule):
 
     def forward(self, x):
         return self.model(x)
-        
+
     def fit(self, dataset_train, dataset_val):
         super().fit(self.model, dataset_train, val_dataloaders=dataset_val)
 
@@ -143,3 +147,17 @@ class CustomProgressBar(TQDMProgressBar):
         items = super().get_metrics(trainer, model)
         items.pop("v_num", None)
         return items
+
+
+def _load_checkpoint(model, checkpoint_path):
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    checkpoint = torch.load(checkpoint_path, map_location=device)
+    
+    state_dict = {}
+
+    for k, v in checkpoint["state_dict"].items():
+        k = k.replace("model.", "")
+        state_dict[k] = v
+
+    model.load_state_dict(state_dict, strict=False)
