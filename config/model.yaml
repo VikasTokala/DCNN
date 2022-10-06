@@ -3,8 +3,8 @@ model:
   loss_mode: ILD-IPD-SNR # ILD-IPD-SNR | ILD-SNR | RTF
 
   stoi_weight: 1
-  rtf_weight: 0.3
-  snr_weight: 1
+  rtf_weight: 0
+  snr_weight: 0
   ild_weight: 0.1
   ipd_weight: 1
   

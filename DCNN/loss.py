@@ -46,7 +46,7 @@ class BinauralLoss(Module):
             stoi_r = self.stoi_loss(model_output[:, 1], targets[:, 1])
             
             stoi_loss = (stoi_l+stoi_r)/2
-            loss += self.stoi_weight*stoi_loss
+            loss += self.stoi_weight*stoi_loss.mean()
 
         if self.ild_weight > 0:
             ild_loss = ild_loss_db(target_stft_l, target_stft_r,
