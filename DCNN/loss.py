@@ -4,25 +4,25 @@ import torch.functional as F
 from torch.nn import Module
 from DCNN.utils.conv_stft import ConvSTFT
 from torch_stoi import NegSTOILoss
-import matplotlib.pyplot as plt
 
 EPS = 1e-6
 
 
 class BinauralLoss(Module):
     def __init__(self, loss_mode="RTF", win_len=400,
-                 win_inc=100, fft_len=512,sr=16000,rtf_weight=0.3,snr_weight=0.7,
-                 ild_weight=0.1, ipd_weight=1, avg_mode="freq"):
+                 win_inc=100, fft_len=512,sr=16000,rtf_weight=0.3, snr_weight=0.7,
+                 ild_weight=0.1, ipd_weight=1, stoi_weight=0, avg_mode="freq"):
 
         super().__init__()
         self.loss_mode = loss_mode
         self.stft = STFT(win_len, win_inc, fft_len)
-        self.stoiLoss = NegSTOILoss(sample_rate=sr)
+        self.stoi_loss = NegSTOILoss(sample_rate=sr)
         self.istft = ISTFT(win_len, win_inc, fft_len)
         self.rtf_weight = rtf_weight
         self.snr_weight = snr_weight
         self.ild_weight = ild_weight
         self.ipd_weight = ipd_weight
+        self.stoi_weight = stoi_weight
         self.avg_mode = avg_mode
 
 
@@ -33,12 +33,32 @@ class BinauralLoss(Module):
         output_stft_l = self.stft(model_output[:, 0])
         output_stft_r = self.stft(model_output[:, 1])
 
-        snr_l = si_snr(model_output[:, 0], targets[:, 0])
-        snr_r = si_snr(model_output[:, 1], targets[:, 1])
-        snr_loss = - (snr_l + snr_r)/2
+        loss = 0
 
-        if self.loss_mode == "RTF":
+        if self.snr_weight > 0:
+            snr_l = si_snr(model_output[:, 0], targets[:, 0])
+            snr_r = si_snr(model_output[:, 1], targets[:, 1])
+            snr_loss = - (snr_l + snr_r)/2
+            loss += self.snr_weight*snr_loss
 
+        if self.stoi_weight > 0:
+            stoi_l = self.stoi_loss(model_output[:, 0], targets[:, 0])
+            stoi_r = self.stoi_loss(model_output[:, 1], targets[:, 1])
+            
+            stoi_loss = (stoi_l+stoi_r)/2
+            loss += self.stoi_weight*stoi_loss
+
+        if self.ild_weight > 0:
+            ild_loss = ild_loss_db(target_stft_l, target_stft_r,
+                                   output_stft_l, output_stft_r, avg_mode=self.avg_mode)
+            loss += self.ild_weight*ild_loss
+
+        if self.ipd_weight > 0:
+            ipd_loss = ipd_loss_rads(target_stft_l, target_stft_r,
+                                     output_stft_l, output_stft_r, avg_mode=self.avg_mode)
+            loss += self.ipd_weight*ipd_loss
+            
+        if self.rtf_weight > 0:
             target_rtf_td_full = self.istft(target_stft_l/(target_stft_r + EPS))
             output_rtf_td_full = self.istft(output_stft_l/(output_stft_r + EPS))
 
@@ -48,27 +68,15 @@ class BinauralLoss(Module):
             epsilon = target_rtf_td - ((target_rtf_td@(torch.transpose(output_rtf_td,0,1)))/(output_rtf_td@torch.transpose(output_rtf_td,0,1)))@output_rtf_td
             npm_error = torch.norm((epsilon/torch.max(epsilon)))/torch.norm((target_rtf_td)/torch.max(target_rtf_td))
 
-            stoi_l = self.stoiLoss(model_output[:, 0], targets[:, 0])
-            stoi_r = self.stoiLoss(model_output[:, 1], targets[:, 1])
+            stoi_l = self.stoi_loss(model_output[:, 0], targets[:, 0])
+            stoi_r = self.stoi_loss(model_output[:, 1], targets[:, 1])
             
             stoi_loss = (stoi_l+stoi_r)/2
 
             return self.rtf_weight *npm_error + self.snr_weight * snr_loss + 0*stoi_loss.mean()
 
-        elif self.loss_mode == "ILD-SNR":
-            ild_loss = ild_loss_db(target_stft_l, target_stft_r,
-                                   output_stft_l, output_stft_r, avg_mode=self.avg_mode)
-            return snr_loss + self.ild_weight*ild_loss
+        return loss
 
-        elif self.loss_mode == "ILD-IPD-SNR":
-            ild_loss = ild_loss_db(target_stft_l, target_stft_r,
-                                   output_stft_l, output_stft_r, avg_mode=self.avg_mode)
-            ipd_loss = ipd_loss_rads(target_stft_l, target_stft_r,
-                                     output_stft_l, output_stft_r, avg_mode=self.avg_mode)
-            
-            return self.snr_weight*snr_loss + self.ild_weight*ild_loss + self.ipd_weight*ipd_loss
-        else:
-            raise NotImplementedError("Only loss available for binaural enhancement is 'RTF'")
 
 class Loss(Module):
     def __init__(self, loss_mode="SI-SNR", win_len=400,
@@ -82,7 +90,7 @@ class Loss(Module):
         self.loss_mode = loss_mode
         self.stft = ConvSTFT(win_len, win_inc, fft_len,
                              win_type, "complex", fix=fix)
-        self.stoiLoss = NegSTOILoss(sample_rate=sr)
+        self.stoi_loss = NegSTOILoss(sample_rate=sr)
         self.STOI_weight = STOI_weight
         self.SNR_weight = SNR_weight
 
@@ -103,7 +111,7 @@ class Loss(Module):
             return torch.mean(torch.abs(model_output - gth_spec)) * d
 
         elif self.loss_mode == "STOI-SNR":
-            loss_batch = self.stoiLoss(model_output, targets)
+            loss_batch = self.stoi_loss(model_output, targets)
             return -(self.SNR_weight*si_snr(model_output, targets)) + self.STOI_weight*loss_batch.mean()
 
 
