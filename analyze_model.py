@@ -4,7 +4,6 @@ import numpy as np
 import torch
 
 from omegaconf import DictConfig
-from pystoi import stoi
 from tqdm import tqdm
 from mbstoi import mbstoi
 

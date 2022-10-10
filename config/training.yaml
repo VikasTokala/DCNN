@@ -5,7 +5,7 @@ training:
   learning_rate_decay_steps: [3, 8]
   learning_rate_decay_values: 0.5
   n_workers: 2
-  checkpoint_path: /Users/vtokala/Documents/Research/di_nn/DCNN/checkpoints/weights-epoch=35-validation_loss=-0.61.ckpt 
+  checkpoint_path: /kaggle/working/SE_DCNN/lightning_logs/0/checkpoints/last.ckpt
 
   early_stopping:
     enabled: True
