@@ -1,6 +1,5 @@
 model:
   binaural: true
-  loss_mode: ILD-IPD-SNR # ILD-IPD-SNR | ILD-SNR | RTF
 
   stoi_weight: 0
   rtf_weight: 0
@@ -8,7 +7,6 @@ model:
   ild_weight: 0
   ipd_weight: 0
   
-
   binaural_avg_mode: null # time | freq | null
 
   use_clstm: True

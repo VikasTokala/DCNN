@@ -1,4 +1,3 @@
-from codecs import ignore_errors
 import pickle
 import pytorch_lightning as pl
 import torch
