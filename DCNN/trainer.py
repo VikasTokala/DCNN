@@ -5,7 +5,7 @@ from torch.optim.lr_scheduler import MultiStepLR
 from DCNN.binaural_model import BinauralDCNN
 
 from DCNN.model import DCNN
-from DCNN.loss import BinauralLoss, Loss
+from DCNN.loss_old import BinauralLoss, Loss
 from DCNN.utils.base_trainer import (
     BaseTrainer, BaseLightningModule
 )
