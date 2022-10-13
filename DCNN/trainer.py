@@ -16,7 +16,8 @@ class DCNNTrainer(BaseTrainer):
         lightning_module = DCNNLightniningModule(config)
         super().__init__(lightning_module,
                          config["training"]["n_epochs"],
-                         early_stopping_config=config["training"]["early_stopping"])
+                         early_stopping_config=config["training"]["early_stopping"],
+                         checkpoint_path=None)
 
     def fit(self, train_dataloaders, val_dataloaders=None):
         super().fit(self._lightning_module, train_dataloaders,
@@ -39,13 +40,17 @@ class DCNNLightniningModule(BaseLightningModule):
         if config["model"]["binaural"]:
             model = BinauralDCNN(**self.config["model"])
             loss = BinauralLoss(loss_mode=self.config["model"]["loss_mode"],
-                rtf_weight=self.config["model"]["rtf_weight"],snr_weight=self.config["model"]["snr_weight"])
+                rtf_weight=self.config["model"]["rtf_weight"],
+                snr_weight=self.config["model"]["snr_weight"],
+                ild_weight=self.config["model"]["ild_weight"],
+                ipd_weight=self.config["model"]["ipd_weight"],
+                avg_mode=config["model"]["binaural_avg_mode"])
         else:    
             model = DCNN(**self.config["model"])
 
             loss = Loss(loss_mode=self.config["model"]["loss_mode"],
                         STOI_weight=self.config["model"]["STOI_weight"],
-                        SNR_weight=self.config["model"]["SNR_weight"])
+                        SNR_weight=self.config["model"]["snr_weight"])
 
         super().__init__(model, loss)
 
