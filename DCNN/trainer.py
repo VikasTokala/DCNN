@@ -5,7 +5,7 @@ from torch.optim.lr_scheduler import MultiStepLR
 from DCNN.binaural_model import BinauralDCNN
 
 from DCNN.model import DCNN
-from DCNN.loss_old import BinauralLoss, Loss
+from DCNN.loss import BinauralLoss, Loss
 from DCNN.utils.base_trainer import (
     BaseTrainer, BaseLightningModule
 )
@@ -17,7 +17,7 @@ class DCNNTrainer(BaseTrainer):
         super().__init__(lightning_module,
                          config["training"]["n_epochs"],
                          early_stopping_config=config["training"]["early_stopping"],
-                         checkpoint_path=config["training"]["train_checkpoint_path"])
+                         checkpoint_path=None)
 
     def fit(self, train_dataloaders, val_dataloaders=None):
         super().fit(self._lightning_module, train_dataloaders,
@@ -44,13 +44,12 @@ class DCNNLightniningModule(BaseLightningModule):
                 snr_weight=self.config["model"]["snr_weight"],
                 ild_weight=self.config["model"]["ild_weight"],
                 ipd_weight=self.config["model"]["ipd_weight"],
-                stoi_weight=self.config["model"]["stoi_weight"],
                 avg_mode=config["model"]["binaural_avg_mode"])
         else:    
             model = DCNN(**self.config["model"])
 
             loss = Loss(loss_mode=self.config["model"]["loss_mode"],
-                        STOI_weight=self.config["model"]["stoi_weight"],
+                        STOI_weight=self.config["model"]["STOI_weight"],
                         SNR_weight=self.config["model"]["snr_weight"])
 
         super().__init__(model, loss)

@@ -9,7 +9,7 @@ EPS = 1e-6
 
 
 class BinauralLoss(Module):
-    def __init__(self, loss_mode="RTF", win_len=400,
+    def __init__(self, loss_mode="BINAURAL", win_len=400,
                  win_inc=100, fft_len=512, sr=16000, rtf_weight=0.3, snr_weight=0.7,
                  ild_weight=0.1, ipd_weight=1, stoi_weight=0, avg_mode="freq"):
 

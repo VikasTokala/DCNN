@@ -5,8 +5,8 @@ training:
   learning_rate_decay_steps: [3, 8]
   learning_rate_decay_values: 0.5
   n_workers: 2
-  test_checkpoint_path: /Users/vtokala/Documents/Research/di_nn/DCNN/checkpoints/weights-epoch=35-validation_loss=-0.61.ckpt # Model to be used when analyzing the results
-  train_checkpoint_path: /Users/ezajlerg/src/SE_DCNN/demo/weights-epoch=19-validation_loss=-17.90.ckpt # Start training using this pretrained model
+  # test_checkpoint_path: None #/Users/vtokala/Documents/Research/di_nn/DCNN/checkpoints/weights-epoch=35-validation_loss=-0.61.ckpt # Model to be used when analyzing the results
+  # train_checkpoint_path: None #/Users/ezajlerg/src/SE_DCNN/demo/weights-epoch=19-validation_loss=-17.90.ckpt # Start training using this pretrained model
 
   early_stopping:
     enabled: True

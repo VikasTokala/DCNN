@@ -1,4 +1,4 @@
-sr: 16000
+# sr: 16000
 # noisy_training_dataset_dir: /rds/general/user/vtokala/home/BinauralSpeech/Noisy_trainset
 # noisy_validation_dataset_dir: /rds/general/user/vtokala/home/BinauralSpeech/Noisy_valset
 # noisy_test_dataset_dir: /rds/general/user/vtokala/home/BinauralSpeech/Noisy_testset
@@ -8,10 +8,10 @@ sr: 16000
 
 
 
-# sr: 16000
-noisy_training_dataset_dir: /Users/ezajlerg/src/SE_DCNN/demo/testing_samples/noisy
-noisy_validation_dataset_dir: /Users/ezajlerg/src/SE_DCNN/demo/testing_samples/noisy
-noisy_test_dataset_dir: /Users/ezajlerg/src/SE_DCNN/demo/testing_samples/noisy
-target_training_dataset_dir: /Users/ezajlerg/src/SE_DCNN/demo/testing_samples/clean
-target_validation_dataset_dir: /Users/ezajlerg/src/SE_DCNN/demo/testing_samples/clean
-target_test_dataset_dir: /Users/ezajlerg/src/SE_DCNN/demo/testing_samples/clean
+sr: 16000
+noisy_training_dataset_dir: /Users/vtokala/Documents/Research/di_nn/Dataset/noisy_trainset_1f
+noisy_validation_dataset_dir: /Users/vtokala/Documents/Research/di_nn/Dataset/noisy_valset_1f
+noisy_test_dataset_dir: /Users/vtokala/Documents/Research/di_nn/Dataset/noisy_testset_1f
+target_training_dataset_dir: /Users/vtokala/Documents/Research/di_nn/Dataset/clean_trainset_1f
+target_validation_dataset_dir: /Users/vtokala/Documents/Research/di_nn/Dataset/clean_valset_1f
+target_test_dataset_dir: /Users/vtokala/Documents/Research/di_nn/Dataset/clean_testset_1f
