@@ -155,8 +155,8 @@ def ild_loss_db(target_stft_l, target_stft_r,
     ild_loss = ((target_ild - output_ild).abs()).mean()
     
     mask = (target_stft_l.abs() + target_stft_r.abs())/2
-
-    masked_ild_loss = ild_loss*mask
+    mask_avg = _avg_signal(mask, avg_mode)
+    masked_ild_loss = ild_loss*mask_avg
     return masked_ild_loss.mean()
 
 
@@ -175,10 +175,10 @@ def ipd_loss_rads(target_stft_l, target_stft_r,
     output_ipd = ipd_rad(output_stft_l, output_stft_r, avg_mode=avg_mode)
 
     mask = (target_stft_l.abs() + target_stft_r.abs())/2
-
+    mask_avg = _avg_signal(mask, avg_mode)
     ipd_loss = ((target_ipd - output_ipd).abs())
-
-    masked_ipd_loss = ipd_loss*mask
+    # breakpoint()
+    masked_ipd_loss = ipd_loss*mask_avg
     return masked_ipd_loss.mean()
 
 
