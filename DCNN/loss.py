@@ -32,61 +32,7 @@ class BinauralLoss(Module):
         output_stft_l = self.stft(model_output[:, 0])
         output_stft_r = self.stft(model_output[:, 1])
 
-<<<<<<< HEAD
-            output_stft_l = self.stft(model_output[:, 0])
-            output_stft_r = self.stft(model_output[:, 1])
-
-            # target_l_psd = target_stft_l.abs()**2
-            # target_r_psd = target_stft_r.abs()**2
-
-            # output_l_psd = output_stft_l.abs()**2
-            # output_r_psd = output_stft_r.abs()**2
-
-            # noise_l_psd_hat =  output_l_psd - target_l_psd
-            # noise_r_psd_hat =  output_r_psd - target_r_psd
-
-            # target_l_psd_hat = output_l_psd - noise_l_psd_hat
-            # target_r_psd_hat = output_r_psd - noise_r_psd_hat
-
-            # # v,h = torch.linalg.eig(ta)
-
-            # noise_stft_l_hat = output_stft_l - target_stft_l
-            # noise_stft_r_hat = output_stft_r - target_stft_r
-
-            # target_stft_l_hat = output_stft_l - noise_stft_l_hat
-            # target_stft_r_hat = output_stft_r - noise_stft_r_hat
-
-            target_rtf_td_full = self.istft(target_stft_l/(target_stft_r + EPS))
-            output_rtf_td_full = self.istft(output_stft_l/(output_stft_r + EPS))
-            plt.figure()
-            # plt.plot(target_rtf_td_full[1,:])
-            plt.plot(output_rtf_td_full[1,:])
-            plt.pause(1)
-            breakpoint()
-            target_rtf_td = target_rtf_td_full[:,0:2047]
-            output_rtf_td = output_rtf_td_full[:,0:2047]
-            plt.plot(target_rtf_td_full[1,:])
-
-            # breakpoint()
-            
-            
-            epsilon = target_rtf_td - ((target_rtf_td@(torch.transpose(output_rtf_td,0,1)))/(output_rtf_td@torch.transpose(output_rtf_td,0,1)))@output_rtf_td
-            # breakpoint()
-            npm_error = torch.norm((epsilon/torch.max(epsilon)))/torch.norm((target_rtf_td)/torch.max(target_rtf_td))
-            
-            
-            # error = (target_stft_l_hat/(target_stft_r_hat + EPS) - target_stft_l/(target_stft_r + EPS))
-            # bstoi = - mbstoi(targets.detach().to('cpu').numpy()[:, 0],targets.detach().to('cpu').numpy()[:, 1],
-            #     model_output.detach().to('cpu').numpy()[:, 0],model_output.detach().to('cpu').numpy()[:, 1],fsi=16000)
-            stoi_l = self.stoiLoss(model_output[:, 0], targets[:, 0])
-            stoi_r = self.stoiLoss(model_output[:, 1], targets[:, 1])
-            
-            
-
-            stoi_loss = (stoi_l+stoi_r)/2
-=======
         loss = 0
->>>>>>> feature/ild
 
         if self.snr_weight > 0:
             snr_l = si_snr(model_output[:, 0], targets[:, 0])
