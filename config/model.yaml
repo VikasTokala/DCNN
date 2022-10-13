@@ -7,8 +7,8 @@ model:
   
   rtf_weight: 0
   snr_weight: 1
-  ild_weight: 0
-  ipd_weight: 0
+  ild_weight: 0.1
+  ipd_weight: 0.1
   stoi_weight: 10
   binaural_avg_mode: null # time | freq | null
 
