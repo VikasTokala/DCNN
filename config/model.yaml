@@ -1,6 +1,6 @@
 model:
   binaural: true
-  # loss_mode: RTF # ILD-IPD-SNR | ILD-SNR | RTF
+  loss_mode: RTF # ILD-IPD-SNR | ILD-SNR | RTF
   STOI_weight: 1
   # rtf_weight: 0.3
 
