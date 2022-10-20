@@ -15,7 +15,10 @@ SAVE_DIR = "logs/"
 class BaseTrainer(pl.Trainer):
     def __init__(self, lightning_module, n_epochs, use_checkpoint_callback=True, checkpoint_path=None, early_stopping_config=None):
 
+        torch.cuda.device_count()
+
         accelerator = "cuda" if torch.cuda.is_available() else "cpu"
+        strategy = "dp" if torch.cuda.device_count() > 1 else None
 
         progress_bar = CustomProgressBar()
         early_stopping = EarlyStopping(early_stopping_config["key_to_monitor"],
@@ -42,6 +45,7 @@ class BaseTrainer(pl.Trainer):
                        ],
             logger=[tb_logger, csv_logger],
             accelerator=accelerator,
+            strategy=strategy,
             log_every_n_steps=25, enable_progress_bar=True)
 
         if checkpoint_path is not None:
@@ -119,6 +123,7 @@ class BaseLightningModule(pl.LightningModule):
             with open(pickle_filename, "wb") as f:
                 pickle.dump(outputs, f)
 
+        breakpoint()
         return epoch_stats
 
     def training_epoch_end(self, outputs):
