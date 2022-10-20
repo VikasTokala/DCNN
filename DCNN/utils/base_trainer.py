@@ -15,10 +15,14 @@ SAVE_DIR = "logs/"
 class BaseTrainer(pl.Trainer):
     def __init__(self, lightning_module, n_epochs,
                  use_checkpoint_callback=True, checkpoint_path=None,
-                 early_stopping_config=None, strategy="ddp"):
+                 early_stopping_config=None, strategy="ddp",
+                 accelerator=None):
 
         gpu_count = torch.cuda.device_count()
-        accelerator = "cuda" if torch.cuda.is_available() else "cpu"
+
+        if accelerator is None:
+            accelerator = "cuda" if torch.cuda.is_available() else "cpu"
+
         strategy = strategy if gpu_count > 1 else None
 
         progress_bar = CustomProgressBar()
