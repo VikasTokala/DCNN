@@ -17,8 +17,9 @@ class BaseTrainer(pl.Trainer):
                  use_checkpoint_callback=True, checkpoint_path=None,
                  early_stopping_config=None, strategy="ddp"):
 
+        gpu_count = torch.cuda.device_count()
         accelerator = "cuda" if torch.cuda.is_available() else "cpu"
-        strategy = strategy if torch.cuda.device_count() > 1 else None
+        strategy = strategy if gpu_count > 1 else None
 
         progress_bar = CustomProgressBar()
         early_stopping = EarlyStopping(early_stopping_config["key_to_monitor"],
@@ -46,6 +47,7 @@ class BaseTrainer(pl.Trainer):
             logger=[tb_logger, csv_logger],
             accelerator=accelerator,
             strategy=strategy,
+            gpus=gpu_count,
             log_every_n_steps=25, enable_progress_bar=True)
 
         if checkpoint_path is not None:
