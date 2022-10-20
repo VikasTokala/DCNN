@@ -86,7 +86,7 @@ class BaseLightningModule(pl.LightningModule):
 
         # 3. Log step metrics
         self.log("loss_step", output_dict["loss"],
-                 on_step=True, prog_bar=True)
+                 on_step=True, prog_bar=False)
 
         return output_dict
 
