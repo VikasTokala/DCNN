@@ -42,7 +42,7 @@ def create_torch_dataloader(config, mode):
         dataset,
         batch_size=config["training"]["batch_size"],
         shuffle=shuffle,
-        pin_memory=True,
+        pin_memory=config["training"]["pin_memory"],
         drop_last=False,
         num_workers=config["training"]["n_workers"]
     )

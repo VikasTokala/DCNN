@@ -17,8 +17,6 @@ class BaseTrainer(pl.Trainer):
                  use_checkpoint_callback=True, checkpoint_path=None,
                  early_stopping_config=None, strategy="ddp"):
 
-        torch.cuda.device_count()
-
         accelerator = "cuda" if torch.cuda.is_available() else "cpu"
         strategy = strategy if torch.cuda.device_count() > 1 else None
 
