@@ -9,7 +9,6 @@ from mbstoi import mbstoi
 
 from DCNN.trainer import DCNNLightniningModule
 from DCNN.datasets.base_dataset import BaseDataset
-from DCNN.loss_old import si_snr
 
 SR = 16000
 
