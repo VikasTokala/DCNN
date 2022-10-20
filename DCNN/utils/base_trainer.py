@@ -129,7 +129,6 @@ class BaseLightningModule(pl.LightningModule):
             with open(pickle_filename, "wb") as f:
                 pickle.dump(outputs, f)
 
-        breakpoint()
         return epoch_stats
 
     def training_epoch_end(self, outputs):
