@@ -9,6 +9,8 @@ from pytorch_lightning import loggers as pl_loggers
 
 from DCNN.utils.model_utilities import merge_list_of_dicts
 
+
+
 SAVE_DIR = "logs/"
 
 
@@ -84,6 +86,7 @@ class BaseLightningModule(pl.LightningModule):
         # 1. Compute model output and loss
         output = self.model(x)
         loss = self.loss(output, y)
+        from GPUtil import showUtilization as gpu_usage
 
         output_dict = {
             "loss": loss
@@ -101,6 +104,7 @@ class BaseLightningModule(pl.LightningModule):
         return output_dict
 
     def training_step(self, batch, batch_idx):
+
         return self._step(batch, batch_idx)
 
     def validation_step(self, batch, batch_idx):
