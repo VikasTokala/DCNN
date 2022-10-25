@@ -20,6 +20,7 @@ class DCNNTrainer(BaseTrainer):
                          checkpoint_path=None,
                          strategy=config["training"]["strategy"],
                          accelerator=config["training"]["accelerator"])
+                        # accelerator='mps')
 
     def fit(self, train_dataloaders, val_dataloaders=None):
         super().fit(self._lightning_module, train_dataloaders,

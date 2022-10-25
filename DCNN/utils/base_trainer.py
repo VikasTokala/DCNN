@@ -24,6 +24,8 @@ class BaseTrainer(pl.Trainer):
 
         if accelerator is None:
             accelerator = "cuda" if torch.cuda.is_available() else "cpu"
+        # if accelerator == "mac":
+        #     accelerator = "auto" 
 
         strategy = strategy if gpu_count > 1 else None
 
@@ -39,7 +41,7 @@ class BaseTrainer(pl.Trainer):
         )
 
         tb_logger = pl_loggers.TensorBoardLogger(save_dir=SAVE_DIR)
-        csv_logger = pl_loggers.CSVLogger(save_dir=SAVE_DIR)
+        # csv_logger = pl_loggers.CSVLogger(save_dir=SAVE_DIR)
 
         callbacks = [early_stopping]  # feature_map_callback],
         if use_checkpoint_callback:
@@ -50,7 +52,7 @@ class BaseTrainer(pl.Trainer):
             callbacks=[progress_bar,
                        checkpoint_callback  # feature_map_callback
                        ],
-            logger=[tb_logger, csv_logger],
+            logger=[tb_logger], # csv_logger],
             accelerator=accelerator,
             strategy=strategy,
             gpus=gpu_count,
