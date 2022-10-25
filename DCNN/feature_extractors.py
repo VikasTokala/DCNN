@@ -2,7 +2,7 @@ import torch
 
 from torch.nn import Module
 
-DEFAULT_STFT_CONFIG = {"n_fft": 1024, "use_onesided_fft":True}
+DEFAULT_STFT_CONFIG = {"n_fft": 512, "use_onesided_fft":True}
 
 
 class StftArray(Module):
