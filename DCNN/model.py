@@ -18,7 +18,7 @@ class DCNN(nn.Module):
             rnn_units=128,
             win_len=400,
             win_inc=100,
-            fft_len=512,
+            fft_len=1024,
             win_type='hann',
             masking_mode='E',
             use_clstm=True,
