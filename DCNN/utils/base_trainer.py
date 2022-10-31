@@ -18,7 +18,7 @@ class BaseTrainer(pl.Trainer):
     def __init__(self, lightning_module, n_epochs,
                  use_checkpoint_callback=True, checkpoint_path=None,
                  early_stopping_config=None, strategy="ddp",
-                 accelerator=None):
+                 accelerator=None, profiler='advanced'):
 
         gpu_count = torch.cuda.device_count()
 
@@ -26,6 +26,7 @@ class BaseTrainer(pl.Trainer):
             accelerator = "cuda" if torch.cuda.is_available() else "cpu"
         # if accelerator == "mac":
         #     accelerator = "auto" 
+
 
         strategy = strategy if gpu_count > 1 else None
 
@@ -88,7 +89,7 @@ class BaseLightningModule(pl.LightningModule):
         # 1. Compute model output and loss
         output = self.model(x)
         loss = self.loss(output, y)
-        from GPUtil import showUtilization as gpu_usage
+        # from GPUtil import showUtilization as gpu_usage
 
         output_dict = {
             "loss": loss
@@ -100,8 +101,8 @@ class BaseLightningModule(pl.LightningModule):
             output_dict["model_output"] = output
 
         # 3. Log step metrics
-        self.log("loss_step", output_dict["loss"],
-                 on_step=True, prog_bar=False)
+        self.log("loss_epoch", output_dict["loss"],
+                 on_step=False, prog_bar=False,on_epoch=True)
 
         return output_dict
 
@@ -111,11 +112,11 @@ class BaseLightningModule(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         return self._step(batch, batch_idx,
-                          log_model_output=True, log_labels=True)
+                          log_model_output=False, log_labels=True)
 
     def test_step(self, batch, batch_idx):
         return self._step(batch, batch_idx,
-                          log_model_output=True, log_labels=True)
+                          log_model_output=False, log_labels=True)
 
     def _epoch_end(self, outputs, epoch_type="train", save_pickle=False):
         # 1. Compute epoch metrics
