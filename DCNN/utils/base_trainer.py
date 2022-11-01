@@ -57,7 +57,7 @@ class BaseTrainer(pl.Trainer):
             accelerator=accelerator,
             strategy=strategy,
             gpus=gpu_count,
-            log_every_n_steps=25, enable_progress_bar=True)
+            log_every_n_steps=400, enable_progress_bar=True)
 
         if checkpoint_path is not None:
             _load_checkpoint(lightning_module.model, checkpoint_path)
@@ -72,7 +72,7 @@ class BaseLightningModule(pl.LightningModule):
     """
 
     def __init__(self, model, loss,
-                 log_step=50):
+                 log_step=400):
         super().__init__()
 
         self.is_cuda_available = torch.cuda.is_available()
@@ -101,8 +101,8 @@ class BaseLightningModule(pl.LightningModule):
             output_dict["model_output"] = output
 
         # 3. Log step metrics
-        # self.log("loss_epoch", output_dict["loss"],
-        #          on_step=False, prog_bar=False,on_epoch=True)
+        self.log("loss_epoch", output_dict["loss"],
+                 on_step=False, prog_bar=False,on_epoch=True)
 
         return output_dict
 
