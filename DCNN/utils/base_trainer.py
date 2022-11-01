@@ -101,8 +101,8 @@ class BaseLightningModule(pl.LightningModule):
             output_dict["model_output"] = output
 
         # 3. Log step metrics
-        self.log("loss_epoch", output_dict["loss"],
-                 on_step=False, prog_bar=False,on_epoch=True)
+        # self.log("loss_epoch", output_dict["loss"],
+        #          on_step=False, prog_bar=False,on_epoch=True)
 
         return output_dict
 
