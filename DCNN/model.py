@@ -57,8 +57,8 @@ class DCNN(nn.Module):
         self.masking_mode = masking_mode
         self.use_clstm = use_clstm
 
-        bidirectional=True
-        # bidirectional = False
+        # bidirectional=True
+        bidirectional = False
         fac = 2 if bidirectional else 1
 
         fix = True
