@@ -162,7 +162,7 @@ class DCNN(nn.Module):
         cspecs = torch.stack([real, imag], 1)
         cspecs = cspecs[:, :, 1:]
         
-        out_fal = FAL(in_channels=2,f_length=256)
+        # out_fal = FAL(in_channels=2,f_length=256)
         '''
         means = torch.mean(cspecs, [1,2,3], keepdim=True)
         std = torch.std(cspecs, [1,2,3], keepdim=True )
@@ -179,7 +179,7 @@ class DCNN(nn.Module):
             encoder_out.append(out)
 
         batch_size, channels, dims, lengths = out.size()
-        breakpoint()
+        # breakpoint()
         out = out.permute(3, 0, 1, 2)
         
         if self.use_clstm:
