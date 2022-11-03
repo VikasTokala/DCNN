@@ -5,6 +5,7 @@ import sys
 from DCNN.utils.show import show_params, show_model
 import torch.nn.functional as F
 from DCNN.utils.conv_stft import ConvSTFT, ConviSTFT
+from DCNN.utils.freq_transform import FAL
 # from cvnn.layers.convolutional import ComplexConv2D
 
 from DCNN.utils.complexnn import ComplexConv2d, ComplexConvTranspose2d, NavieComplexLSTM, complex_cat, ComplexBatchNorm
@@ -160,6 +161,8 @@ class DCNN(nn.Module):
         spec_phase = spec_phase
         cspecs = torch.stack([real, imag], 1)
         cspecs = cspecs[:, :, 1:]
+        
+        out_fal = FAL(in_channels=2,f_length=256)
         '''
         means = torch.mean(cspecs, [1,2,3], keepdim=True)
         std = torch.std(cspecs, [1,2,3], keepdim=True )
@@ -176,7 +179,9 @@ class DCNN(nn.Module):
             encoder_out.append(out)
 
         batch_size, channels, dims, lengths = out.size()
+        breakpoint()
         out = out.permute(3, 0, 1, 2)
+        
         if self.use_clstm:
             r_rnn_in = out[:, :, :channels // 2]
             i_rnn_in = out[:, :, channels // 2:]
