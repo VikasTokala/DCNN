@@ -41,7 +41,7 @@ class BaseTrainer(pl.Trainer):
             save_weights_only=True
         )
         # pl.metrics.Accuracy(compute_on_step=False)
-        # tb_logger = pl_loggers.TensorBoardLogger(save_dir=SAVE_DIR)
+        tb_logger = pl_loggers.TensorBoardLogger(save_dir=SAVE_DIR)
         # csv_logger = pl_loggers.CSVLogger(save_dir=SAVE_DIR)
 
         callbacks = [early_stopping]  # feature_map_callback],
@@ -53,7 +53,7 @@ class BaseTrainer(pl.Trainer):
             callbacks=[progress_bar,
                        checkpoint_callback  # feature_map_callback
                        ],
-            # logger=[tb_logger], # csv_logger],
+            logger=[tb_logger], # csv_logger],
             accelerator=accelerator,
             strategy=strategy,
             gpus=gpu_count,
