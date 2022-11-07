@@ -40,7 +40,7 @@ class BaseTrainer(pl.Trainer):
             save_last=True,
             save_weights_only=True
         )
-        pl.metrics.Accuracy(compute_on_step=False)
+        # pl.metrics.Accuracy(compute_on_step=False)
         tb_logger = pl_loggers.TensorBoardLogger(save_dir=SAVE_DIR)
         # csv_logger = pl_loggers.CSVLogger(save_dir=SAVE_DIR)
 
