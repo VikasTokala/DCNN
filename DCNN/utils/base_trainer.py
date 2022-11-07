@@ -41,7 +41,7 @@ class BaseTrainer(pl.Trainer):
             save_weights_only=True
         )
         # pl.metrics.Accuracy(compute_on_step=False)
-        tb_logger = pl_loggers.TensorBoardLogger(save_dir=SAVE_DIR)
+        # tb_logger = pl_loggers.TensorBoardLogger(save_dir=SAVE_DIR)
         # csv_logger = pl_loggers.CSVLogger(save_dir=SAVE_DIR)
 
         callbacks = [early_stopping]  # feature_map_callback],
@@ -53,7 +53,7 @@ class BaseTrainer(pl.Trainer):
             callbacks=[progress_bar,
                        checkpoint_callback  # feature_map_callback
                        ],
-            logger=[tb_logger], # csv_logger],
+            # logger=[tb_logger], # csv_logger],
             accelerator=accelerator,
             strategy=strategy,
             gpus=gpu_count,
@@ -124,8 +124,10 @@ class BaseLightningModule(pl.LightningModule):
         epoch_stats = {
             f"{epoch_type}_loss": outputs["loss"].mean(),
             f"{epoch_type}_std": outputs["loss"].std()
+            
         }
-
+        # breakpoint()
+        # outputs.detach()
         # 2. Log epoch metrics
         for key, value in epoch_stats.items():
             self.log(key, value, on_epoch=True, prog_bar=True)
@@ -139,9 +141,6 @@ class BaseLightningModule(pl.LightningModule):
         return epoch_stats
 
     def training_epoch_end(self, outputs):
-        loss = sum([out['loss'] for out in outputs])/len(outputs)
-        self.log_dict({'train_loss' : loss.detach(), 
-               'train_accuracy' : self.train_metric.compute()})
         self._epoch_end(outputs)
 
     def validation_epoch_end(self, outputs):
