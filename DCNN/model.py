@@ -1,54 +1,38 @@
 import torch
 import torch.nn as nn
-import os
-import sys
-from DCNN.utils.show import show_params, show_model
 import torch.nn.functional as F
+
+from DCNN.utils.show import show_params, show_model
 from DCNN.utils.conv_stft import ConvSTFT, ConviSTFT
-from DCNN.utils.freq_transform import FAL
-# from cvnn.layers.convolutional import ComplexConv2D
-
-from DCNN.utils.complexnn import ComplexConv2d, ComplexConvTranspose2d, NavieComplexLSTM, complex_cat, ComplexBatchNorm
-
+from DCNN.utils.complexnn import (
+    ComplexConv2d, ComplexConvTranspose2d,
+    NaiveComplexLSTM, complex_cat, ComplexBatchNorm
+)
+from DCNN.utils.apply_mask import apply_mask
 
 class DCNN(nn.Module):
-
     def __init__(
             self,
-            rnn_layers=2,
-            rnn_units=128,
-            win_len=400,
-            win_inc=100,
-            fft_len=512,
-            win_type='hann',
-            masking_mode='E',
-            use_clstm=True,
-            use_cbn=True,
-            kernel_size=5,
-            kernel_num=[16, 32, 64, 128, 256, 256],
+            rnn_layers=2, rnn_units=128,
+            win_len=400, win_inc=100, fft_len=512, win_type='hann',
+            masking_mode='E', use_clstm=False, use_cbn=False,
+            kernel_size=5, kernel_num=[16, 32, 64, 128, 256, 256],
             **kwargs
     ):
         ''' 
-            
             rnn_layers: the number of lstm layers in the crn,
             rnn_units: for clstm, rnn_units = real+imag
-
         '''
 
         super().__init__()
 
-        # for fft 
+        # for fft
         self.win_len = win_len
         self.win_inc = win_inc
         self.fft_len = fft_len
         self.win_type = win_type
 
-        input_dim = win_len
-        output_dim = win_len
-
         self.rnn_units = rnn_units
-        self.input_dim = input_dim
-        self.output_dim = output_dim
         self.hidden_layers = rnn_layers
         self.kernel_size = kernel_size
         # self.kernel_num = [2, 8, 16, 32, 128, 128, 128]
@@ -57,17 +41,78 @@ class DCNN(nn.Module):
         self.masking_mode = masking_mode
         self.use_clstm = use_clstm
 
-        # bidirectional=True
-        bidirectional = False
-        fac = 2 if bidirectional else 1
+        self.stft = ConvSTFT(self.win_len, self.win_inc,
+                             fft_len, self.win_type, 'complex', fix=True)
+        self.istft = ConviSTFT(self.win_len, self.win_inc,
+                               fft_len, self.win_type, 'complex', fix=True)
 
-        fix = True
-        self.fix = fix
-        self.stft = ConvSTFT(self.win_len, self.win_inc, fft_len, self.win_type, 'complex', fix=fix)
-        self.istft = ConviSTFT(self.win_len, self.win_inc, fft_len, self.win_type, 'complex', fix=fix)
+        self._create_encoder(use_cbn)
+        self._create_rnn(rnn_layers)
+        self._create_decoder(use_cbn)
+        
+        show_model(self)
+        show_params(self)
+        self._flatten_parameters()
 
+    def forward(self, inputs):
+
+        # 0. Extract
+        specs = self.stft(inputs)
+        real = specs[:, :self.fft_len // 2 + 1]
+        imag = specs[:, self.fft_len // 2 + 1:]
+        cspecs = torch.stack([real, imag], 1)
+        x = cspecs[:, :, 1:] # Not sure what this is, seems to be ignoring the first frame? Why...
+        '''
+        means = torch.mean(cspecs, [1,2,3], keepdim=True)
+        std = torch.std(cspecs, [1,2,3], keepdim=True )
+        normed_cspecs = (cspecs-means)/(std+1e-8)
+        out = normed_cspecs
+        '''
+
+        encoder_out = []
+        # 1. Apply encoder
+        for idx, layer in enumerate(self.encoder):
+            x = layer(x)
+            encoder_out.append(x)
+
+        # 2. Apply RNN
+        x = self._forward_rnn(x)
+
+        # 3. Apply decoder
+        for idx in range(len(self.decoder)):
+            x = complex_cat([x, encoder_out[-1 - idx]], 1)
+            x = self.decoder[idx](x)
+            x = x[..., 1:]
+        
+        # 4. Apply mask
+        out_spec = apply_mask(x, specs, self.fft_len, self.masking_mode)
+
+        # 5. Invert STFT 
+        out_wav = self.istft(out_spec)
+        out_wav = torch.squeeze(out_wav, 1)
+        out_wav = torch.clamp_(out_wav, -1, 1)
+
+        return out_wav  # out_spec, out_wav
+
+    def get_params(self, weight_decay=0.0):
+        # add L2 penalty
+        weights, biases = [], []
+        for name, param in self.named_parameters():
+            if 'bias' in name:
+                biases += [param]
+            else:
+                weights += [param]
+        params = [{
+            'params': weights,
+            'weight_decay': weight_decay,
+        }, {
+            'params': biases,
+            'weight_decay': 0.0,
+        }]
+        return params
+
+    def _create_encoder(self, use_cbn):
         self.encoder = nn.ModuleList()
-        self.decoder = nn.ModuleList()
         for idx in range(len(self.kernel_num) - 1):
             self.encoder.append(
                 nn.Sequential(
@@ -85,32 +130,9 @@ class DCNN(nn.Module):
                     nn.PReLU()
                 )
             )
-        hidden_dim = self.fft_len // (2 ** (len(self.kernel_num)))
 
-        if self.use_clstm:
-            rnns = []
-            for idx in range(rnn_layers):
-                rnns.append(
-                    NavieComplexLSTM(
-                        input_size=hidden_dim * self.kernel_num[-1] if idx == 0 else self.rnn_units,
-                        hidden_size=self.rnn_units,
-                        bidirectional=bidirectional,
-                        batch_first=False,
-                        projection_dim=hidden_dim * self.kernel_num[-1] if idx == rnn_layers - 1 else None,
-                    )
-                )
-                self.enhance = nn.Sequential(*rnns)  # What is *rnns - Runs the layers sequentially - to be used when append is used
-        else:
-            self.enhance = nn.LSTM(
-                input_size=hidden_dim * self.kernel_num[-1],
-                hidden_size=self.rnn_units,
-                num_layers=2,
-                dropout=0.0,
-                bidirectional=bidirectional,
-                batch_first=False
-            )
-            self.tranform = nn.Linear(self.rnn_units * fac, hidden_dim * self.kernel_num[-1])
-
+    def _create_decoder(self, use_cbn):
+        self.decoder = nn.ModuleList()
         for idx in range(len(self.kernel_num) - 1, 0, -1):
             if idx != 1:
                 self.decoder.append(
@@ -142,136 +164,72 @@ class DCNN(nn.Module):
                         ),
                     )
                 )
+    
+    def _create_rnn(self, rnn_layers):
+        # TODO: Make bidirectional a hyperparameter
+        bidirectional = False
+        fac = 2 if bidirectional else 1
+        
+        hidden_dim = self.fft_len // (2 ** (len(self.kernel_num)))
 
-        # show_model(self)
-        # show_params(self)
-        self.flatten_parameters()
+        if self.use_clstm:
+            rnns = []
+            for idx in range(rnn_layers):
+                rnns.append(
+                    NaiveComplexLSTM(
+                        input_size=hidden_dim *
+                        self.kernel_num[-1] if idx == 0 else self.rnn_units,
+                        hidden_size=self.rnn_units,
+                        bidirectional=bidirectional,
+                        batch_first=False,
+                        projection_dim=hidden_dim *
+                        self.kernel_num[-1] if idx == rnn_layers - 1 else None,
+                    )
+                )
+                # What is *rnns - Runs the layers sequentially - to be used when append is used
+                self.enhance = nn.Sequential(*rnns)
+        else:
+            self.enhance = nn.LSTM(
+                input_size=hidden_dim * self.kernel_num[-1],
+                hidden_size=self.rnn_units,
+                num_layers=2,
+                dropout=0.0,
+                bidirectional=bidirectional,
+                batch_first=False
+            )
+            self.tranform = nn.Linear(
+                self.rnn_units * fac, hidden_dim * self.kernel_num[-1])
 
-    def flatten_parameters(self):
+    def _flatten_parameters(self):
         if isinstance(self.enhance, nn.LSTM):
             self.enhance.flatten_parameters()
 
-    def forward(self, inputs, output_mode="time"):
-        specs = self.stft(inputs)
-        real = specs[:, :self.fft_len // 2 + 1]
-        imag = specs[:, self.fft_len // 2 + 1:]
-        spec_mags = torch.sqrt(real ** 2 + imag ** 2 + 1e-8)
-        spec_mags = spec_mags
-        spec_phase = torch.atan2(imag, real)
-        spec_phase = spec_phase
-        cspecs = torch.stack([real, imag], 1)
-        cspecs = cspecs[:, :, 1:]
-        
-        # out_fal = FAL(in_channels=2,f_length=256)
-        '''
-        means = torch.mean(cspecs, [1,2,3], keepdim=True)
-        std = torch.std(cspecs, [1,2,3], keepdim=True )
-        normed_cspecs = (cspecs-means)/(std+1e-8)
-        out = normed_cspecs
-        '''
-
-        out = cspecs
-        encoder_out = []
-
-        for idx, layer in enumerate(self.encoder):
-            out = layer(out)
-            #    print('encoder', out.size())
-            encoder_out.append(out)
-
-        batch_size, channels, dims, lengths = out.size()
-        # breakpoint()
-        out = out.permute(3, 0, 1, 2)
-        
+    def _forward_rnn(self, x):
+        batch_size, channels, dims, lengths = x.size()
+        x = x.permute(3, 0, 1, 2)
         if self.use_clstm:
-            r_rnn_in = out[:, :, :channels // 2]
-            i_rnn_in = out[:, :, channels // 2:]
-            r_rnn_in = torch.reshape(r_rnn_in, [lengths, batch_size, channels // 2 * dims])
-            i_rnn_in = torch.reshape(i_rnn_in, [lengths, batch_size, channels // 2 * dims])
+            r_rnn_in = x[:, :, :channels // 2]
+            i_rnn_in = x[:, :, channels // 2:]
+            r_rnn_in = torch.reshape(
+                r_rnn_in, [lengths, batch_size, channels // 2 * dims])
+            i_rnn_in = torch.reshape(
+                i_rnn_in, [lengths, batch_size, channels // 2 * dims])
 
             r_rnn_in, i_rnn_in = self.enhance([r_rnn_in, i_rnn_in])
 
-            r_rnn_in = torch.reshape(r_rnn_in, [lengths, batch_size, channels // 2, dims])
-            i_rnn_in = torch.reshape(i_rnn_in, [lengths, batch_size, channels // 2, dims])
-            out = torch.cat([r_rnn_in, i_rnn_in], 2)
+            r_rnn_in = torch.reshape(
+                r_rnn_in, [lengths, batch_size, channels // 2, dims])
+            i_rnn_in = torch.reshape(
+                i_rnn_in, [lengths, batch_size, channels // 2, dims])
+            x = torch.cat([r_rnn_in, i_rnn_in], 2)
 
         else:
             # to [L, B, C, D]
-            out = torch.reshape(out, [lengths, batch_size, channels * dims])
-            out, _ = self.enhance(out)
-            out = self.tranform(out)
-            out = torch.reshape(out, [lengths, batch_size, channels, dims])
+            x = torch.reshape(x, [lengths, batch_size, channels * dims])
+            x, _ = self.enhance(x)
+            x = self.tranform(x)
+            x = torch.reshape(x, [lengths, batch_size, channels, dims])
 
-        out = out.permute(1, 2, 3, 0)
+        x = x.permute(1, 2, 3, 0)
 
-        for idx in range(len(self.decoder)):
-            out = complex_cat([out, encoder_out[-1 - idx]], 1)
-            out = self.decoder[idx](out)
-            out = out[..., 1:]
-        #    print('decoder', out.size())
-        mask_real = out[:, 0]
-        mask_imag = out[:, 1]
-        mask_real = F.pad(mask_real, [0, 0, 1, 0])
-        mask_imag = F.pad(mask_imag, [0, 0, 1, 0])
-
-        if self.masking_mode == 'E':
-            mask_mags = (mask_real ** 2 + mask_imag ** 2) ** 0.5
-            real_phase = mask_real / (mask_mags + 1e-8)
-            imag_phase = mask_imag / (mask_mags + 1e-8)
-            mask_phase = torch.atan2(
-                imag_phase,
-                real_phase
-            )
-
-            # mask_mags = torch.clamp_(mask_mags,0,100)
-            mask_mags = torch.tanh(mask_mags)
-            est_mags = mask_mags * spec_mags
-            est_phase = spec_phase + mask_phase
-            real = est_mags * torch.cos(est_phase)
-            imag = est_mags * torch.sin(est_phase)
-        elif self.masking_mode == 'C':
-            real, imag = real * mask_real - imag * mask_imag, real * mask_imag + imag * mask_real
-        elif self.masking_mode == 'R':
-            real, imag = real * mask_real, imag * mask_imag
-
-        out_spec = torch.cat([real, imag], 1)
-        if output_mode == "cspec":
-            return out_spec
-        else:
-            out_wav = self.istft(out_spec)
-            out_wav = torch.squeeze(out_wav, 1)
-            out_wav = torch.clamp_(out_wav, -1, 1)
-            return out_wav
-
-    def get_params(self, weight_decay=0.0):
-        # add L2 penalty
-        weights, biases = [], []
-        for name, param in self.named_parameters():
-            if 'bias' in name:
-                biases += [param]
-            else:
-                weights += [param]
-        params = [{
-            'params': weights,
-            'weight_decay': weight_decay,
-        }, {
-            'params': biases,
-            'weight_decay': 0.0,
-        }]
-        return params
-
-
-def remove_dc(data):
-    mean = torch.mean(data, -1, keepdim=True)
-    data = data - mean
-    return data
-
-
-def test_complex():
-    torch.manual_seed(20)
-    inputs = torch.randn(10, 2, 256, 10)
-    conv = ComplexConv2d(2, 32, (3, 1), (2, 1), (1, 0))
-    tconv = ComplexConvTranspose2d(32, 2, (3, 1), (2, 1), (1, 0), (1, 0))
-    out = conv(inputs)
-    print(out.shape)
-    out = tconv(out)
-    print(out.shape)
+        return x
