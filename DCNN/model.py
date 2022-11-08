@@ -1,14 +1,17 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+# import torch.nn.functional as F
+from DCNN.feature_extractors import IStft, Stft
 
+import DCNN.utils.complexPyTorch.complexLayers as torch_complex
 from DCNN.utils.show import show_params, show_model
-from DCNN.utils.conv_stft import ConvSTFT, ConviSTFT
 from DCNN.utils.complexnn import (
-    ComplexConv2d, ComplexConvTranspose2d,
-    NaiveComplexLSTM, complex_cat, ComplexBatchNorm
+    ComplexConv2d, ComplexConvTranspose2d, ComplexBatchNorm,
+    NaiveComplexLSTM, complex_cat
 )
 from DCNN.utils.apply_mask import apply_mask
+
+
 
 class DCNN(nn.Module):
     def __init__(
@@ -27,10 +30,10 @@ class DCNN(nn.Module):
         super().__init__()
 
         # for fft
-        self.win_len = win_len
-        self.win_inc = win_inc
+        self.win_len = win_len # TODO: Remove
+        self.win_inc = win_inc # TODO: Rename to hop_size
         self.fft_len = fft_len
-        self.win_type = win_type
+        self.win_type = win_type # TODO: Remove
 
         self.rnn_units = rnn_units
         self.hidden_layers = rnn_layers
@@ -41,10 +44,8 @@ class DCNN(nn.Module):
         self.masking_mode = masking_mode
         self.use_clstm = use_clstm
 
-        self.stft = ConvSTFT(self.win_len, self.win_inc,
-                             fft_len, self.win_type, 'complex', fix=True)
-        self.istft = ConviSTFT(self.win_len, self.win_inc,
-                               fft_len, self.win_type, 'complex', fix=True)
+        self.stft = Stft(self.fft_len, self.win_inc)
+        self.istft = IStft(self.fft_len, self.win_inc)
 
         self._create_encoder(use_cbn)
         self._create_rnn(rnn_layers)
@@ -56,12 +57,9 @@ class DCNN(nn.Module):
 
     def forward(self, inputs):
 
-        # 0. Extract
-        specs = self.stft(inputs)
-        real = specs[:, :self.fft_len // 2 + 1]
-        imag = specs[:, self.fft_len // 2 + 1:]
-        cspecs = torch.stack([real, imag], 1)
-        x = cspecs[:, :, 1:] # Not sure what this is, seems to be ignoring the first frame? Why...
+        # 0. Extract STFT
+        x = cspecs = self.stft(inputs)
+        x = x.unsqueeze(1) # Add a dummy channel
         '''
         means = torch.mean(cspecs, [1,2,3], keepdim=True)
         std = torch.std(cspecs, [1,2,3], keepdim=True )
@@ -75,19 +73,27 @@ class DCNN(nn.Module):
             x = layer(x)
             encoder_out.append(x)
 
+        
         # 2. Apply RNN
+        x = torch.view_as_real(x)
+        x = x.movedim(-1, 1) # move complex dim to front
+        x = x.flatten(start_dim=1, end_dim=2)
         x = self._forward_rnn(x)
 
+        n_channels = x.shape[1]
+        x = torch.complex(x[:, :n_channels//2], x[:, n_channels//2:])
+      
         # 3. Apply decoder
         for idx in range(len(self.decoder)):
             x = complex_cat([x, encoder_out[-1 - idx]], 1)
             x = self.decoder[idx](x)
-            x = x[..., 1:]
+            #x = x[..., 1:]
         
         # 4. Apply mask
-        out_spec = apply_mask(x, specs, self.fft_len, self.masking_mode)
+        out_spec = apply_mask(x, cspecs, self.masking_mode)
 
-        # 5. Invert STFT 
+        # 5. Invert STFT
+        out_spec = torch.complex(out_spec[:, 0], out_spec[:, 1])
         out_wav = self.istft(out_spec)
         out_wav = torch.squeeze(out_wav, 1)
         out_wav = torch.clamp_(out_wav, -1, 1)
@@ -117,17 +123,16 @@ class DCNN(nn.Module):
             self.encoder.append(
                 nn.Sequential(
                     # nn.ConstantPad2d([0, 0, 0, 0], 0),
-
-                    ComplexConv2d(
-                        self.kernel_num[idx],
-                        self.kernel_num[idx + 1],
+                    
+                    torch_complex.ComplexConv2d(
+                        self.kernel_num[idx]//2,
+                        self.kernel_num[idx + 1]//2,
                         kernel_size=(self.kernel_size, 2),
                         stride=(2, 1),
                         padding=(2, 1)
                     ),
-                    nn.BatchNorm2d(self.kernel_num[idx + 1]) if not use_cbn else ComplexBatchNorm(
-                        self.kernel_num[idx + 1]),
-                    nn.PReLU()
+                    # torch_complex.NaiveComplexBatchNorm2d(self.kernel_num[idx + 1]), # if not use_cbn else ComplexBatchNorm(self.kernel_num[idx + 1]),
+                    torch_complex.ComplexReLU()
                 )
             )
 
@@ -137,24 +142,22 @@ class DCNN(nn.Module):
             if idx != 1:
                 self.decoder.append(
                     nn.Sequential(
-                        ComplexConvTranspose2d(
-                            self.kernel_num[idx] * 2,
-                            self.kernel_num[idx - 1],
+                        torch_complex.ComplexConvTranspose2d(
+                            self.kernel_num[idx], #* 2,
+                            self.kernel_num[idx - 1]//2,
                             kernel_size=(self.kernel_size, 2),
                             stride=(2, 1),
                             padding=(2, 0),
                             output_padding=(1, 0)
                         ),
-                        nn.BatchNorm2d(self.kernel_num[idx - 1]) if not use_cbn else ComplexBatchNorm(
-                            self.kernel_num[idx - 1]),
-                        # nn.ELU()
-                        nn.PReLU()
+                        # torch_complex.NaiveComplexBatchNorm2d(self.kernel_num[idx - 1]), #if not use_cbn else ComplexBatchNorm(self.kernel_num[idx - 1]),
+                        torch_complex.ComplexReLU()
                     )
                 )
             else:
                 self.decoder.append(
                     nn.Sequential(
-                        ComplexConvTranspose2d(
+                        torch_complex.ComplexConvTranspose2d(
                             self.kernel_num[idx] * 2,
                             self.kernel_num[idx - 1],
                             kernel_size=(self.kernel_size, 2),

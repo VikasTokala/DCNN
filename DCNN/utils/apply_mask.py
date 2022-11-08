@@ -2,15 +2,15 @@ import torch
 import torch.nn.functional as F
 
 
-def apply_mask(x, specs, fft_len, masking_mode="E"):
-    real = specs[:, :fft_len // 2 + 1]
-    imag = specs[:, fft_len // 2 + 1:]
+def apply_mask(x, specs, masking_mode="E"):
+    real, imag = specs[:, 0], specs[:, 1]
+    mask_real, mask_imag = x[:, 0], x[:, 1]
+    
     spec_mags = torch.sqrt(real ** 2 + imag ** 2 + 1e-8)
     spec_phase = torch.atan2(imag, real)
 
-    mask_real, mask_imag = x[:, 0], x[:, 1]
-    mask_real = F.pad(mask_real, [0, 0, 1, 0])
-    mask_imag = F.pad(mask_imag, [0, 0, 1, 0])
+    # mask_real = F.pad(mask_real, [0, 0, 1, 0])
+    # mask_imag = F.pad(mask_imag, [0, 0, 1, 0])
 
     if masking_mode == "E":
         mask_mags = (mask_real ** 2 + mask_imag ** 2) ** 0.5
@@ -33,7 +33,11 @@ def apply_mask(x, specs, fft_len, masking_mode="E"):
     elif masking_mode == "R":
         real, imag = real * mask_real, imag * mask_imag
 
+    # Pad DC component, which was removed
+    real = F.pad(real, [0, 0, 1, 0])
+    imag = F.pad(imag, [0, 0, 1, 0])
+
     # Generate output signal
-    out_spec = torch.cat([real, imag], 1)
+    out_spec = torch.stack([real, imag], 1)
 
     return out_spec

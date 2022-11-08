@@ -1,53 +1,48 @@
 import torch
-
-from torch.nn import Module
-
-DEFAULT_STFT_CONFIG = {"n_fft": 512, "use_onesided_fft":True}
+import torch.nn as nn
 
 
-class StftArray(Module):
-    def __init__(self, model_config):
+class Stft(nn.Module):
+    def __init__(self, n_dft=1024, hop_size=512, onesided=True,
+                 is_complex=True):
 
         super().__init__()
 
-        self.n_fft = model_config["n_fft"]
-        self.onesided = model_config["use_onesided_fft"]
-        self.is_complex = True
+        self.n_dft = n_dft
+        self.hop_size = hop_size
+        self.onesided = onesided
+        self.is_complex = is_complex
 
-    def forward(self, X):
-        "Expected input has shape (batch_size, n_arrays, time_steps)"
+    def forward(self, x: torch.Tensor):
+        "Expected input has shape (batch_size, n_channels, time_steps)"
 
-        result = []
-        n_arrays = X.shape[1]
-
-        for i in range(n_arrays):
-            x = X[:, i, :]
-            stft_output = torch.stft(x, self.n_fft, onesided=self.onesided, return_complex=True)
-            result.append(
-                stft_output[:, 1:, :]
-            ) # Ignore frequency 0
+        y = torch.stft(x, self.n_dft, hop_length=self.hop_size, 
+                       onesided=self.onesided, return_complex=True)
         
-        result = torch.stack(result, dim=1)
-        return result
+        y = y[:, 1:] # Remove DC component (f=0hz)
+
+        # y.shape == (batch_size*channels, time, freqs)
+
+        if not self.is_complex:
+            y = torch.view_as_real(y)
+            y = y.movedim(-1, 1) # move complex dim to front
+
+        return y
 
 
-class DecoupledStftArray(StftArray):
-    "Stft where the real and imaginary channels are modeled as separate channels"
-    def __init__(self, model_config):
-        super().__init__(model_config)
-        self.is_complex = False
+class IStft(nn.Module):
+    def __init__(self, n_dft=1024, hop_size=512, onesided=True):
 
-    def forward(self, X):
+        super().__init__()
 
-        stft = super().forward(X)
+        self.n_dft = n_dft
+        self.hop_size = hop_size
+        self.onesided = onesided
 
-        # stft.real.shape = (batch_size, num_mics, num_channels, time_steps)
-        result = torch.cat((stft.real, stft.imag), dim=2)   
-        
-        return result
+    def forward(self, x: torch.Tensor):
+        "Expected input has shape (batch_size, n_channels, time_steps)"
 
+        y = torch.istft(x, self.n_dft, hop_length=self.hop_size, 
+                       onesided=self.onesided)
 
-FEATURE_NAME_TO_CLASS_MAP = {
-    "stft": StftArray,
-    "decoupled_stft": DecoupledStftArray
-}
+        return y
