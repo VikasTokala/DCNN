@@ -52,7 +52,7 @@ class DCNN(nn.Module):
         #self._create_rnn(rnn_layers)
 
         hidden_dim = self.fft_len // (2 ** (len(self.kernel_num) + 1))
-        self.rnn = nn.LSTM(
+        self.rnn = torch_complex.LSTM(
             input_size=hidden_dim * self.kernel_num[-1], # if idx == 0 else self.rnn_units,
             hidden_size=self.rnn_units,
             bidirectional=bidirectional,

@@ -632,7 +632,7 @@ class ComplexLSTM(Module):
         dims = (dim_0, batch_size, self.hidden_size)
 
         h_real, h_imag, c_real, c_imag = [
-            torch.zeros(dims) for i in range(4)]
+            torch.zeros(dims, dtype=torch.float32) for i in range(4)]
 
         if to_gpu:
             h_real, h_imag, c_real, c_imag = [
