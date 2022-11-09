@@ -18,7 +18,7 @@ class DCNN(nn.Module):
             rnn_layers=2,
             rnn_units=128,
             win_len=400,
-            win_inc=100,
+            win_inc=160,
             fft_len=512,
             win_type='hann',
             masking_mode='E',
@@ -56,6 +56,7 @@ class DCNN(nn.Module):
         self.kernel_num = [2] + kernel_num
         self.masking_mode = masking_mode
         self.use_clstm = use_clstm
+        self.c_a = 96
 
         # bidirectional=True
         bidirectional = False
@@ -142,7 +143,14 @@ class DCNN(nn.Module):
                         ),
                     )
                 )
-
+        self.amp_pre = nn.Sequential(
+        nn.Conv2d(in_channels=2, out_channels=self.c_a, kernel_size=(7, 1), stride=1, padding=[3, 0]),
+            # nn.BatchNorm2d(self.c_a),
+            # nn.ReLU(),
+        nn.Conv2d(in_channels=self.c_a, out_channels=self.c_a, kernel_size=(1, 7), stride=1, padding=[0, 3]),
+            # nn.BatchNorm2d(self.c_a),
+            # nn.ReLU()
+         )
         # show_model(self)
         # show_params(self)
         self.flatten_parameters()
@@ -153,16 +161,35 @@ class DCNN(nn.Module):
 
     def forward(self, inputs, output_mode="time"):
         specs = self.stft(inputs)
+        
+        amp_pre = nn.Sequential(
+        nn.Conv2d(in_channels=2, out_channels=self.c_a, kernel_size=(7, 1), stride=1, padding=[3, 0]),
+            # nn.BatchNorm2d(self.c_a),
+            # nn.ReLU(),
+        nn.Conv2d(in_channels=self.c_a, out_channels=self.c_a, kernel_size=(1, 7), stride=1, padding=[0, 3]),
+            # nn.BatchNorm2d(self.c_a),
+            # nn.ReLU()
+         )
+      
         real = specs[:, :self.fft_len // 2 + 1]
         imag = specs[:, self.fft_len // 2 + 1:]
         spec_mags = torch.sqrt(real ** 2 + imag ** 2 + 1e-8)
         spec_mags = spec_mags
+        bs, f_length, seg_length = spec_mags.shape
+
+        # breakpoint()
+
+        input_spec = spec_mags.reshape([bs//2, 2, seg_length, f_length]) 
+       
+        
         spec_phase = torch.atan2(imag, real)
         spec_phase = spec_phase
         cspecs = torch.stack([real, imag], 1)
         cspecs = cspecs[:, :, 1:]
         
-        # out_fal = FAL(in_channels=2,f_length=256)
+        out_fal = FAL(in_channels=96,f_length=257)
+        temp=amp_pre(input_spec)
+        tat=out_fal(temp)
         '''
         means = torch.mean(cspecs, [1,2,3], keepdim=True)
         std = torch.std(cspecs, [1,2,3], keepdim=True )
@@ -177,7 +204,7 @@ class DCNN(nn.Module):
             out = layer(out)
             #    print('encoder', out.size())
             encoder_out.append(out)
-
+        # breakpoint()
         batch_size, channels, dims, lengths = out.size()
         # breakpoint()
         out = out.permute(3, 0, 1, 2)
