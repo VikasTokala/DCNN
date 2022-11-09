@@ -250,7 +250,6 @@ class _ComplexBatchNorm(Module):
 
 
 class ComplexBatchNorm2d(_ComplexBatchNorm):
-
     def forward(self, input):
         exponential_average_factor = 0.0
 
@@ -328,9 +327,7 @@ class ComplexBatchNorm2d(_ComplexBatchNorm):
 
 
 class ComplexBatchNorm1d(_ComplexBatchNorm):
-
     def forward(self, input):
-
         exponential_average_factor = 0.0
 
         if self.training and self.track_running_stats:
@@ -629,7 +626,7 @@ class ComplexLSTM(Module):
 
     def _init_state(self, batch_size, to_gpu=False):
         dim_0 = 2 if self.bidirectional else 1
-        dims = (dim_0, batch_size, self.hidden_size)
+        dims = (dim_0*self.num_layer, batch_size, self.hidden_size)
 
         h_real, h_imag, c_real, c_imag = [
             torch.zeros(dims, dtype=torch.float32) for i in range(4)]
@@ -637,7 +634,6 @@ class ComplexLSTM(Module):
         if to_gpu:
             h_real, h_imag, c_real, c_imag = [
                 t.cuda() for t in [h_real, h_imag, c_real, c_imag]]
-            
 
         return h_real, h_imag, c_real, c_imag
     
