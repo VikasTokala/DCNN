@@ -2,7 +2,7 @@ import torch
 import torch.functional as F
 
 from torch.nn import Module
-from DCNN.utils.conv_stft import ConvSTFT
+from DCNN.feature_extractors import Stft, IStft
 from torch_stoi import NegSTOILoss
 
 EPS = 1e-6
@@ -15,9 +15,9 @@ class BinauralLoss(Module):
 
         super().__init__()
         self.loss_mode = loss_mode
-        self.stft = STFT(win_len, win_inc, fft_len)
+        self.stft = Stft(fft_len, win_inc)
         self.stoi_loss = NegSTOILoss(sample_rate=sr)
-        self.istft = ISTFT(win_len, win_inc, fft_len)
+        self.istft = IStft(fft_len, win_inc)
         self.rtf_weight = rtf_weight
         self.snr_weight = snr_weight
         self.ild_weight = ild_weight
@@ -31,7 +31,6 @@ class BinauralLoss(Module):
 
         output_stft_l = self.stft(model_output[:, 0])
         output_stft_r = self.stft(model_output[:, 1])
-        # breakpoint()
 
         loss = 0
 
@@ -148,7 +147,6 @@ def ild_db(s1, s2, eps=EPS, avg_mode=None):
 
     l1 = 20*torch.log10(s1 + eps)
     l2 = 20*torch.log10(s2 + eps)
-    # breakpoint()
     ild_value = (l1 - l2).abs()
 
     return ild_value
@@ -186,7 +184,6 @@ def ipd_loss_rads(target_stft_l, target_stft_r,
     mask = (target_stft_l.abs() + target_stft_r.abs())/2
     mask_avg = _avg_signal(mask, avg_mode)
     ipd_loss = ((target_ipd - output_ipd).abs())
-    # breakpoint()
     masked_ipd_loss = ipd_loss*mask_avg
     return masked_ipd_loss.mean()
 

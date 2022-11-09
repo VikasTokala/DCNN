@@ -35,7 +35,6 @@ def sim_test_main():
     
     
     sm = bin_sm.SignalModel(Nch=2,N_rtf_t=1024)
-    # breakpoint()
     print(sm.y)
 
     rtf_fblms, y_hat_fblms, mse_fblms = test_fblms_rtf(sm,ref_ch=1)

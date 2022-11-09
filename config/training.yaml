@@ -10,7 +10,7 @@ training:
 
   strategy: ddp # defines how data is shared when using multiple GPUs 
   pin_memory: False
-  accelerator: None
+  accelerator: null
   early_stopping:
     enabled: True
     key_to_monitor: validation_loss

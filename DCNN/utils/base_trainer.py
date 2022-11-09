@@ -98,7 +98,7 @@ class BaseLightningModule(pl.LightningModule):
         # TODO: Add these to a callback
         # 2. Log model output
         if log_model_output:
-            # breakpoint()
+
             output_dict["model_output"] = output
 
         # 3. Log step metrics
@@ -127,11 +127,11 @@ class BaseLightningModule(pl.LightningModule):
             f"{epoch_type}_std": outputs["loss"].std()
             
         }
-        # breakpoint()
+
         # outputs.detach()
         # 2. Log epoch metrics
         for key, value in epoch_stats.items():
-            # breakpoint()
+
             self.log(key, value, on_epoch=True, prog_bar=True)
 
         # 3. Save complete epoch data on pickle
