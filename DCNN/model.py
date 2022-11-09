@@ -137,7 +137,7 @@ class DCNN(nn.Module):
                         stride=(2, 1),
                         padding=(2, 1)
                     ),
-                    # torch_complex.NaiveComplexBatchNorm2d(self.kernel_num[idx + 1]), # if not use_cbn else ComplexBatchNorm(self.kernel_num[idx + 1]),
+                    torch_complex.NaiveComplexBatchNorm2d(self.kernel_num[idx + 1]//2),
                     torch_complex.ComplexPReLU()
                 )
             )
@@ -155,7 +155,7 @@ class DCNN(nn.Module):
                             padding=(2, 1),
                             output_padding=(1, 0)
                         ),
-                        # torch_complex.NaiveComplexBatchNorm2d(self.kernel_num[idx - 1]), #if not use_cbn else ComplexBatchNorm(self.kernel_num[idx - 1]),
+                        torch_complex.NaiveComplexBatchNorm2d(self.kernel_num[idx - 1]//2),
                         torch_complex.ComplexPReLU()
                     )
             ]
