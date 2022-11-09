@@ -5,10 +5,10 @@ from DCNN.feature_extractors import IStft, Stft
 
 import DCNN.utils.complexPyTorch.complexLayers as torch_complex
 from DCNN.utils.show import show_params, show_model
-from DCNN.utils.complexnn import (
-    ComplexConv2d, ComplexConvTranspose2d, ComplexBatchNorm,
-    NaiveComplexLSTM, complex_cat
-)
+# from DCNN.utils.complexnn import (
+#     ComplexConv2d, ComplexConvTranspose2d, ComplexBatchNorm,
+#     NaiveComplexLSTM, complex_cat
+# )
 from DCNN.utils.apply_mask import apply_mask
 
 
@@ -18,8 +18,9 @@ class DCNN(nn.Module):
             self,
             rnn_layers=2, rnn_units=128,
             win_len=400, win_inc=100, fft_len=512, win_type='hann',
-            masking_mode='E', use_clstm=False, use_cbn=False,
+            masking_mode='E', use_clstm=False,
             kernel_size=5, kernel_num=[16, 32, 64, 128, 256, 256],
+            bidirectional=False,
             **kwargs
     ):
         ''' 
@@ -47,13 +48,25 @@ class DCNN(nn.Module):
         self.stft = Stft(self.fft_len, self.win_inc)
         self.istft = IStft(self.fft_len, self.win_inc)
 
-        self._create_encoder(use_cbn)
-        self._create_rnn(rnn_layers)
-        self._create_decoder(use_cbn)
+        self._create_encoder()
+        #self._create_rnn(rnn_layers)
+
+        hidden_dim = self.fft_len // (2 ** (len(self.kernel_num) + 1))
+        self.rnn = nn.LSTM(
+            input_size=hidden_dim * self.kernel_num[-1], # if idx == 0 else self.rnn_units,
+            hidden_size=self.rnn_units,
+            bidirectional=bidirectional,
+            num_layers=rnn_layers,
+            batch_first=True,
+            dtype=torch.complex64)
+        self.transform = nn.Linear(self.rnn_units,
+                                   hidden_dim * self.kernel_num[-1],
+                                   dtype=torch.complex64)
+        self._create_decoder()
         
         show_model(self)
         show_params(self)
-        self._flatten_parameters()
+        #self._flatten_parameters()
 
     def forward(self, inputs):
 
@@ -71,29 +84,29 @@ class DCNN(nn.Module):
         # 1. Apply encoder
         for idx, layer in enumerate(self.encoder):
             x = layer(x)
+            #x = x[..., :-1] # Experimental
             encoder_out.append(x)
-
         
         # 2. Apply RNN
-        x = torch.view_as_real(x)
-        x = x.movedim(-1, 1) # move complex dim to front
+        batch_size, channels, freqs, time_bins = x.shape
         x = x.flatten(start_dim=1, end_dim=2)
-        x = self._forward_rnn(x)
+        x = x.transpose(1, 2) # (batch_size, time_bins, rnn_channels)
+        x = self.rnn(x)[0]
+        x = self.transform(x)
+        x = x.unflatten(-1, (channels, freqs))
+        x = x.movedim(1, -1)
 
-        n_channels = x.shape[1]
-        x = torch.complex(x[:, :n_channels//2], x[:, n_channels//2:])
-      
         # 3. Apply decoder
         for idx in range(len(self.decoder)):
-            x = complex_cat([x, encoder_out[-1 - idx]], 1)
+            #x = complex_cat([x, encoder_out[-1 - idx]], 1)
+            x = torch.cat([x, encoder_out[-1 - idx]], 1)
             x = self.decoder[idx](x)
             #x = x[..., 1:]
         
         # 4. Apply mask
-        out_spec = apply_mask(x, cspecs, self.masking_mode)
+        out_spec = apply_mask(x[:, 0], cspecs, self.masking_mode)
 
         # 5. Invert STFT
-        out_spec = torch.complex(out_spec[:, 0], out_spec[:, 1])
         out_wav = self.istft(out_spec)
         out_wav = torch.squeeze(out_wav, 1)
         out_wav = torch.clamp_(out_wav, -1, 1)
@@ -117,7 +130,7 @@ class DCNN(nn.Module):
         }]
         return params
 
-    def _create_encoder(self, use_cbn):
+    def _create_encoder(self):
         self.encoder = nn.ModuleList()
         for idx in range(len(self.kernel_num) - 1):
             self.encoder.append(
@@ -136,37 +149,27 @@ class DCNN(nn.Module):
                 )
             )
 
-    def _create_decoder(self, use_cbn):
+    def _create_decoder(self):
         self.decoder = nn.ModuleList()
         for idx in range(len(self.kernel_num) - 1, 0, -1):
-            if idx != 1:
-                self.decoder.append(
-                    nn.Sequential(
+            block = [
+                nn.Sequential(
                         torch_complex.ComplexConvTranspose2d(
                             self.kernel_num[idx], #* 2,
                             self.kernel_num[idx - 1]//2,
                             kernel_size=(self.kernel_size, 2),
                             stride=(2, 1),
-                            padding=(2, 0),
+                            padding=(2, 1),
                             output_padding=(1, 0)
                         ),
                         # torch_complex.NaiveComplexBatchNorm2d(self.kernel_num[idx - 1]), #if not use_cbn else ComplexBatchNorm(self.kernel_num[idx - 1]),
                         torch_complex.ComplexReLU()
                     )
-                )
-            else:
-                self.decoder.append(
-                    nn.Sequential(
-                        torch_complex.ComplexConvTranspose2d(
-                            self.kernel_num[idx] * 2,
-                            self.kernel_num[idx - 1],
-                            kernel_size=(self.kernel_size, 2),
-                            stride=(2, 1),
-                            padding=(2, 0),
-                            output_padding=(1, 0)
-                        ),
-                    )
-                )
+            ]
+            
+            if idx != 1:
+                block.append(torch_complex.ComplexReLU())
+            self.decoder.append(nn.Sequential(*block))
     
     def _create_rnn(self, rnn_layers):
         # TODO: Make bidirectional a hyperparameter

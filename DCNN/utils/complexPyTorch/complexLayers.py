@@ -597,11 +597,13 @@ class ComplexLSTM(Module):
         self.lstm_re = LSTM(input_size=input_size, hidden_size=hidden_size,
                             num_layers=num_layers, bias=bias,
                             batch_first=batch_first, dropout=dropout,
-                            bidirectional=bidirectional)
+                            bidirectional=bidirectional,
+                            dtype=torch.float32)
         self.lstm_im = LSTM(input_size=input_size, hidden_size=hidden_size,
                             num_layers=num_layers, bias=bias,
                             batch_first=batch_first, dropout=dropout,
-                            bidirectional=bidirectional)
+                            bidirectional=bidirectional,
+                            dtype=torch.float32)
     def forward(self, x):
         real, state_real = self._forward_real(x)
         imaginary, state_imag = self._forward_imaginary(x)
