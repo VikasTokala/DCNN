@@ -195,14 +195,14 @@ class DCNN(nn.Module):
         cspecs = torch.stack([real, imag], 1)
         cspecs = cspecs[:, :, 1:]
         
-        # out_fal = FAL(in_channels=2,f_length=256)
+        out_fal = FAL(in_channels=2,f_length=256)
         '''
         means = torch.mean(cspecs, [1,2,3], keepdim=True)
         std = torch.std(cspecs, [1,2,3], keepdim=True )
         normed_cspecs = (cspecs-means)/(std+1e-8)
         out = normed_cspecs
         '''
-
+        breakpoint()
         out = cspecs
         encoder_out = []
 
