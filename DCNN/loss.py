@@ -15,9 +15,9 @@ class BinauralLoss(Module):
 
         super().__init__()
         self.loss_mode = loss_mode
-        self.stft = Stft(fft_len, win_inc)
+        self.stft = Stft(fft_len, win_inc, win_len)
+        self.istft = IStft(fft_len, win_inc, win_len)
         self.stoi_loss = NegSTOILoss(sample_rate=sr)
-        self.istft = IStft(fft_len, win_inc)
         self.rtf_weight = rtf_weight
         self.snr_weight = snr_weight
         self.ild_weight = ild_weight

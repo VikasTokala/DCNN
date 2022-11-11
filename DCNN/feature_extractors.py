@@ -3,21 +3,24 @@ import torch.nn as nn
 
 
 class Stft(nn.Module):
-    def __init__(self, n_dft=1024, hop_size=512, onesided=True,
-                 is_complex=True):
+    def __init__(self, n_dft=1024, hop_size=512, win_length=None,
+                 onesided=True, is_complex=True):
 
         super().__init__()
 
         self.n_dft = n_dft
         self.hop_size = hop_size
+        self.win_length = n_dft if win_length is None else win_length
         self.onesided = onesided
         self.is_complex = is_complex
+        self.window = torch.hann_window(win_length)
 
     def forward(self, x: torch.Tensor):
         "Expected input has shape (batch_size, n_channels, time_steps)"
 
-        y = torch.stft(x, self.n_dft, hop_length=self.hop_size, 
-                       onesided=self.onesided, return_complex=True)
+        y = torch.stft(x, self.n_dft, hop_length=self.hop_size,
+                       win_length=self.win_length, onesided=self.onesided,
+                       return_complex=True, window=self.window)
         
         y = y[:, 1:] # Remove DC component (f=0hz)
 
@@ -30,19 +33,13 @@ class Stft(nn.Module):
         return y
 
 
-class IStft(nn.Module):
-    def __init__(self, n_dft=1024, hop_size=512, onesided=True):
-
-        super().__init__()
-
-        self.n_dft = n_dft
-        self.hop_size = hop_size
-        self.onesided = onesided
+class IStft(Stft):
 
     def forward(self, x: torch.Tensor):
         "Expected input has shape (batch_size, n_channels, time_steps)"
 
-        y = torch.istft(x, self.n_dft, hop_length=self.hop_size, 
-                       onesided=self.onesided)
+        y = torch.istft(x, self.n_dft, hop_length=self.hop_size,
+                        win_length=self.win_length, onesided=self.onesided,
+                        window=self.window)
 
         return y

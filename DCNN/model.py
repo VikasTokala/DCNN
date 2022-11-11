@@ -25,10 +25,9 @@ class DCNN(nn.Module):
         super().__init__()
 
         # for fft
-        self.win_len = win_len # TODO: Remove
+        self.win_len = win_len
         self.win_inc = win_inc # TODO: Rename to hop_size
         self.fft_len = fft_len
-        self.win_type = win_type # TODO: Remove
 
         self.rnn_units = rnn_units
         self.hidden_layers = rnn_layers
@@ -39,8 +38,8 @@ class DCNN(nn.Module):
         self.masking_mode = masking_mode
         self.use_clstm = use_clstm
 
-        self.stft = Stft(self.fft_len, self.win_inc)
-        self.istft = IStft(self.fft_len, self.win_inc)
+        self.stft = Stft(self.fft_len, self.win_inc, self.win_len)
+        self.istft = IStft(self.fft_len, self.win_inc, self.win_len)
 
         self._create_encoder()
         #self._create_rnn(rnn_layers)
@@ -146,89 +145,17 @@ class DCNN(nn.Module):
         self.decoder = nn.ModuleList()
         for idx in range(len(self.kernel_num) - 1, 0, -1):
             block = [
-                nn.Sequential(
-                        torch_complex.ComplexConvTranspose2d(
-                            self.kernel_num[idx], #* 2,
-                            self.kernel_num[idx - 1]//2,
-                            kernel_size=(self.kernel_size, 2),
-                            stride=(2, 1),
-                            padding=(2, 1),
-                            output_padding=(1, 0)
-                        ),
-                        torch_complex.NaiveComplexBatchNorm2d(self.kernel_num[idx - 1]//2),
-                        torch_complex.ComplexPReLU()
-                    )
+                torch_complex.ComplexConvTranspose2d(
+                    self.kernel_num[idx], #* 2,
+                    self.kernel_num[idx - 1]//2,
+                    kernel_size=(self.kernel_size, 2),
+                    stride=(2, 1),
+                    padding=(2, 1),
+                    output_padding=(1, 0)
+                ),
             ]
             
             if idx != 1:
-                block.append(torch_complex.ComplexReLU())
+                block.append(torch_complex.NaiveComplexBatchNorm2d(self.kernel_num[idx - 1]//2))
+                block.append(torch_complex.ComplexPReLU())
             self.decoder.append(nn.Sequential(*block))
-
-    # def _create_rnn(self, rnn_layers):
-    #     # TODO: Make bidirectional a hyperparameter
-    #     bidirectional = False
-    #     fac = 2 if bidirectional else 1
-        
-    #     hidden_dim = self.fft_len // (2 ** (len(self.kernel_num)))
-
-    #     if self.use_clstm:
-    #         rnns = []
-    #         for idx in range(rnn_layers):
-    #             rnns.append(
-    #                 NaiveComplexLSTM(
-    #                     input_size=hidden_dim *
-    #                     self.kernel_num[-1] if idx == 0 else self.rnn_units,
-    #                     hidden_size=self.rnn_units,
-    #                     bidirectional=bidirectional,
-    #                     batch_first=False,
-    #                     projection_dim=hidden_dim *
-    #                     self.kernel_num[-1] if idx == rnn_layers - 1 else None,
-    #                 )
-    #             )
-    #             # What is *rnns - Runs the layers sequentially - to be used when append is used
-    #             self.enhance = nn.Sequential(*rnns)
-    #     else:
-    #         self.enhance = nn.LSTM(
-    #             input_size=hidden_dim * self.kernel_num[-1],
-    #             hidden_size=self.rnn_units,
-    #             num_layers=2,
-    #             dropout=0.0,
-    #             bidirectional=bidirectional,
-    #             batch_first=False
-    #         )
-    #         self.tranform = nn.Linear(
-    #             self.rnn_units * fac, hidden_dim * self.kernel_num[-1])
-
-    # def _flatten_parameters(self):
-    #     if isinstance(self.enhance, nn.LSTM):
-    #         self.enhance.flatten_parameters()
-
-    # def _forward_rnn(self, x):
-    #     batch_size, channels, dims, lengths = x.size()
-    #     x = x.permute(3, 0, 1, 2)
-    #     if self.use_clstm:
-    #         r_rnn_in = x[:, :, :channels // 2]
-    #         i_rnn_in = x[:, :, channels // 2:]
-    #         r_rnn_in = torch.reshape(
-    #             r_rnn_in, [lengths, batch_size, channels // 2 * dims])
-    #         i_rnn_in = torch.reshape(
-    #             i_rnn_in, [lengths, batch_size, channels // 2 * dims])
-
-    #         r_rnn_in, i_rnn_in = self.enhance([r_rnn_in, i_rnn_in])
-
-    #         r_rnn_in = torch.reshape(
-    #             r_rnn_in, [lengths, batch_size, channels // 2, dims])
-    #         i_rnn_in = torch.reshape(
-    #             i_rnn_in, [lengths, batch_size, channels // 2, dims])
-    #         x = torch.cat([r_rnn_in, i_rnn_in], 2)
-
-    #     else:
-    #         # to [L, B, C, D]
-    #         x = torch.reshape(x, [lengths, batch_size, channels * dims])
-    #         x, _ = self.enhance(x)
-    #         x = self.tranform(x)
-    #         x = torch.reshape(x, [lengths, batch_size, channels, dims])
-
-    #     x = x.permute(1, 2, 3, 0)
-
-    #     return x
