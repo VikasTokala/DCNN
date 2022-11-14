@@ -189,9 +189,9 @@ class DCNN(nn.Module):
         real = specs[:, :self.fft_len // 2 + 1]
         imag = specs[:, self.fft_len // 2 + 1:]
         spec_mags = torch.sqrt(real ** 2 + imag ** 2 + 1e-8)
-        spec_mags = spec_mags
+        
         spec_phase = torch.atan2(imag, real)
-        spec_phase = spec_phase
+        
         cspecs = torch.stack([real, imag], 1)
         cspecs = cspecs[:, :, 1:]
         
