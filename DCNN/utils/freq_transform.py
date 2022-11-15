@@ -1,5 +1,7 @@
 import torch
 import torch.nn as nn
+import DCNN.utils.complexPyTorch.complexLayers as torch_complex
+
 
 
 class FAL(torch.nn.Module):
@@ -10,41 +12,58 @@ class FAL(torch.nn.Module):
         self.in_channels = in_channels
         self.c_fal_r = 5 #Channels to be used within the FTB
         self.f_length = f_length
+        
+        self.amp_pre = nn.Sequential(
+            torch_complex.ComplexConv2d(in_channels=1, out_channels=self.in_channels, kernel_size=(7, 1), stride=1, padding=[3, 0]),
+            torch_complex.NaiveComplexBatchNorm2d(self.in_channels),
+            torch_complex.ComplexReLU(),
+            
+            torch_complex.ComplexConv2d(in_channels=self.in_channels, out_channels=self.in_channels, kernel_size=(1, 7), stride=1, padding=[0, 3]),
+            torch_complex.NaiveComplexBatchNorm2d(self.in_channels),
+            torch_complex.ComplexReLU()
+        )
+
+
 
         self.conv_1_multiply_1_1 = nn.Sequential(
-            nn.Conv2d(in_channels=self.in_channels, out_channels=self.c_fal_r, kernel_size=1, stride=1, padding=0),
-            nn.BatchNorm2d(self.c_fal_r),
-            nn.ReLU()
+            torch_complex.ComplexConv2d(in_channels=self.in_channels, out_channels=self.c_fal_r, kernel_size=1, stride=1, padding=0),
+            torch_complex.NaiveComplexBatchNorm2d(self.c_fal_r),
+            torch_complex.ComplexReLU()
         )
         self.conv_1D = nn.Sequential(
-            nn.Conv1d(self.f_length * self.c_fal_r, self.in_channels, kernel_size=9, stride=1, padding=4),
-            nn.BatchNorm1d(self.in_channels),
-            nn.ReLU()
+            nn.Conv1d(self.f_length * self.c_fal_r, self.in_channels, kernel_size=9, stride=1, padding=4, dtype=torch.cfloat),
+            torch_complex.NaiveComplexBatchNorm1d(self.in_channels),
+            torch_complex.ComplexReLU()
         )
-        self.frec_fc = nn.Linear(self.f_length, self.f_length, bias=False)
+        self.frec_fc = torch_complex.ComplexLinear(self.f_length, self.f_length)
         self.conv_1_multiply_1_2 = nn.Sequential(
-            nn.Conv2d(2 * self.in_channels, self.in_channels, kernel_size=1, stride=1, padding=0),
-            nn.BatchNorm2d(self.in_channels),
-            nn.ReLU()
+            torch_complex.ComplexConv2d(2 * self.in_channels, self.in_channels, kernel_size=1, stride=1, padding=0),
+            torch_complex.NaiveComplexBatchNorm2d(self.in_channels),
+            torch_complex.ComplexReLU()
         )
 
     def forward(self, inputs):
-        _, _, _,seg_length = inputs.shape
+        bsize, ch, f_len,seg_length = inputs.shape
+        inputs = inputs.reshape(bsize,ch,seg_length,f_len)
+        # breakpoint()
+        inputs = self.amp_pre(inputs)
 
-        temp = self.conv_1_multiply_1_1(inputs)  # [B,c_ftb_r,segment_length,f]
+        x = self.conv_1_multiply_1_1(inputs)  # [B,c_ftb_r,segment_length,f]
 
-        temp = temp.view(-1, self.f_length * self.c_fal_r, seg_length)  # [B,c_ftb_r*f,segment_length]
+        x = x.view(-1, self.f_length * self.c_fal_r, seg_length)  # [B,c_ftb_r*f,segment_length]
 
-        temp = self.conv_1D(temp)  # [B,c_a,segment_length]
+        x = self.conv_1D(x)  # [B,c_a,segment_length]
 
-        temp = temp.view(-1, self.in_channels, seg_length, 1)  # [B,c_a,segment_length,1]
+        x = x.view(-1, self.in_channels, seg_length,1)  # [B,c_a,segment_length,1]
 
-        temp = temp * inputs  # [B,c_a,segment_length,1]*[B,c_a,segment_length,f]
+        x = x * inputs  # [B,c_a,segment_length,1]*[B,c_a,segment_length,f]
 
-        temp = self.frec_fc(temp)  # [B,c_a,segment_length,f]
+        # x= x.reshape(-1, self.in_channels, seg_length,self.f_length)
 
-        temp = torch.cat((temp, inputs), dim=1)  # [B,2*c_a,segment_length,f]
+        x = self.frec_fc(x)  # [B,c_a,segment_length,f]
 
-        outputs = self.conv_1_multiply_1_2(temp)  # [B,c_a,segment_length,f]
+        x = torch.cat((x, inputs), dim=1)  # [B,2*c_a,segment_length,f]
+
+        outputs = self.conv_1_multiply_1_2(x)  # [B,c_a,segment_length,f]
 
         return outputs

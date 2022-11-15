@@ -6,6 +6,7 @@ import DCNN.utils.complexPyTorch.complexLayers as torch_complex
 from DCNN.utils.show import show_params, show_model
 
 from DCNN.utils.apply_mask import apply_mask
+from DCNN.utils.freq_transform import FAL
 
 
 class DCNN(nn.Module):
@@ -34,7 +35,7 @@ class DCNN(nn.Module):
         self.kernel_size = kernel_size
         # self.kernel_num = [2, 8, 16, 32, 128, 128, 128]
         # self.kernel_num = [2, 16, 32, 64, 128, 256, 256]
-        self.kernel_num = [2] + kernel_num
+        self.kernel_num = [192] + kernel_num
         self.masking_mode = masking_mode
         self.use_clstm = use_clstm
 
@@ -65,6 +66,14 @@ class DCNN(nn.Module):
         # 0. Extract STFT
         x = cspecs = self.stft(inputs)
         x = x.unsqueeze(1) # Add a dummy channel
+        
+        
+        # spec_mag = x.abs()
+        # spec_phase = x.angle()
+        attn = FAL(in_channels=96, f_length=256)
+        #  breakpoint()
+        # x=attn(x)
+        
         '''
         means = torch.mean(cspecs, [1,2,3], keepdim=True)
         std = torch.std(cspecs, [1,2,3], keepdim=True )
@@ -78,7 +87,7 @@ class DCNN(nn.Module):
             x = layer(x)
             #x = x[..., :-1] # Experimental
             encoder_out.append(x)
-        
+        # breakpoint()
         # 2. Apply RNN
         batch_size, channels, freqs, time_bins = x.shape
         x = x.flatten(start_dim=1, end_dim=2)
