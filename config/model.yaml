@@ -1,7 +1,7 @@
 model:
   binaural: true
-  loss_mode: BINAURAL # BINAURAL | 
-  
+  attention: true
+
   STOI_weight: 1
  
   

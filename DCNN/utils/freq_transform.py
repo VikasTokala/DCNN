@@ -3,67 +3,78 @@ import torch.nn as nn
 import DCNN.utils.complexPyTorch.complexLayers as torch_complex
 
 
-
 class FAL(torch.nn.Module):
     """This is an attention layer based on frequency transformation"""
 
-    def __init__(self, in_channels=24, f_length=256):
+    def __init__(self, in_channels, out_channels, f_length=256):
         super(FAL, self).__init__()
         self.in_channels = in_channels
-        self.c_fal_r = 5 #Channels to be used within the FTB
+        self.out_channels = out_channels
+        self.c_fal_r = 5  # Channels to be used within the FTB
         self.f_length = f_length
-        
+
         self.amp_pre = nn.Sequential(
-            torch_complex.ComplexConv2d(in_channels=1, out_channels=self.in_channels, kernel_size=(7, 1), stride=1, padding=[3, 0]),
-            torch_complex.NaiveComplexBatchNorm2d(self.in_channels),
+            torch_complex.ComplexConv2d(in_channels=in_channels, out_channels=self.out_channels, kernel_size=(
+                7, 1), stride=1, padding=[3, 0]),
+            torch_complex.NaiveComplexBatchNorm2d(self.out_channels),
             torch_complex.ComplexReLU(),
-            
-            torch_complex.ComplexConv2d(in_channels=self.in_channels, out_channels=self.in_channels, kernel_size=(1, 7), stride=1, padding=[0, 3]),
-            torch_complex.NaiveComplexBatchNorm2d(self.in_channels),
+
+            torch_complex.ComplexConv2d(in_channels=self.out_channels, out_channels=self.out_channels, kernel_size=(
+                1, 7), stride=1, padding=[0, 3]),
+            torch_complex.NaiveComplexBatchNorm2d(self.out_channels),
             torch_complex.ComplexReLU()
         )
 
-
-
         self.conv_1_multiply_1_1 = nn.Sequential(
-            torch_complex.ComplexConv2d(in_channels=self.in_channels, out_channels=self.c_fal_r, kernel_size=1, stride=1, padding=0),
+            torch_complex.ComplexConv2d(
+                in_channels=self.out_channels, out_channels=self.c_fal_r, kernel_size=1, stride=1, padding=0),
             torch_complex.NaiveComplexBatchNorm2d(self.c_fal_r),
             torch_complex.ComplexReLU()
         )
         self.conv_1D = nn.Sequential(
-            nn.Conv1d(self.f_length * self.c_fal_r, self.in_channels, kernel_size=9, stride=1, padding=4, dtype=torch.cfloat),
-            torch_complex.NaiveComplexBatchNorm1d(self.in_channels),
+            nn.Conv1d(self.f_length * self.c_fal_r, self.out_channels,
+                      kernel_size=9, stride=1, padding=4, dtype=torch.cfloat),
+            torch_complex.NaiveComplexBatchNorm1d(self.out_channels),
             torch_complex.ComplexReLU()
         )
-        self.frec_fc = torch_complex.ComplexLinear(self.f_length, self.f_length)
+        self.frec_fc = torch_complex.ComplexLinear(
+            self.f_length, self.f_length)
         self.conv_1_multiply_1_2 = nn.Sequential(
-            torch_complex.ComplexConv2d(2 * self.in_channels, self.in_channels, kernel_size=1, stride=1, padding=0),
-            torch_complex.NaiveComplexBatchNorm2d(self.in_channels),
+            torch_complex.ComplexConv2d(
+                2 * self.out_channels, self.out_channels, kernel_size=1, stride=1, padding=0),
+            torch_complex.NaiveComplexBatchNorm2d(self.out_channels),
             torch_complex.ComplexReLU()
+
         )
+        self.conv_suf = torch_complex.ComplexConv2d(
+            self.out_channels, 1, kernel_size=1, stride=1, padding=0)
 
     def forward(self, inputs):
-        bsize, ch, f_len,seg_length = inputs.shape
-        inputs = inputs.reshape(bsize,ch,seg_length,f_len)
+        bsize, ch, f_len, seg_length = inputs.shape
+        inputs = inputs.reshape(bsize, ch, seg_length, f_len)
         # breakpoint()
         inputs = self.amp_pre(inputs)
 
         x = self.conv_1_multiply_1_1(inputs)  # [B,c_ftb_r,segment_length,f]
 
-        x = x.view(-1, self.f_length * self.c_fal_r, seg_length)  # [B,c_ftb_r*f,segment_length]
+        # [B,c_ftb_r*f,segment_length]
+        x = x.view(-1, self.f_length * self.c_fal_r, seg_length)
 
         x = self.conv_1D(x)  # [B,c_a,segment_length]
 
-        x = x.view(-1, self.in_channels, seg_length,1)  # [B,c_a,segment_length,1]
+        # [B,c_a,segment_length,1]
+        x = x.view(-1, self.out_channels, seg_length, 1)
 
         x = x * inputs  # [B,c_a,segment_length,1]*[B,c_a,segment_length,f]
 
-        # x= x.reshape(-1, self.in_channels, seg_length,self.f_length)
+        # x= x.reshape(-1, self.out_channels, seg_length,self.f_length)
 
         x = self.frec_fc(x)  # [B,c_a,segment_length,f]
 
         x = torch.cat((x, inputs), dim=1)  # [B,2*c_a,segment_length,f]
 
         outputs = self.conv_1_multiply_1_2(x)  # [B,c_a,segment_length,f]
-
+        # breakpoint()
+        outputs = self.conv_suf(outputs)
+        outputs = outputs.transpose(2, 3)
         return outputs

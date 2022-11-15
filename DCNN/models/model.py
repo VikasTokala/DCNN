@@ -35,27 +35,25 @@ class DCNN(nn.Module):
         self.kernel_size = kernel_size
         # self.kernel_num = [2, 8, 16, 32, 128, 128, 128]
         # self.kernel_num = [2, 16, 32, 64, 128, 256, 256]
-        self.kernel_num = [192] + kernel_num
+        self.kernel_num = [2] + kernel_num
         self.masking_mode = masking_mode
         self.use_clstm = use_clstm
 
         self.stft = Stft(self.fft_len, self.win_inc, self.win_len)
         self.istft = IStft(self.fft_len, self.win_inc, self.win_len)
 
-        self._create_encoder()
+        self.encoder = Encoder(self.kernel_num, kernel_size)
         #self._create_rnn(rnn_layers)
+        # self.attn = FAL(in_channels=1, out_channels=96, f_length=256)
 
         hidden_dim = self.fft_len // (2 ** (len(self.kernel_num) + 1))
-        self.rnn = torch_complex.ComplexLSTM(
+        self.rnn = RnnBlock(
             input_size=hidden_dim * self.kernel_num[-1], # if idx == 0 else self.rnn_units,
             hidden_size=self.rnn_units,
             bidirectional=bidirectional,
-            num_layers=rnn_layers,
-            batch_first=True)
-        self.transform = nn.Linear(self.rnn_units,
-                                   hidden_dim * self.kernel_num[-1],
-                                   dtype=torch.complex64)
-        self._create_decoder()
+            num_layers=rnn_layers)
+
+        self.decoder = Decoder(self.kernel_num, self.kernel_size) 
         
         show_model(self)
         show_params(self)
@@ -66,43 +64,17 @@ class DCNN(nn.Module):
         # 0. Extract STFT
         x = cspecs = self.stft(inputs)
         x = x.unsqueeze(1) # Add a dummy channel
-        
-        
-        # spec_mag = x.abs()
-        # spec_phase = x.angle()
-        attn = FAL(in_channels=96, f_length=256)
-        #  breakpoint()
-        # x=attn(x)
-        
-        '''
-        means = torch.mean(cspecs, [1,2,3], keepdim=True)
-        std = torch.std(cspecs, [1,2,3], keepdim=True )
-        normed_cspecs = (cspecs-means)/(std+1e-8)
-        out = normed_cspecs
-        '''
 
-        encoder_out = []
-        # 1. Apply encoder
-        for idx, layer in enumerate(self.encoder):
-            x = layer(x)
-            #x = x[..., :-1] # Experimental
-            encoder_out.append(x)
-        # breakpoint()
+        # x=self.attn(x)
+        
+        encoder_out = self.encoder(x)
+        x = encoder_out[-1]
+
         # 2. Apply RNN
-        batch_size, channels, freqs, time_bins = x.shape
-        x = x.flatten(start_dim=1, end_dim=2)
-        x = x.transpose(1, 2) # (batch_size, time_bins, rnn_channels)
-        x = self.rnn(x)[0]
-        x = self.transform(x)
-        x = x.unflatten(-1, (channels, freqs))
-        x = x.movedim(1, -1)
+        x = self.rnn(x)
 
         # 3. Apply decoder
-        for idx in range(len(self.decoder)):
-            #x = complex_cat([x, encoder_out[-1 - idx]], 1)
-            x = torch.cat([x, encoder_out[-1 - idx]], 1)
-            x = self.decoder[idx](x)
-            #x = x[..., 1:]
+        x = self.decoder(x, encoder_out)
         
         # 4. Apply mask
         out_spec = apply_mask(x[:, 0], cspecs, self.masking_mode)
@@ -131,10 +103,17 @@ class DCNN(nn.Module):
         }]
         return params
 
-    def _create_encoder(self):
-        self.encoder = nn.ModuleList()
+
+class Encoder(nn.Module):
+    def __init__(self, kernel_num, kernel_size):
+        super().__init__()
+
+        self.kernel_num = kernel_num
+        self.kernel_size = kernel_size
+
+        self.model = nn.ModuleList()
         for idx in range(len(self.kernel_num) - 1):
-            self.encoder.append(
+            self.model.append(
                 nn.Sequential(
                     # nn.ConstantPad2d([0, 0, 0, 0], 0),
                     
@@ -149,9 +128,26 @@ class DCNN(nn.Module):
                     torch_complex.ComplexPReLU()
                 )
             )
+    
+    def forward(self, x):
+        output = []
+        # 1. Apply encoder
+        for idx, layer in enumerate(self.model):
+            x = layer(x)
+            #x = x[..., :-1] # Experimental
+            output.append(x)
 
-    def _create_decoder(self):
-        self.decoder = nn.ModuleList()
+        return output
+
+
+class Decoder(nn.Module):
+    def __init__(self, kernel_num, kernel_size):
+        super().__init__()
+
+        self.kernel_num = kernel_num
+        self.kernel_size = kernel_size 
+        
+        self.model = nn.ModuleList()
         for idx in range(len(self.kernel_num) - 1, 0, -1):
             block = [
                 torch_complex.ComplexConvTranspose2d(
@@ -167,4 +163,43 @@ class DCNN(nn.Module):
             if idx != 1:
                 block.append(torch_complex.NaiveComplexBatchNorm2d(self.kernel_num[idx - 1]//2))
                 block.append(torch_complex.ComplexPReLU())
-            self.decoder.append(nn.Sequential(*block))
+            self.model.append(nn.Sequential(*block))
+
+    def forward(self, x, encoder_out):
+        for idx in range(len(self.model)):
+            #x = complex_cat([x, encoder_out[-1 - idx]], 1)
+            x = torch.cat([x, encoder_out[-1 - idx]], 1)
+            x = self.model[idx](x)
+            #x = x[..., 1:]
+
+        return x
+
+
+class RnnBlock(nn.Module):
+    def __init__(self, input_size, hidden_size, bidirectional, num_layers) -> None:
+        super().__init__()
+
+        self.rnn = torch_complex.ComplexLSTM(
+            input_size=input_size, # if idx == 0 else self.rnn_units,
+            hidden_size=hidden_size,
+            bidirectional=bidirectional,
+            num_layers=num_layers,
+            batch_first=True
+        )
+        
+        self.transform = nn.Linear(
+            hidden_size,
+            input_size,
+            dtype=torch.complex64
+        )
+    
+    def forward(self, x):
+        batch_size, channels, freqs, time_bins = x.shape
+        x = x.flatten(start_dim=1, end_dim=2)
+        x = x.transpose(1, 2) # (batch_size, time_bins, rnn_channels)
+        x = self.rnn(x)[0]
+        x = self.transform(x)
+        x = x.unflatten(-1, (channels, freqs))
+        x = x.movedim(1, -1)
+
+        return x
