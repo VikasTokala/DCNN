@@ -33,7 +33,7 @@ class FAL(torch.nn.Module):
         )
         self.conv_1D = nn.Sequential(
             nn.Conv1d(self.f_length * self.c_fal_r, self.out_channels,
-                      kernel_size=9, stride=1, padding=4, dtype=torch.cfloat),
+                      kernel_size=9, stride=1, padding=4, dtype=torch.complex64),
             torch_complex.NaiveComplexBatchNorm1d(self.out_channels),
             torch_complex.ComplexReLU()
         )
