@@ -47,7 +47,7 @@ class FAL(torch.nn.Module):
 
         )
         self.conv_suf = torch_complex.ComplexConv2d(
-            self.out_channels, 1, kernel_size=1, stride=1, padding=0)
+            self.out_channels, 2, kernel_size=1, stride=1, padding=0)
 
     def forward(self, inputs):
         bsize, ch, f_len, seg_length = inputs.shape
