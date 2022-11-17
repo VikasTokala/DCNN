@@ -16,8 +16,13 @@ class BinauralAttentionDCNN(DCNN):
 
         attention_out = self.attention(cspecs)
 
+        # breakpoint()
+
         encoder_out_l = self.encoder(attention_out[:, 0, :, :].unsqueeze(1))
         encoder_out_r = self.encoder(attention_out[:, 1, :, :].unsqueeze(1))
+
+        # encoder_out_l = self.encoder(cspecs_l.unsqueeze(1))
+        # encoder_out_r = self.encoder(cspecs_r.unsqueeze(1))
 
         # attention_out = encoder_out_l[-1]*encoder_out_r[-1].conj()
         # attention_out = self.attention(cspecs)

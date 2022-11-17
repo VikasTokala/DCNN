@@ -32,9 +32,9 @@ class FAL(torch.nn.Module):
             torch_complex.ComplexReLU()
         )
         self.conv_1D = nn.Sequential(
-            nn.Conv1d(self.f_length * self.c_fal_r, self.out_channels,
-                      kernel_size=9, stride=1, padding=4, dtype=torch.complex64),
-            torch_complex.NaiveComplexBatchNorm1d(self.out_channels),
+            torch_complex.ComplexConv2d(self.f_length * self.c_fal_r, self.out_channels,
+                                        kernel_size=(9, 1), stride=1, padding=(4, 0)),
+            torch_complex.NaiveComplexBatchNorm2d(self.out_channels),
             torch_complex.ComplexReLU()
         )
         self.frec_fc = torch_complex.ComplexLinear(
@@ -59,11 +59,12 @@ class FAL(torch.nn.Module):
 
         # [B,c_ftb_r*f,segment_length]
         x = x.view(-1, self.f_length * self.c_fal_r, seg_length)
-
+        x = x.unsqueeze(-1)
+        # breakpoint()
         x = self.conv_1D(x)  # [B,c_a,segment_length]
 
         # [B,c_a,segment_length,1]
-        x = x.view(-1, self.out_channels, seg_length, 1)
+        # x = x.view(-1, self.out_channels, seg_length, 1)
 
         x = x * inputs  # [B,c_a,segment_length,1]*[B,c_a,segment_length,f]
 
