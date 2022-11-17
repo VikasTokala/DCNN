@@ -65,7 +65,7 @@ class FAL(torch.nn.Module):
 
         # [B,c_a,segment_length,1]
         # x = x.view(-1, self.out_channels, seg_length, 1)
-
+        breakpoint()
         x = x * inputs  # [B,c_a,segment_length,1]*[B,c_a,segment_length,f]
 
         # x= x.reshape(-1, self.out_channels, seg_length,self.f_length)

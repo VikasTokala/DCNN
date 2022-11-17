@@ -41,7 +41,7 @@ class DCNN(nn.Module):
 
         self.stft = Stft(self.fft_len, self.win_inc, self.win_len)
         self.istft = IStft(self.fft_len, self.win_inc, self.win_len)
-        self.attention = FAL(in_channels=2,out_channels=96,f_length=256)
+        self.attention = FAL(in_channels=2,out_channels=24,f_length=256)
 
         self.encoder = Encoder(self.kernel_num, kernel_size)
         #self._create_rnn(rnn_layers)
