@@ -54,6 +54,7 @@ class FAL(torch.nn.Module):
         inputs = inputs.reshape(bsize, ch, seg_length, f_len)
         # breakpoint()
         inputs = self.amp_pre(inputs)
+        # breakpoint()
 
         x = self.conv_1_multiply_1_1(inputs)  # [B,c_ftb_r,segment_length,f]
 
@@ -76,6 +77,6 @@ class FAL(torch.nn.Module):
 
         outputs = self.conv_1_multiply_1_2(x)  # [B,c_a,segment_length,f]
         # breakpoint()
-        outputs = self.conv_suf(outputs)
+        # outputs = self.conv_suf(outputs)
         outputs = outputs.transpose(2, 3)
         return outputs

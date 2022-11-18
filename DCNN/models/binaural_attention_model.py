@@ -14,16 +14,20 @@ class BinauralAttentionDCNN(DCNN):
         cspecs_r = self.stft(inputs[:, 1])
         cspecs = torch.stack((cspecs_l, cspecs_r), dim=1)
 
-        attention_out = self.attention(cspecs)
+        
 
         # breakpoint()
 
-        encoder_out_l = self.encoder(attention_out[:, 0, :, :].unsqueeze(1))
-        encoder_out_r = self.encoder(attention_out[:, 1, :, :].unsqueeze(1))
+        # encoder_out_l = self.encoder(attention_out[:, 0, :, :].unsqueeze(1))
+        # encoder_out_r = self.encoder(attention_out[:, 1, :, :].unsqueeze(1))
 
-        # encoder_out_l = self.encoder(cspecs_l.unsqueeze(1))
-        # encoder_out_r = self.encoder(cspecs_r.unsqueeze(1))
+        encoder_out_l = self.encoder(cspecs_l.unsqueeze(1))
+        encoder_out_r = self.encoder(cspecs_r.unsqueeze(1))
+        # breakpoint()
 
+        encoder_out = torch.cat((encoder_out_l[-1],encoder_out_r[-1]),dim=1)
+        attention_out = self.attention(encoder_out)
+     
         # attention_out = encoder_out_l[-1]*encoder_out_r[-1].conj()
         # attention_out = self.attention(cspecs)
 
