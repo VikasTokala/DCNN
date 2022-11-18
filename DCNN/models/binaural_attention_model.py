@@ -3,7 +3,7 @@ import torch
 from DCNN.utils.apply_mask import apply_mask
 
 from .model import DCNN
-from DCNN.utils.freq_transform import FAL
+from DCNN.utils.freq_transform import FAL_enc, FAL_dec
 
 
 class BinauralAttentionDCNN(DCNN):
@@ -14,33 +14,38 @@ class BinauralAttentionDCNN(DCNN):
         cspecs_r = self.stft(inputs[:, 1])
         cspecs = torch.stack((cspecs_l, cspecs_r), dim=1)
 
-        
-
         # breakpoint()
 
-        # encoder_out_l = self.encoder(attention_out[:, 0, :, :].unsqueeze(1))
-        # encoder_out_r = self.encoder(attention_out[:, 1, :, :].unsqueeze(1))
+        # encoder_out_l = self.encoder(attention_enc[:, 0, :, :].unsqueeze(1))
+        # encoder_out_r = self.encoder(attention_enc[:, 1, :, :].unsqueeze(1))
 
         encoder_out_l = self.encoder(cspecs_l.unsqueeze(1))
         encoder_out_r = self.encoder(cspecs_r.unsqueeze(1))
         # breakpoint()
 
-        encoder_out = torch.cat((encoder_out_l[-1],encoder_out_r[-1]),dim=1)
-        attention_out = self.attention(encoder_out)
+        encoder_out = torch.cat((encoder_out_l[-1], encoder_out_r[-1]), dim=1)
+        attention_enc = self.attention_enc(encoder_out)
         # breakpoint()
-        # attention_out = encoder_out_l[-1]*encoder_out_r[-1].conj()
-        # attention_out = self.attention(cspecs)
-        _,attn_len,_,_ = attention_out.shape
-        encoder_attn_l = attention_out[:,:attn_len//2,:,:]
-        encoder_attn_r = attention_out[:,attn_len//2:,:,:]
+        # attention_enc = encoder_out_l[-1]*encoder_out_r[-1].conj()
+        # attention_enc = self.attention(cspecs)
+        _, attn_len, _, _ = attention_enc.shape
+        encoder_attn_l = attention_enc[:, :attn_len//2, :, :]
+        encoder_attn_r = attention_enc[:, attn_len//2:, :, :]
         # breakpoint()
         # 2. Apply RNN
         x_l = self.rnn(encoder_attn_l)
         x_r = self.rnn(encoder_attn_r)
 
+        rnn_out = torch.cat((x_l, x_r), dim=1)
+        attention_dec = self.attention_enc(rnn_out)
+
+        _, dec_attn_len, _, _ = attention_dec.shape
+        decoder_attn_l = attention_dec[:, :dec_attn_len//2, :, :]
+        decoder_attn_r = attention_dec[:, dec_attn_len//2:, :, :]
+
         # 3. Apply decoder
-        x_l = self.decoder(x_l, encoder_out_l)
-        x_r = self.decoder(x_r, encoder_out_r)
+        x_l = self.decoder(decoder_attn_l, encoder_out_l)
+        x_r = self.decoder(decoder_attn_r, encoder_out_r)
 
         # 4. Apply mask
         out_spec_l = apply_mask(x_l[:, 0], cspecs_l, self.masking_mode)
