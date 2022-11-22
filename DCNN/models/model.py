@@ -27,7 +27,7 @@ class DCNN(nn.Module):
 
         # for fft
         self.win_len = win_len
-        self.win_inc = win_inc # TODO: Rename to hop_size
+        self.win_inc = win_inc  # TODO: Rename to hop_size
         self.fft_len = fft_len
 
         self.rnn_units = rnn_units
@@ -37,38 +37,41 @@ class DCNN(nn.Module):
         # self.kernel_num = [2, 16, 32, 64, 128, 256, 256]
         self.kernel_num = [2] + kernel_num
         self.masking_mode = masking_mode
-        self.use_clstm = use_clstm  
+        self.use_clstm = use_clstm
 
         self.stft = Stft(self.fft_len, self.win_inc, self.win_len)
         self.istft = IStft(self.fft_len, self.win_inc, self.win_len)
-        self.attention_enc = FAL_enc(in_channels=256, out_channels=256, f_length=4)
-        self.attention_dec = FAL_dec(in_channels=256, out_channels=256, f_length=4)
+        self.attention_enc = FAL_enc(
+            in_channels=256, out_channels=256, f_length=4)
+        self.attention_dec = FAL_dec(
+            in_channels=256, out_channels=256, f_length=4)
 
         self.encoder = Encoder(self.kernel_num, kernel_size)
-        #self._create_rnn(rnn_layers)
+        # self._create_rnn(rnn_layers)
         # self.attn = FAL(in_channels=1, out_channels=96, f_length=256)
 
         hidden_dim = self.fft_len // (2 ** (len(self.kernel_num) + 1))
         self.rnn = RnnBlock(
-            input_size=hidden_dim * self.kernel_num[-1], # if idx == 0 else self.rnn_units,
+            # if idx == 0 else self.rnn_units,
+            input_size=hidden_dim * self.kernel_num[-1],
             hidden_size=self.rnn_units,
             bidirectional=bidirectional,
             num_layers=rnn_layers)
 
-        self.decoder = Decoder(self.kernel_num, self.kernel_size) 
-        
+        self.decoder = Decoder(self.kernel_num, self.kernel_size)
+
         show_model(self)
         show_params(self)
-        #self._flatten_parameters()
+        # self._flatten_parameters()
 
     def forward(self, inputs):
 
         # 0. Extract STFT
         x = cspecs = self.stft(inputs)
-        x = x.unsqueeze(1) # Add a dummy channel
+        x = x.unsqueeze(1)  # Add a dummy channel
 
         # x=self.attn(x)
-        
+
         encoder_out = self.encoder(x)
         x = encoder_out[-1]
 
@@ -77,7 +80,7 @@ class DCNN(nn.Module):
 
         # 3. Apply decoder
         x = self.decoder(x, encoder_out)
-        
+
         # 4. Apply mask
         out_spec = apply_mask(x[:, 0], cspecs, self.masking_mode)
 
@@ -85,7 +88,7 @@ class DCNN(nn.Module):
         out_wav = self.istft(out_spec)
         out_wav = torch.squeeze(out_wav, 1)
         out_wav = torch.clamp_(out_wav, -1, 1)
-
+        breakpoint()
         return out_wav  # out_spec, out_wav
 
     def get_params(self, weight_decay=0.0):
@@ -118,7 +121,7 @@ class Encoder(nn.Module):
             self.model.append(
                 nn.Sequential(
                     # nn.ConstantPad2d([0, 0, 0, 0], 0),
-                    
+
                     torch_complex.ComplexConv2d(
                         self.kernel_num[idx]//2,
                         self.kernel_num[idx + 1]//2,
@@ -126,17 +129,18 @@ class Encoder(nn.Module):
                         stride=(2, 1),
                         padding=(2, 1)
                     ),
-                    torch_complex.NaiveComplexBatchNorm2d(self.kernel_num[idx + 1]//2),
+                    torch_complex.NaiveComplexBatchNorm2d(
+                        self.kernel_num[idx + 1]//2),
                     torch_complex.ComplexPReLU()
                 )
             )
-    
+
     def forward(self, x):
         output = []
         # 1. Apply encoder
         for idx, layer in enumerate(self.model):
             x = layer(x)
-            #x = x[..., :-1] # Experimental
+            # x = x[..., :-1] # Experimental
             output.append(x)
 
         return output
@@ -147,13 +151,13 @@ class Decoder(nn.Module):
         super().__init__()
 
         self.kernel_num = kernel_num
-        self.kernel_size = kernel_size 
-        
+        self.kernel_size = kernel_size
+
         self.model = nn.ModuleList()
         for idx in range(len(self.kernel_num) - 1, 0, -1):
             block = [
                 torch_complex.ComplexConvTranspose2d(
-                    self.kernel_num[idx], #* 2,
+                    self.kernel_num[idx],  # * 2,
                     self.kernel_num[idx - 1]//2,
                     kernel_size=(self.kernel_size, 2),
                     stride=(2, 1),
@@ -161,9 +165,10 @@ class Decoder(nn.Module):
                     output_padding=(1, 0)
                 ),
             ]
-            
+
             if idx != 1:
-                block.append(torch_complex.NaiveComplexBatchNorm2d(self.kernel_num[idx - 1]//2))
+                block.append(torch_complex.NaiveComplexBatchNorm2d(
+                    self.kernel_num[idx - 1]//2))
                 block.append(torch_complex.ComplexPReLU())
             self.model.append(nn.Sequential(*block))
 
@@ -182,23 +187,23 @@ class RnnBlock(nn.Module):
         super().__init__()
 
         self.rnn = torch_complex.ComplexLSTM(
-            input_size=input_size, # if idx == 0 else self.rnn_units,
+            input_size=input_size,  # if idx == 0 else self.rnn_units,
             hidden_size=hidden_size,
             bidirectional=bidirectional,
             num_layers=num_layers,
             batch_first=True
         )
-        
+
         self.transform = nn.Linear(
             hidden_size,
             input_size,
             dtype=torch.complex64
         )
-    
+
     def forward(self, x):
         batch_size, channels, freqs, time_bins = x.shape
         x = x.flatten(start_dim=1, end_dim=2)
-        x = x.transpose(1, 2) # (batch_size, time_bins, rnn_channels)
+        x = x.transpose(1, 2)  # (batch_size, time_bins, rnn_channels)
         x = self.rnn(x)[0]
         x = self.transform(x)
         x = x.unflatten(-1, (channels, freqs))
