@@ -9,6 +9,7 @@ from DCNN.utils.apply_mask import apply_mask
 from DCNN.utils.freq_transform import FAL_enc, FAL_dec
 
 
+
 class DCNN(nn.Module):
     def __init__(
             self,
@@ -16,7 +17,7 @@ class DCNN(nn.Module):
             win_len=400, win_inc=100, fft_len=512, win_type='hann',
             masking_mode='E', use_clstm=False,
             kernel_size=5, kernel_num=[16, 32, 64, 128, 256, 256],
-            bidirectional=False, **kwargs
+            bidirectional=False, embed_dim=512, num_heads=8,**kwargs
     ):
         ''' 
             rnn_layers: the number of lstm layers in the crn,
@@ -45,6 +46,11 @@ class DCNN(nn.Module):
             in_channels=256, out_channels=256, f_length=4)
         self.attention_dec = FAL_dec(
             in_channels=256, out_channels=256, f_length=4)
+        
+        self.num_heads = num_heads
+        self.embed_dim = embed_dim
+
+        self.mattn = MultiAttnBlock(embed_dim=self.embed_dim, num_heads=self.num_heads)
 
         self.encoder = Encoder(self.kernel_num, kernel_size)
         # self._create_rnn(rnn_layers)
@@ -208,5 +214,20 @@ class RnnBlock(nn.Module):
         x = self.transform(x)
         x = x.unflatten(-1, (channels, freqs))
         x = x.movedim(1, -1)
+
+        return x
+
+class MultiAttnBlock(nn.Module):
+    def __init__(self, embed_dim=512, num_heads=8):
+        super().__init__()
+
+        self.mattn = nn.MultiheadAttention(embed_dim=embed_dim, num_heads=num_heads, batch_first=True, dtype=torch.complex64)
+
+    def forward(self,x):
+
+        batch_size, channels, freqs, time_bins = x.shape
+        x = x.flatten(start_dim=1, end_dim=2)
+        x = x.transpose(1, 2)
+        x,_ = self.mattn(x,x,x)
 
         return x
