@@ -92,9 +92,9 @@ class DCNN(nn.Module):
 
         # 5. Invert STFT
         out_wav = self.istft(out_spec)
-        out_wav = torch.squeeze(out_wav, 1)
-        out_wav = torch.clamp_(out_wav, -1, 1)
-        breakpoint()
+        # out_wav = torch.squeeze(out_wav, 1)
+        # out_wav = torch.clamp_(out_wav, -1, 1)
+        # breakpoint()
         return out_wav  # out_spec, out_wav
 
     def get_params(self, weight_decay=0.0):
