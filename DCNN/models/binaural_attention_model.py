@@ -33,19 +33,20 @@ class BinauralAttentionDCNN(DCNN):
         # encoder_attn_r = attention_enc[:, attn_len//2:, :, :]
         # breakpoint()
         # 2. Apply RNN
-        x_l = self.rnn(encoder_out_l[-1])
-        x_r = self.rnn(encoder_out_r[-1])
+        x_l_rnn = self.rnn(encoder_out_l[-1])
+        x_r_rnn = self.rnn(encoder_out_r[-1])
 
-        rnn_out = torch.cat((x_l, x_r), dim=1)
-        attention_dec = self.attention_enc(rnn_out)
+        # rnn_out = torch.cat((x_l_rnn, x_r_rnn), dim=1)
+        # breakpoint()
+        # attention_dec = self.attention_enc(rnn_out)
 
-        _, dec_attn_len, _, _ = attention_dec.shape
-        decoder_attn_l = attention_dec[:, :dec_attn_len//2, :, :]
-        decoder_attn_r = attention_dec[:, dec_attn_len//2:, :, :]
+        # _, dec_attn_len, _, _ = attention_dec.shape
+        # decoder_attn_l = attention_dec[:, :dec_attn_len//2, :, :]
+        # decoder_attn_r = attention_dec[:, dec_attn_len//2:, :, :]
 
         # 3. Apply decoder
-        x_l = self.decoder(decoder_attn_l, encoder_out_l)
-        x_r = self.decoder(decoder_attn_r, encoder_out_r)
+        x_l = self.decoder(x_l_rnn, encoder_out_l)
+        x_r = self.decoder(x_r_rnn, encoder_out_r)
 
         # 4. Apply mask
         out_spec_l = apply_mask(x_l[:, 0], cspecs_l, self.masking_mode)
