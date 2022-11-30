@@ -53,14 +53,15 @@ class BinauralAttentionDCNN(DCNN):
 
         # 5. Invert STFT
         out_wav_l = self.istft(out_spec_l)
-        out_wav_l = torch.squeeze(out_wav_l, 1)
-        out_wav_l = torch.clamp_(out_wav_l, -1, 1)
+        # breakpoint()
+        # out_wav_l = torch.squeeze(out_wav_l, 1)
+        # out_wav_l = torch.clamp_(out_wav_l, -1, 1)
         
         out_wav_r = self.istft(out_spec_r)
-        out_wav_r = torch.squeeze(out_wav_r, 1)
-        out_wav_r = torch.clamp_(out_wav_r, -1, 1)
+        # out_wav_r = torch.squeeze(out_wav_r, 1)
+        # out_wav_r = torch.clamp_(out_wav_r, -1, 1)
 
         
         out_wav = torch.stack([out_wav_l, out_wav_r], dim=1)
-        breakpoint()
+        
         return out_wav

@@ -21,7 +21,7 @@ class Stft(nn.Module):
 
         y = torch.stft(x, self.n_dft, hop_length=self.hop_size,
                        win_length=self.win_length, onesided=self.onesided,
-                       return_complex=True, window=window)
+                       return_complex=True, window=window, normalized=True)
         
         y = y[:, 1:] # Remove DC component (f=0hz)
 
@@ -37,11 +37,11 @@ class Stft(nn.Module):
 class IStft(Stft):
 
     def forward(self, x: torch.Tensor):
-        "Expected input has shape (batch_size, n_channels, time_steps)"
+        "Expected input has shape (batch_size, n_channels=freq_bins, time_steps)"
         window = torch.hann_window(self.win_length, device=x.device)
 
         y = torch.istft(x, self.n_dft, hop_length=self.hop_size,
                         win_length=self.win_length, onesided=self.onesided,
-                        window=window)
+                        window=window,normalized=True)
 
         return y
