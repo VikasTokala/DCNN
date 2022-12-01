@@ -50,7 +50,7 @@ class DCNN(nn.Module):
         self.num_heads = num_heads
         self.embed_dim = embed_dim
 
-        self.mattn = MultiAttnBlock(embed_dim=self.embed_dim, num_heads=self.num_heads)
+        self.mattn = MultiAttnBlock(embed_dim=self.embed_dim, num_heads=self.num_heads, batch_first=True)
 
         self.encoder = Encoder(self.kernel_num, kernel_size)
         # self._create_rnn(rnn_layers)
@@ -218,16 +218,16 @@ class RnnBlock(nn.Module):
         return x
 
 class MultiAttnBlock(nn.Module):
-    def __init__(self, embed_dim=512, num_heads=8):
+    def __init__(self, embed_dim=512, num_heads=8, batch_first=True):
         super().__init__()
 
-        self.mattn = nn.MultiheadAttention(embed_dim=embed_dim, num_heads=num_heads, batch_first=True, dtype=torch.complex64)
+        self.mattn = torch_complex.ComplexMultiheadAttention(embed_dim=embed_dim, num_heads=num_heads, batch_first=batch_first)
 
     def forward(self,x):
 
         batch_size, channels, freqs, time_bins = x.shape
         x = x.flatten(start_dim=1, end_dim=2)
         x = x.transpose(1, 2)
-        x,_ = self.mattn(x,x,x)
+        x = self.mattn(x,x,x)[0]
 
         return x

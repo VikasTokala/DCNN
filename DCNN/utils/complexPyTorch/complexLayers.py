@@ -14,7 +14,7 @@ from torch.nn import (
     Module, Parameter, init,
     Conv2d, ConvTranspose2d, Linear, LSTM, GRU,
     BatchNorm1d, BatchNorm2d,
-    PReLU
+    PReLU, MultiheadAttention
 )
 
 from .complexFunctions import (
@@ -639,3 +639,34 @@ class ComplexLSTM(Module):
     
     def _get_batch_size(self, x):
         return x.size(self.batch_dim)
+
+
+class ComplexMultiheadAttention(Module):
+    def __init__(self, embed_dim=512, num_heads=8, batch_first=True):
+        super().__init__()
+        self.embed_dim = embed_dim
+        self.num_heads = num_heads
+
+        self.MultiheadAttention_re = MultiheadAttention(self.embed_dim, self.num_heads, batch_first=batch_first)
+        self.MultiheadAttention_im = MultiheadAttention(self.embed_dim, self.num_heads, batch_first=batch_first)
+   
+    def forward(self, x):
+        real = self._forward_real(x)
+        imaginary = self._forward_imaginary(x)
+
+        output = torch.complex(real, imaginary)
+
+        return output
+
+    def _forward_real(self, x):
+        real_real = self.MultiheadAttention_re(x.real, x.real, x.real)
+        imag_imag = self.MultiheadAttention_im(x.imag, x.imag, x.imag)
+        real = real_real - imag_imag
+        return real
+
+    def _forward_imaginary(self, x):
+        imag_real = self.MultiheadAttention_re(x.imag, x.imag, x.imag)
+        real_imag = self.MultiheadAttention_im(x.real, x.real, x.real)
+        imaginary = imag_real + real_imag
+
+        return imaginary
