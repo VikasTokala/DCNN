@@ -9,7 +9,6 @@ from DCNN.utils.apply_mask import apply_mask
 from DCNN.utils.freq_transform import FAL_enc, FAL_dec
 
 
-
 class DCNN(nn.Module):
     def __init__(
             self,
@@ -17,7 +16,7 @@ class DCNN(nn.Module):
             win_len=400, win_inc=100, fft_len=512, win_type='hann',
             masking_mode='E', use_clstm=False,
             kernel_size=5, kernel_num=[16, 32, 64, 128, 256, 256],
-            bidirectional=False, embed_dim=512, num_heads=8,**kwargs
+            bidirectional=False, embed_dim=512, num_heads=8, **kwargs
     ):
         ''' 
             rnn_layers: the number of lstm layers in the crn,
@@ -46,23 +45,27 @@ class DCNN(nn.Module):
             in_channels=256, out_channels=256, f_length=4)
         self.attention_dec = FAL_dec(
             in_channels=256, out_channels=256, f_length=4)
-        
+
         self.num_heads = num_heads
         self.embed_dim = embed_dim
-
-        self.mattn = MultiAttnBlock(embed_dim=self.embed_dim, num_heads=self.num_heads, batch_first=True)
+        hidden_dim = self.fft_len // (2 ** (len(self.kernel_num) + 1))
+        self.mattn = MultiAttnBlock(input_size=512,
+                                    hidden_size=self.rnn_units,
+                                    embed_dim=self.embed_dim,
+                                    num_heads=self.num_heads,
+                                    batch_first=True)
 
         self.encoder = Encoder(self.kernel_num, kernel_size)
         # self._create_rnn(rnn_layers)
         # self.attn = FAL(in_channels=1, out_channels=96, f_length=256)
 
-        hidden_dim = self.fft_len // (2 ** (len(self.kernel_num) + 1))
-        self.rnn = RnnBlock(
-            # if idx == 0 else self.rnn_units,
-            input_size=hidden_dim * self.kernel_num[-1],
-            hidden_size=self.rnn_units,
-            bidirectional=bidirectional,
-            num_layers=rnn_layers)
+        
+        # self.rnn = RnnBlock(
+        #     # if idx == 0 else self.rnn_units,
+        #     input_size=hidden_dim * self.kernel_num[-1],
+        #     hidden_size=self.rnn_units,
+        #     bidirectional=bidirectional,
+        #     num_layers=rnn_layers)
 
         self.decoder = Decoder(self.kernel_num, self.kernel_size)
 
@@ -82,7 +85,7 @@ class DCNN(nn.Module):
         x = encoder_out[-1]
 
         # 2. Apply RNN
-        x = self.rnn(x)
+        x = self.mattn(x)
 
         # 3. Apply decoder
         x = self.decoder(x, encoder_out)
@@ -210,24 +213,39 @@ class RnnBlock(nn.Module):
         batch_size, channels, freqs, time_bins = x.shape
         x = x.flatten(start_dim=1, end_dim=2)
         x = x.transpose(1, 2)  # (batch_size, time_bins, rnn_channels)
+        # breakpoint()
         x = self.rnn(x)[0]
         x = self.transform(x)
+        # breakpoint()
         x = x.unflatten(-1, (channels, freqs))
         x = x.movedim(1, -1)
 
         return x
 
+
 class MultiAttnBlock(nn.Module):
-    def __init__(self, embed_dim=512, num_heads=8, batch_first=True):
+    def __init__(self, input_size, hidden_size, embed_dim=128, num_heads=8, batch_first=True):
         super().__init__()
 
-        self.mattn = torch_complex.ComplexMultiheadAttention(embed_dim=embed_dim, num_heads=num_heads, batch_first=batch_first)
+        self.mattn = torch_complex.ComplexMultiheadAttention(
+            embed_dim=embed_dim, num_heads=num_heads, batch_first=batch_first)
 
-    def forward(self,x):
+        self.transform = nn.Linear(
+            in_features=512,
+            out_features=512,
+            dtype=torch.complex64
+        )
+
+    def forward(self, x):
 
         batch_size, channels, freqs, time_bins = x.shape
         x = x.flatten(start_dim=1, end_dim=2)
         x = x.transpose(1, 2)
-        x = self.mattn(x,x,x)[0]
+        # breakpoint()
+        x = self.mattn(x)
+        # breakpoint()
+        x = self.transform(x)
+        x = x.unflatten(-1, (channels, freqs))
+        x = x.movedim(1, -1)
 
         return x

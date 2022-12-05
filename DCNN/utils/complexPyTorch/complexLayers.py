@@ -659,14 +659,14 @@ class ComplexMultiheadAttention(Module):
         return output
 
     def _forward_real(self, x):
-        real_real = self.MultiheadAttention_re(x.real, x.real, x.real)
-        imag_imag = self.MultiheadAttention_im(x.imag, x.imag, x.imag)
+        real_real,_ = self.MultiheadAttention_re(x.real, x.real, x.real)
+        imag_imag,_ = self.MultiheadAttention_im(x.imag, x.imag, x.imag)
         real = real_real - imag_imag
         return real
 
     def _forward_imaginary(self, x):
-        imag_real = self.MultiheadAttention_re(x.imag, x.imag, x.imag)
-        real_imag = self.MultiheadAttention_im(x.real, x.real, x.real)
+        imag_real,_ = self.MultiheadAttention_re(x.imag, x.imag, x.imag)
+        real_imag,_ = self.MultiheadAttention_im(x.real, x.real, x.real)
         imaginary = imag_real + real_imag
 
         return imaginary
