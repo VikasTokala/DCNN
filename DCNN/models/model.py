@@ -16,7 +16,7 @@ class DCNN(nn.Module):
             win_len=400, win_inc=100, fft_len=512, win_type='hann',
             masking_mode='E', use_clstm=False,
             kernel_size=5, kernel_num=[16, 32, 64, 128, 256, 256],
-            bidirectional=False, embed_dim=1024, num_heads=16, **kwargs
+            bidirectional=False, embed_dim=1024, num_heads=32, **kwargs
     ):
         ''' 
             rnn_layers: the number of lstm layers in the crn,
@@ -224,7 +224,8 @@ class RnnBlock(nn.Module):
 
 
 class MultiAttnBlock(nn.Module):
-    def __init__(self, input_size, hidden_size, embed_dim=128, num_heads=8, batch_first=True):
+    def __init__(self, input_size, hidden_size, embed_dim=128, num_heads=8, 
+                batch_first=True):
         super().__init__()
 
         self.mattn = torch_complex.ComplexMultiheadAttention(
