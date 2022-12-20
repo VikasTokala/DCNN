@@ -70,6 +70,23 @@ class Spectral_Kurtosis(nn.Module):
         Y_upper = Y_plus_nz[:, Upper_band_bins[0]:Upper_band_bins[1], :]
 
         # Computing the Sub-Band A-weighted Kurtosis
+        X_lower_kurt = self.kurtosis(X_lower)
+        X_middle_kurt = self.kurtosis(X_middle)
+        X_upper_kurt = self.kurtosis(X_upper)
+        Y_lower_kurt = self.kurtosis(Y_lower)
+        Y_middle_kurt = self.kurtosis(Y_middle)
+        Y_upper_kurt = self.kurtosis(Y_upper)
+
+        # Computing the Sub-Band log-Kurtosis ratio
+        delta_lower_kurt = (torch.log(Y_lower_kurt/X_lower_kurt)).abs()
+        delta_middle_kurt = (torch.log(Y_middle_kurt/X_middle_kurt)).abs()
+        delta_upper_kurt = (torch.log(Y_upper_kurt/X_upper_kurt)).abs()
+
+        # Limiting the values to 0.5
+        delta_lower_kurt[delta_lower_kurt>0.5] = 0.5
+        delta_middle_kurt[delta_middle_kurt>0.5] = 0.5
+        delta_upper_kurt[delta_upper_kurt>0.5] = 0.5
+
 
 
 class Kurtosis(nn.Module):
