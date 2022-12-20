@@ -4,6 +4,7 @@ import torch.functional as F
 from torch.nn import Module
 from DCNN.feature_extractors import Stft, IStft
 from torch_stoi import NegSTOILoss
+from DCNN.utils.spectral_kurtosis import dBA_Torcolli, Kurtosis
 
 EPS = 1e-6
 
@@ -23,6 +24,8 @@ class BinauralLoss(Module):
         self.ipd_weight = ipd_weight
         self.stoi_weight = stoi_weight
         self.avg_mode = avg_mode
+        self.dBA = dBA_Torcolli(fs=16000)
+        self.Kurtosis = Kurtosis()
 
     def forward(self, model_output, targets):
         target_stft_l = self.stft(targets[:, 0])
@@ -30,7 +33,8 @@ class BinauralLoss(Module):
 
         output_stft_l = self.stft(model_output[:, 0])
         output_stft_r = self.stft(model_output[:, 1])
-
+        output_dba = self.dBA(output_stft_l)
+        output_kurt = self.Kurtosis(output_stft_l)
         loss = 0
 
         if self.snr_weight > 0:

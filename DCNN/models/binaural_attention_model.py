@@ -6,6 +6,7 @@ from .model import DCNN
 from DCNN.utils.freq_transform import FAL_enc, FAL_dec
 
 
+
 class BinauralAttentionDCNN(DCNN):
 
     def forward(self, inputs):

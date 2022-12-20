@@ -1,0 +1,124 @@
+import torch
+import torch.nn as nn
+import torchaudio.transforms as tt
+from DCNN.feature_extractors import Stft, IStft
+
+
+class Spectral_Kurtosis(nn.Module):
+    def __init__(self, fs=16000) -> None:
+        super().__init__()
+
+        self.kurtosis = Kurtosis()
+        self.fs = fs
+        self.dBA = dBA_Torcolli(self.fs)
+
+        # As our sampling rate is limited to 16kHz, the bands are reconfigured to these values
+        # which is different from the original paper which uses 48kHz sampling rate.
+        self.Lower_band = [50, 750]
+        self.Middle_band = [750, 3500]
+        self.Upper_band = [3500, 8000]
+
+    def forward(self, x: torch.Tensor, y: torch.Tensor):
+        """" x - reference/target signal power spectrum
+             y - test signal power spectrum
+             Spectral Kurtosis based on Torcoli, M., "An Improved Measure of Musical Noise 
+            Based on Spectral Kurtosis", 2019 IEEE Workshop on Applications of 
+            Signal Processing to Audio and Acoustics, New Paltz, NY, 2019. """
+
+        X_dBA = self.dBA(x)
+        Y_dBA = self.dBA(y)
+
+        # Removing the zero frames (dB = -Inf) and the 0 frequency DC bin
+
+        X_dBA_nz = X_dBA[:, 1:, ~torch.isinf(Y_dBA.sum(1).sum(0))]
+        Y_dBA_nz = Y_dBA[:, 1:, ~torch.isinf(Y_dBA.sum(1).sum(0))]
+
+        # Limiting and shifting the values to be non-negative
+        thr_X = 10*torch.log10((torch.mean(10**(X_dBA_nz/10)))) - 20
+        X_plus = torch.max(X_dBA_nz, thr_X) - thr_X
+
+        thr_Y = 10*torch.log10((torch.mean(10**(Y_dBA_nz/10)))) - 20
+        Y_plus = torch.max(Y_dBA_nz, thr_Y) - thr_Y
+
+        # Discarding the frames for which N_out = 0 for all bins
+
+        X_plus_nz = X_plus[:, :, torch.is_nonzero(Y_plus.sum(1).sum(0))]
+        Y_plus_nz = Y_plus[:, :, torch.is_nonzero(Y_plus.sum(1).sum(0))]
+
+        # Calculating frequeny for each bin
+        _, freq_bins, _ = X_plus_nz.shape
+        f = (torch.arange(1, freq_bins)/freq_bins) * self.fs/2
+
+        Lower_band_bins = [0, 0]
+        Middle_band_bins = [0, 0]
+        Upper_band_bins = [0, 0]
+
+        # Calculating closest bins numbers to the band frequencies
+        (_, Lower_band_bins[0]) = torch.min((f - self.Lower_band[0]).abs())
+        (_, Lower_band_bins[1]) = torch.min((f - self.Lower_band[1]).abs())
+        (_, Middle_band_bins[0]) = torch.min((f - self.Middle_band[0]).abs())
+        (_, Middle_band_bins[1]) = torch.min((f - self.Middle_band[1]).abs())
+        (_, Upper_band_bins[0]) = torch.min((f - self.Upper_band[0]).abs())
+        (_, Upper_band_bins[1]) = torch.min((f - self.Upper_band[1]).abs())
+
+        # Splitting the data into sub-bands
+        X_lower = X_plus_nz[:, Lower_band_bins[0]:Lower_band_bins[1], :]
+        X_middle = X_plus_nz[:, Middle_band_bins[0]:Middle_band_bins[1], :]
+        X_upper = X_plus_nz[:, Upper_band_bins[0]:Upper_band_bins[1], :]
+        Y_lower = Y_plus_nz[:, Lower_band_bins[0]:Lower_band_bins[1], :]
+        Y_middle = Y_plus_nz[:, Middle_band_bins[0]:Middle_band_bins[1], :]
+        Y_upper = Y_plus_nz[:, Upper_band_bins[0]:Upper_band_bins[1], :]
+
+        # Computing the Sub-Band A-weighted Kurtosis
+
+
+class Kurtosis(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def forward(self, X: torch.Tensor):
+
+        _, _, K = X.shape
+        # breakpoint()
+        X_bar = (1/K) * torch.sum(X, dim=1)
+
+        num = (1/K) * torch.sum((X-X_bar)**4, dim=1)
+        den = ((1/K)*torch.sum((X-X_bar)**2, dim=1)**2)
+
+        kurt = num/den
+
+        return kurt
+
+
+class dBA_Torcolli(nn.Module):
+    def __init__(self, fs=16000):
+        super().__init__()
+
+        self.fs = fs
+        # A-weighting filter co-efficients
+        # self.c1 = 12194.217**2
+        self.c2 = 20.598997**2
+        self.c3 = 107.65265**2
+        self.c4 = 737.86223**2
+        self.c1 = 12194.217**2
+
+    def forward(self, x: torch.Tensor):
+
+        _, _, nbins = x.shape
+        # breakpoint()
+        # evaluation of A-weighting filter in the frequeny domain
+        f2_ = (self.fs * 0.5 * (torch.arange(0, nbins))/nbins)
+        f2 = torch.pow(f2_, 2)
+        num = self.c1*(torch.pow(f2, 2))
+        # den = (torch.pow((self.c2 + f2),2)) * (self.c3 + f2) * (self.c4 +f2) * (torch.pow((self.c5 + f2),2))
+        den = (f2 + self.c2) * torch.sqrt((f2+self.c3)
+                                          * (f2+self.c4)) * (f2+self.c1)
+        Aw = 1.2589 * torch.div(num, den)
+
+        # Converting to dBA
+
+        dBA = 10*torch.log10(Aw * torch.pow((x.abs()), 2))
+
+        breakpoint()
+
+        return dBA
