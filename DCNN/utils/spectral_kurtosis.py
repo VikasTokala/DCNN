@@ -102,6 +102,18 @@ class Spectral_Kurtosis(nn.Module):
         w_middle = 10*torch.log10(1/Kb_m * torch.sum(10 ** (Y_middle/10)))
         w_upper = 10*torch.log10(1/Kb_u * torch.sum(10 ** (Y_upper/10)))
 
+        # Computing the energy weighted mean of the log-Kurtosis ratio using the band which 
+        # has max value
+
+        W_lower = w_lower.sum()
+        W_middle = w_middle.sum()
+        W_upper = w_upper.sum()
+
+        temp_lower = torch.sum(w_lower * delta_lower_kurt)/ W_lower
+        temp_middle = torch.sum(w_middle * delta_middle_kurt)/ W_middle
+        temp_upper = torch.sum(w_upper * delta_upper_kurt)/ W_upper
+
+        Spec_Kurt = torch.concat((temp_lower,temp_middle, temp_upper))
 
 class Kurtosis(nn.Module):
     def __init__(self) -> None:
