@@ -83,10 +83,24 @@ class Spectral_Kurtosis(nn.Module):
         delta_upper_kurt = (torch.log(Y_upper_kurt/X_upper_kurt)).abs()
 
         # Limiting the values to 0.5
-        delta_lower_kurt[delta_lower_kurt>0.5] = 0.5
-        delta_middle_kurt[delta_middle_kurt>0.5] = 0.5
-        delta_upper_kurt[delta_upper_kurt>0.5] = 0.5
+        delta_lower_kurt[delta_lower_kurt > 0.5] = 0.5
+        delta_middle_kurt[delta_middle_kurt > 0.5] = 0.5
+        delta_upper_kurt[delta_upper_kurt > 0.5] = 0.5
 
+        # Removing the NaN values if any
+
+        delta_lower_kurt[torch.isnan(delta_lower_kurt)] = 0
+        delta_middle_kurt[torch.isnan(delta_middle_kurt)] = 0
+        delta_upper_kurt[torch.isnan(delta_upper_kurt)] = 0
+
+        # Calculating sub-band energy weights
+        _, Kb_l, _ = Y_lower.shape
+        _, Kb_m, _ = Y_middle.shape
+        _, Kb_u, _ = Y_upper.shape
+
+        w_lower = 10*torch.log10(1/Kb_l * torch.sum(10 ** (Y_lower/10)))
+        w_middle = 10*torch.log10(1/Kb_m * torch.sum(10 ** (Y_middle/10)))
+        w_upper = 10*torch.log10(1/Kb_u * torch.sum(10 ** (Y_upper/10)))
 
 
 class Kurtosis(nn.Module):
