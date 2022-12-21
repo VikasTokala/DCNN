@@ -4,7 +4,7 @@ import torch.functional as F
 from torch.nn import Module
 from DCNN.feature_extractors import Stft, IStft
 from torch_stoi import NegSTOILoss
-from DCNN.utils.spectral_kurtosis import dBA_Torcolli, Kurtosis
+from DCNN.utils.spectral_kurtosis import Spectral_Kurtosis
 
 EPS = 1e-6
 
@@ -12,7 +12,7 @@ EPS = 1e-6
 class BinauralLoss(Module):
     def __init__(self, win_len=400,
                  win_inc=100, fft_len=512, sr=16000, rtf_weight=0.3, snr_weight=0.7,
-                 ild_weight=0.1, ipd_weight=1, stoi_weight=0, avg_mode="freq"):
+                 ild_weight=0.1, ipd_weight=1, stoi_weight=0, avg_mode="freq", kurt_weight=0.1):
 
         super().__init__()
         self.stft = Stft(fft_len, win_inc, win_len)
@@ -24,8 +24,10 @@ class BinauralLoss(Module):
         self.ipd_weight = ipd_weight
         self.stoi_weight = stoi_weight
         self.avg_mode = avg_mode
-        self.dBA = dBA_Torcolli(fs=16000)
-        self.Kurtosis = Kurtosis()
+        # self.dBA = dBA_Torcolli(fs=16000)
+        # self.Kurtosis = Kurtosis()
+        self.Spec_Kurt = Spectral_Kurtosis(fs=16000)
+        self.kurt_weight = kurt_weight
 
     def forward(self, model_output, targets):
         target_stft_l = self.stft(targets[:, 0])
@@ -33,8 +35,10 @@ class BinauralLoss(Module):
 
         output_stft_l = self.stft(model_output[:, 0])
         output_stft_r = self.stft(model_output[:, 1])
-        output_dba = self.dBA(output_stft_l)
-        output_kurt = self.Kurtosis(output_stft_l)
+
+        # sk = self.Spec_Kurt(target_stft_l,output_stft_l)
+        # breakpoint()
+
         loss = 0
 
         if self.snr_weight > 0:
@@ -53,6 +57,15 @@ class BinauralLoss(Module):
             bin_stoi_loss = self.stoi_weight*stoi_loss.mean()
             bin_stoi_loss.detach()
             loss += bin_stoi_loss
+        
+        if self.kurt_weight > 0:
+            kurt_l = self.Spec_Kurt(target_stft_l, output_stft_l)
+            kurt_r = self.Spec_Kurt(target_stft_r, output_stft_r)
+
+            kurt_loss = (kurt_l + kurt_r)/2
+            bin_kurt_loss = self.stoi_weight*kurt_loss.mean()
+            bin_kurt_loss.detach()
+            loss += bin_kurt_loss
 
         if self.ild_weight > 0:
             ild_loss = ild_loss_db(target_stft_l, target_stft_r,
@@ -158,12 +171,11 @@ def ild_db(s1, s2, eps=EPS, avg_mode=None):
 def ild_loss_db(target_stft_l, target_stft_r,
                 output_stft_l, output_stft_r, avg_mode=None):
 
-
     target_ild = ild_db(target_stft_l, target_stft_r, avg_mode=avg_mode)
     output_ild = ild_db(output_stft_l, output_stft_r, avg_mode=avg_mode)
 
     ild_loss = ((target_ild - output_ild).abs()).mean()
-    
+
     mask = (target_stft_l.abs() + target_stft_r.abs())/2
     mask_avg = _avg_signal(mask, avg_mode)
     masked_ild_loss = ild_loss*mask_avg

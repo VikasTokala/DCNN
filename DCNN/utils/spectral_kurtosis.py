@@ -41,9 +41,9 @@ class Spectral_Kurtosis(nn.Module):
         Y_plus = torch.max(Y_dBA_nz, thr_Y) - thr_Y
 
         # Discarding the frames for which N_out = 0 for all bins
-
-        X_plus_nz = X_plus[:, :, torch.is_nonzero(Y_plus.sum(1).sum(0))]
-        Y_plus_nz = Y_plus[:, :, torch.is_nonzero(Y_plus.sum(1).sum(0))]
+        # breakpoint()
+        X_plus_nz = X_plus[:, :, torch.nonzero(Y_plus.sum(1).sum(0))].squeeze()
+        Y_plus_nz = Y_plus[:, :, torch.nonzero(Y_plus.sum(1).sum(0))].squeeze()
 
         # Calculating frequeny for each bin
         _, freq_bins, _ = X_plus_nz.shape
@@ -54,14 +54,20 @@ class Spectral_Kurtosis(nn.Module):
         Upper_band_bins = [0, 0]
 
         # Calculating closest bins numbers to the band frequencies
-        (_, Lower_band_bins[0]) = torch.min((f - self.Lower_band[0]).abs())
-        (_, Lower_band_bins[1]) = torch.min((f - self.Lower_band[1]).abs())
-        (_, Middle_band_bins[0]) = torch.min((f - self.Middle_band[0]).abs())
-        (_, Middle_band_bins[1]) = torch.min((f - self.Middle_band[1]).abs())
-        (_, Upper_band_bins[0]) = torch.min((f - self.Upper_band[0]).abs())
-        (_, Upper_band_bins[1]) = torch.min((f - self.Upper_band[1]).abs())
+        # breakpoint()
+        Lower_band_bins[0] = torch.argmin((f - self.Lower_band[0]).abs())
+        Lower_band_bins[1] = torch.argmin((f - self.Lower_band[1]).abs())
+        Middle_band_bins[0] = torch.argmin((f - self.Middle_band[0]).abs())
+        Middle_band_bins[1] = Middle_band_bins[0] + 1
+        # Plus 1 to remove overlapping regions
+        Middle_band_bins[1] = torch.argmin((f - self.Middle_band[1]).abs())
+        Upper_band_bins[0] = torch.argmin((f - self.Upper_band[0]).abs())
+        # Plus 1 to remove overlapping regions
+        Upper_band_bins[1] = Upper_band_bins[0]+1
+        Upper_band_bins[1] = torch.argmin((f - self.Upper_band[1]).abs())
 
         # Splitting the data into sub-bands
+
         X_lower = X_plus_nz[:, Lower_band_bins[0]:Lower_band_bins[1], :]
         X_middle = X_plus_nz[:, Middle_band_bins[0]:Middle_band_bins[1], :]
         X_upper = X_plus_nz[:, Upper_band_bins[0]:Upper_band_bins[1], :]
@@ -70,6 +76,7 @@ class Spectral_Kurtosis(nn.Module):
         Y_upper = Y_plus_nz[:, Upper_band_bins[0]:Upper_band_bins[1], :]
 
         # Computing the Sub-Band A-weighted Kurtosis
+
         X_lower_kurt = self.kurtosis(X_lower)
         X_middle_kurt = self.kurtosis(X_middle)
         X_upper_kurt = self.kurtosis(X_upper)
@@ -113,9 +120,11 @@ class Spectral_Kurtosis(nn.Module):
         temp_middle = torch.sum(w_middle * delta_middle_kurt) / W_middle
         temp_upper = torch.sum(w_upper * delta_upper_kurt) / W_upper
 
-        Spec_Kurt = torch.concat((temp_lower, temp_middle, temp_upper))
+        Spec_Kurt = torch.stack((temp_lower, temp_middle, temp_upper), dim=0)
 
-        return Spec_Kurt
+        Spec_Kurt[torch.isnan(Spec_Kurt)] = 0
+
+        return Spec_Kurt.mean()
 
 
 class Kurtosis(nn.Module):
@@ -124,9 +133,9 @@ class Kurtosis(nn.Module):
 
     def forward(self, X: torch.Tensor):
 
-        _, _, K = X.shape
-        # breakpoint()
-        X_bar = (1/K) * torch.sum(X, dim=1)
+        _, K, _ = X.shape
+
+        X_bar = (1/K) * torch.sum(X, dim=1).unsqueeze(1)
 
         num = (1/K) * torch.sum((X-X_bar)**4, dim=1)
         den = ((1/K)*torch.sum((X-X_bar)**2, dim=1)**2)
@@ -165,6 +174,6 @@ class dBA_Torcolli(nn.Module):
 
         dBA = 10*torch.log10(Aw * torch.pow((x.abs()), 2))
 
-        breakpoint()
+        # breakpoint()
 
         return dBA
