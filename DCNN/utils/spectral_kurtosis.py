@@ -172,6 +172,8 @@ class dBA_Torcolli(nn.Module):
 
         # Converting to dBA
         # breakpoint()
+        print('\n f2', f2_.device)
+        print(self.fs.device)
         print('\n num - ', num.device)
         print('den -',den.device)
         print(x.device)
