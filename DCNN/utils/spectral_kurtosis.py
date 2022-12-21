@@ -162,7 +162,7 @@ class dBA_Torcolli(nn.Module):
         _, _, nbins = x.shape
         # breakpoint()
         # evaluation of A-weighting filter in the frequeny domain
-        f2_ = (self.fs * 0.5 * (torch.arange(0, nbins))/nbins)
+        f2_ = (self.fs * 0.5 * (torch.arange(0, nbins, device=x.device))/nbins)
         f2 = f2_**2
         num = self.c1*(f2**2)
         # den = (torch.pow((self.c2 + f2),2)) * (self.c3 + f2) * (self.c4 +f2) * (torch.pow((self.c5 + f2),2))
