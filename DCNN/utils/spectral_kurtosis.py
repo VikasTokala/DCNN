@@ -171,7 +171,7 @@ class dBA_Torcolli(nn.Module):
         Aw = 1.2589 * torch.div(num, den)
 
         # Converting to dBA
-
+        Aw.to('cuda')
         dBA = 10*torch.log10(Aw * torch.pow((x.abs()), 2))
 
         # breakpoint()
