@@ -168,7 +168,7 @@ class dBA_Torcolli(nn.Module):
         # den = (torch.pow((self.c2 + f2),2)) * (self.c3 + f2) * (self.c4 +f2) * (torch.pow((self.c5 + f2),2))
         den = (f2 + self.c2) * torch.sqrt((f2+self.c3)
                                           * (f2+self.c4)) * (f2+self.c1)
-        Aw = 1.2589 * torch.div(num, den)
+        Aw = 1.2589 * num / den
 
         # Converting to dBA
         # breakpoint()
