@@ -60,12 +60,12 @@ class DCNN(nn.Module):
         # self.attn = FAL(in_channels=1, out_channels=96, f_length=256)
 
         
-        # self.rnn = RnnBlock(
-        #     # if idx == 0 else self.rnn_units,
-        #     input_size=hidden_dim * self.kernel_num[-1],
-        #     hidden_size=self.rnn_units,
-        #     bidirectional=bidirectional,
-        #     num_layers=rnn_layers)
+        self.rnn = RnnBlock(
+            # if idx == 0 else self.rnn_units,
+            input_size=hidden_dim * self.kernel_num[-1],
+            hidden_size=self.rnn_units,
+            bidirectional=bidirectional,
+            num_layers=rnn_layers)
 
         self.decoder = Decoder(self.kernel_num, self.kernel_size)
 
