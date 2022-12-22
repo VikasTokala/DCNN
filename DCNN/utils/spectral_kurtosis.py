@@ -32,7 +32,7 @@ class Spectral_Kurtosis(nn.Module):
 
         X_dBA_nz = X_dBA[:, 1:, ~torch.isinf(Y_dBA.sum(1).sum(0))]
         Y_dBA_nz = Y_dBA[:, 1:, ~torch.isinf(Y_dBA.sum(1).sum(0))]
-
+        # breakpoint()
         # Limiting and shifting the values to be non-negative
         thr_X = 10*torch.log10((torch.mean(10**(X_dBA_nz/10)))) - 20
         X_plus = torch.max(X_dBA_nz, thr_X) - thr_X
@@ -47,7 +47,7 @@ class Spectral_Kurtosis(nn.Module):
 
         # Calculating frequeny for each bin
         _, freq_bins, _ = X_plus_nz.shape
-        f = (torch.arange(1, freq_bins)/freq_bins) * self.fs/2
+        f = (torch.arange(1, freq_bins, device=x.device)/freq_bins) * self.fs/2
 
         Lower_band_bins = [0, 0]
         Middle_band_bins = [0, 0]
@@ -105,9 +105,11 @@ class Spectral_Kurtosis(nn.Module):
         _, Kb_m, _ = Y_middle.shape
         _, Kb_u, _ = Y_upper.shape
 
-        w_lower = 10*torch.log10(1/Kb_l * torch.sum(10 ** (Y_lower/10)))
-        w_middle = 10*torch.log10(1/Kb_m * torch.sum(10 ** (Y_middle/10)))
-        w_upper = 10*torch.log10(1/Kb_u * torch.sum(10 ** (Y_upper/10)))
+        w_lower = 10*torch.log10(1/Kb_l * torch.sum(10 ** (Y_lower/10),dim=1))
+        w_middle = 10*torch.log10(1/Kb_m * torch.sum(10 ** (Y_middle/10),dim=1))
+        w_upper = 10*torch.log10(1/Kb_u * torch.sum(10 ** (Y_upper/10),dim=1))
+
+        # breakpoint()
 
         # Computing the energy weighted mean of the log-Kurtosis ratio using the band which
         # has max value
@@ -116,15 +118,29 @@ class Spectral_Kurtosis(nn.Module):
         W_middle = w_middle.sum()
         W_upper = w_upper.sum()
 
-        temp_lower = torch.sum(w_lower * delta_lower_kurt) / W_lower
-        temp_middle = torch.sum(w_middle * delta_middle_kurt) / W_middle
-        temp_upper = torch.sum(w_upper * delta_upper_kurt) / W_upper
+        temp_lower = torch.sum(w_lower * delta_lower_kurt,dim=1) / W_lower
+        temp_middle = torch.sum(w_middle * delta_middle_kurt,dim=1) / W_middle
+        temp_upper = torch.sum(w_upper * delta_upper_kurt,dim=1) / W_upper
 
-        Spec_Kurt = torch.stack((temp_lower, temp_middle, temp_upper), dim=0)
+        Spec_Kurt = torch.stack((temp_lower, temp_middle, temp_upper))
 
-        Spec_Kurt[torch.isnan(Spec_Kurt)] = 0
+        Spec_kurt = Spec_Kurt.max()
 
-        return Spec_Kurt.mean()
+        # Spec_Kurt[torch.isnan(Spec_Kurt)] = 0
+
+        # print('Spec_kurt', Spec_Kurt)
+        # print('/n Lower-', temp_lower, ' Middle - ',
+        #       temp_middle, ' Upper - ', temp_upper)
+
+        # if torch.count_nonzero(Spec_Kurt) == 0:
+        #     Spec_kurt_mean = 0
+
+        # else:
+        #     Spec_kurt_mean = Spec_Kurt.mean()
+
+        # print('\n Mean', Spec_kurt_mean)
+
+        return Spec_kurt
 
 
 class Kurtosis(nn.Module):
@@ -139,9 +155,9 @@ class Kurtosis(nn.Module):
 
         num = (1/K) * torch.sum((X-X_bar)**4, dim=1)
         den = ((1/K)*torch.sum((X-X_bar)**2, dim=1)**2)
-
-        kurt = num/den
-
+        # breakpoint()
+        kurt = num/(den)
+ 
         return kurt
 
 
@@ -169,17 +185,11 @@ class dBA_Torcolli(nn.Module):
         den = (f2 + self.c2) * torch.sqrt((f2+self.c3)
                                           * (f2+self.c4)) * (f2+self.c1)
         Aw = 1.2589 * num / den
-
+        # breakpoint()
         # Converting to dBA
         # breakpoint()
-        print('\n f2', f2_.device)
-        # print(self.fs.device)
-        print('\n num - ', num.device)
-        print('den -',den.device)
-        print(x.device)
-        print(Aw.device)
-        print (x.abs().device)
-        print(torch.pow((x.abs()), 2).device)
+        # breakpoint()
+
         dBA = 10*torch.log10(Aw * ((x.abs()) ** 2))
 
         # breakpoint()

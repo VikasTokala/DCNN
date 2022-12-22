@@ -57,7 +57,7 @@ class BaseTrainer(pl.Trainer):
             accelerator=accelerator,
             strategy=strategy,
             gpus=gpu_count,
-            log_every_n_steps=400, enable_progress_bar=True)
+            log_every_n_steps=400, enable_progress_bar=True, detect_anomaly=False)
 
         if checkpoint_path is not None:
             _load_checkpoint(lightning_module.model, checkpoint_path)

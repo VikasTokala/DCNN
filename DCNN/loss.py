@@ -57,16 +57,18 @@ class BinauralLoss(Module):
             bin_stoi_loss = self.stoi_weight*stoi_loss.mean()
             bin_stoi_loss.detach()
             loss += bin_stoi_loss
-        
+
         if self.kurt_weight > 0:
             kurt_l = self.Spec_Kurt(target_stft_l, output_stft_l)
             kurt_r = self.Spec_Kurt(target_stft_r, output_stft_r)
             # breakpoint()
 
             kurt_loss = (kurt_l + kurt_r)/2
-            bin_kurt_loss = self.kurt_weight*kurt_loss.mean()
-            bin_kurt_loss.detach()
+            bin_kurt_loss = self.kurt_weight*kurt_loss
+            # bin_kurt_loss.detach()
             loss += bin_kurt_loss
+            print('bin_kurt loss - ', bin_kurt_loss)
+            print('loss added - ', loss)
 
         if self.ild_weight > 0:
             ild_loss = ild_loss_db(target_stft_l, target_stft_r,
