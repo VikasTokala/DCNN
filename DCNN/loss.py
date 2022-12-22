@@ -113,7 +113,7 @@ class Loss(Module):
                  SNR_weight=0.1):
         super().__init__()
         self.loss_mode = loss_mode
-        self.stft = ConvSTFT(win_len, win_inc, fft_len,
+        self.stft = Stft(win_len, win_inc, fft_len,
                              win_type, "complex", fix=fix)
         self.stoi_loss = NegSTOILoss(sample_rate=sr)
         self.STOI_weight = STOI_weight
