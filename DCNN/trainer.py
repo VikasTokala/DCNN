@@ -3,7 +3,7 @@ import torch
 
 from torch.optim.lr_scheduler import MultiStepLR
 from DCNN.models.binaural_attention_model import BinauralAttentionDCNN
-from DCNN.models.binaural_model import BinauralDCNN
+from DCNN.models.binaural_rnn_model import BinauralDCNN
 
 from DCNN.models.model import DCNN
 from DCNN.loss import BinauralLoss, Loss
