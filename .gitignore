@@ -155,3 +155,6 @@ Dataset/
 loss_old.py
 attentions/
 Checkpoints_old/
+en_example.wav
+only_speech.wav
+vad_test.py
