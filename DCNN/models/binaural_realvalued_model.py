@@ -1,5 +1,5 @@
 import torch
-
+import torch.nn.functional as F
 from DCNN.utils.apply_mask import apply_mask
 
 from .model import DCNN
@@ -10,17 +10,18 @@ class BinauralRealDCNN(DCNN):
 
     def forward(self, inputs):
         # batch_size, binaural_channels, time_bins = inputs.shape
-        cspecs_l = self.stft(inputs[:, 0]).abs()
-        cspecs_r = self.stft(inputs[:, 1]).abs()
-        cspecs = torch.stack((cspecs_l, cspecs_r), dim=1)
+        cspecs_l = self.stft(inputs[:, 0])
+        cspecs_r = self.stft(inputs[:, 1])
+        # breakpoint()
+        cspecs = torch.stack((cspecs_l.abs(), cspecs_r.abs()), dim=1)
 
         # breakpoint()
 
         # encoder_out_l = self.encoder(attention_enc[:, 0, :, :].unsqueeze(1))
         # encoder_out_r = self.encoder(attention_enc[:, 1, :, :].unsqueeze(1))
 
-        encoder_out_l = self.encoder(cspecs_l.unsqueeze(1))
-        encoder_out_r = self.encoder(cspecs_r.unsqueeze(1))
+        encoder_out_l = self.encoder(cspecs_l.abs().unsqueeze(1))
+        encoder_out_r = self.encoder(cspecs_r.abs().unsqueeze(1))
         # breakpoint()
 
         # encoder_out = torch.cat((encoder_out_l[-1], encoder_out_r[-1]), dim=1)
@@ -55,9 +56,16 @@ class BinauralRealDCNN(DCNN):
         # x_r = self.decoder(x_r_mattn, encoder_out_r)
 
         # 4. Apply mask
-        out_spec_l = apply_mask(x_l[:, 0], cspecs_l, self.masking_mode)
-        out_spec_r = apply_mask(x_r[:, 0], cspecs_r, self.masking_mode)
+        out_spec_l_m = apply_mask(x_l[:, 0], cspecs_l, self.masking_mode)
+        out_spec_r_m = apply_mask(x_r[:, 0], cspecs_r, self.masking_mode)
 
+        # breakpoint()
+
+        out_spec_l = out_spec_l_m * torch.exp(1j*(cspecs_l.angle()))
+        out_spec_r = out_spec_r_m * torch.exp(1j*(cspecs_r.angle()))
+
+        out_spec_l = F.pad(out_spec_l, [0,0,1,0])
+        out_spec_r = F.pad(out_spec_r, [0,0,1,0])
         # 5. Invert STFT
         out_wav_l = self.istft(out_spec_l)
         # breakpoint()

@@ -3,6 +3,15 @@ import torch.nn.functional as F
 
 
 def apply_mask(x, specs, masking_mode="E"):
+    
+    if masking_mode == 'RV':
+        out_spec = x * specs
+        # out_spec = F.pad(out_spec, [0,0,1,0])
+
+        return out_spec
+    
+    
+    
     real, imag = specs.real, specs.imag
     mask_real, mask_imag = x.real, x.imag
 
