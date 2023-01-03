@@ -21,6 +21,7 @@ class DCNN(nn.Module):
         ''' 
             rnn_layers: the number of lstm layers in the crn,
             rnn_units: for clstm, rnn_units = real+imag
+            this will be a real valued network for evaluation
         '''
 
         super().__init__()
