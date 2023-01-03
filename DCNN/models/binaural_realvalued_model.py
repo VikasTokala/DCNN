@@ -6,12 +6,12 @@ from .model import DCNN
 from DCNN.utils.freq_transform import FAL_enc, FAL_dec
 
 
-class BinauralAttentionDCNN(DCNN):
+class BinauralRealDCNN(DCNN):
 
     def forward(self, inputs):
         # batch_size, binaural_channels, time_bins = inputs.shape
-        cspecs_l = self.stft(inputs[:, 0])
-        cspecs_r = self.stft(inputs[:, 1])
+        cspecs_l = self.stft(inputs[:, 0]).abs()
+        cspecs_r = self.stft(inputs[:, 1]).abs()
         cspecs = torch.stack((cspecs_l, cspecs_r), dim=1)
 
         # breakpoint()

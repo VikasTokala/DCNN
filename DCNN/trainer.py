@@ -2,7 +2,7 @@ from omegaconf import OmegaConf
 import torch
 
 from torch.optim.lr_scheduler import MultiStepLR
-from DCNN.models.binaural_attention_model import BinauralAttentionDCNN
+from DCNN.models.binaural_realvalued_model import BinauralRealDCNN
 from DCNN.models.binaural_model import BinauralDCNN
 
 from DCNN.models.model import DCNN
@@ -43,7 +43,7 @@ class DCNNLightniningModule(BaseLightningModule):
 
         if config["model"]["binaural"]:
             if config["model"]["attention"]:
-                model = model = BinauralAttentionDCNN(**self.config["model"])
+                model = model = BinauralRealDCNN(**self.config["model"])
             else:
                 model = BinauralDCNN(**self.config["model"])
             loss = BinauralLoss(

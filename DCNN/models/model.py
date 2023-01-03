@@ -50,9 +50,7 @@ class DCNN(nn.Module):
         self.num_heads = num_heads
         self.embed_dim = embed_dim
         hidden_dim = self.fft_len // (2 ** (len(self.kernel_num) + 1))
-        self.mattn = MultiAttnBlock(input_size=512,
-                                    hidden_size=self.rnn_units,
-                                    embed_dim=self.embed_dim,
+        self.mattn = MultiAttnBlock(embed_dim=self.embed_dim,
                                     num_heads=self.num_heads,
                                     batch_first=True)
 
@@ -132,16 +130,16 @@ class Encoder(nn.Module):
                 nn.Sequential(
                     # nn.ConstantPad2d([0, 0, 0, 0], 0),
 
-                    torch_complex.ComplexConv2d(
+                    nn.Conv2d(
                         self.kernel_num[idx]//2,
                         self.kernel_num[idx + 1]//2,
                         kernel_size=(self.kernel_size, 2),
                         stride=(2, 1),
                         padding=(2, 1)
                     ),
-                    torch_complex.NaiveComplexBatchNorm2d(
+                    nn.BatchNorm2d(
                         self.kernel_num[idx + 1]//2),
-                    torch_complex.ComplexPReLU()
+                    nn.PReLU()
                 )
             )
 
@@ -166,7 +164,7 @@ class Decoder(nn.Module):
         self.model = nn.ModuleList()
         for idx in range(len(self.kernel_num) - 1, 0, -1):
             block = [
-                torch_complex.ComplexConvTranspose2d(
+                nn.ConvTranspose2d(
                     self.kernel_num[idx],  # * 2,
                     self.kernel_num[idx - 1]//2,
                     kernel_size=(self.kernel_size, 2),
@@ -177,9 +175,9 @@ class Decoder(nn.Module):
             ]
 
             if idx != 1:
-                block.append(torch_complex.NaiveComplexBatchNorm2d(
+                block.append(nn.BatchNorm2d(
                     self.kernel_num[idx - 1]//2))
-                block.append(torch_complex.ComplexPReLU())
+                block.append(nn.PReLU())
             self.model.append(nn.Sequential(*block))
 
     def forward(self, x, encoder_out):
@@ -196,7 +194,7 @@ class RnnBlock(nn.Module):
     def __init__(self, input_size, hidden_size, bidirectional, num_layers) -> None:
         super().__init__()
 
-        self.rnn = torch_complex.ComplexLSTM(
+        self.rnn = nn.LSTM(
             input_size=input_size,  # if idx == 0 else self.rnn_units,
             hidden_size=hidden_size,
             bidirectional=bidirectional,
@@ -206,8 +204,8 @@ class RnnBlock(nn.Module):
 
         self.transform = nn.Linear(
             hidden_size,
-            input_size,
-            dtype=torch.complex64
+            input_size
+            # dtype=torch.complex64
         )
 
     def forward(self, x):
@@ -225,16 +223,16 @@ class RnnBlock(nn.Module):
 
 
 class MultiAttnBlock(nn.Module):
-    def __init__(self, input_size, hidden_size, embed_dim=128, num_heads=8, batch_first=True):
+    def __init__(self, embed_dim=128, num_heads=8, batch_first=True):
         super().__init__()
 
-        self.mattn = torch_complex.ComplexMultiheadAttention(
+        self.mattn = nn.MultiheadAttention(
             embed_dim=embed_dim, num_heads=num_heads, batch_first=batch_first)
 
         self.transform = nn.Linear(
             in_features=512,
-            out_features=512,
-            dtype=torch.complex64
+            out_features=512
+            # dtype=torch.complex64
         )
 
     def forward(self, x):
