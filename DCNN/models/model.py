@@ -245,7 +245,7 @@ class MultiAttnBlock(nn.Module):
         x = x.flatten(start_dim=1, end_dim=2)
         x = x.transpose(1, 2)
         # breakpoint()
-        x = self.mattn(x)
+        x,_ = self.mattn(x,x,x)
         # breakpoint()
         x = self.transform(x)
         x = x.unflatten(-1, (channels, freqs))

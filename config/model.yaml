@@ -1,6 +1,6 @@
 model:
-  binaural: true
-  attention: false
+  binaural: True
+  attention: True
 
   STOI_weight: 1
  
