@@ -19,7 +19,7 @@ class BinauralRealDCNN(DCNN):
 
         # encoder_out_l = self.encoder(attention_enc[:, 0, :, :].unsqueeze(1))
         # encoder_out_r = self.encoder(attention_enc[:, 1, :, :].unsqueeze(1))
-
+        breakpoint()
         encoder_out_l = self.encoder(cspecs_l.abs().unsqueeze(1))
         encoder_out_r = self.encoder(cspecs_r.abs().unsqueeze(1))
         # breakpoint()

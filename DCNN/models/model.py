@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from DCNN.feature_extractors import IStft, Stft
+import torch.nn.functional as F
 
 import DCNN.utils.complexPyTorch.complexLayers as torch_complex
 from DCNN.utils.show import show_params, show_model
@@ -76,7 +77,7 @@ class DCNN(nn.Module):
 
         # 0. Extract STFT
         x = cspecs = self.stft(inputs)
-        x = x.unsqueeze(1)  # Add a dummy channel
+        x = x.abs().unsqueeze(1)  # Add a dummy channel
 
         # x=self.attn(x)
 
@@ -91,6 +92,8 @@ class DCNN(nn.Module):
 
         # 4. Apply mask
         out_spec = apply_mask(x[:, 0], cspecs, self.masking_mode)
+        out_spec = out_spec * torch.exp(1j*(cspecs.angle()))
+        out_spec = F.pad(out_spec, [0,0,1,0])
 
         # 5. Invert STFT
         out_wav = self.istft(out_spec)
@@ -147,6 +150,7 @@ class Encoder(nn.Module):
         output = []
         # 1. Apply encoder
         for idx, layer in enumerate(self.model):
+            # breakpoint()
             x = layer(x)
             # x = x[..., :-1] # Experimental
             output.append(x)
