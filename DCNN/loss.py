@@ -196,31 +196,31 @@ def _avg_signal(s, avg_mode):
         return s
 
 
-class STFT(Module):
-    def __init__(self, win_len=400, win_inc=100,
-                 fft_len=512):
-        self.win_len = win_len
-        self.win_inc = win_inc
-        self.fft_len = fft_len
+# class STFT(Module):
+#     def __init__(self, win_len=400, win_inc=100,
+#                  fft_len=512):
+#         self.win_len = win_len
+#         self.win_inc = win_inc
+#         self.fft_len = fft_len
 
-        super().__init__()
+#         super().__init__()
 
-    def forward(self, x):
-        stft = torch.stft(x, self.fft_len, hop_length=self.win_inc,
-                          win_length=self.win_len, return_complex=True)
-        return stft
+#     def forward(self, x):
+#         stft = torch.stft(x, self.fft_len, hop_length=self.win_inc,
+#                           win_length=self.win_len, return_complex=True)
+#         return stft
 
 
-class ISTFT(Module):
-    def __init__(self, win_len=400, win_inc=100,
-                 fft_len=512):
-        self.win_len = win_len
-        self.win_inc = win_inc
-        self.fft_len = fft_len
+# class ISTFT(Module):
+#     def __init__(self, win_len=400, win_inc=100,
+#                  fft_len=512):
+#         self.win_len = win_len
+#         self.win_inc = win_inc
+#         self.fft_len = fft_len
 
-        super().__init__()
+#         super().__init__()
 
-    def forward(self, x):
-        istft = torch.istft(x, self.fft_len, hop_length=self.win_inc,
-                            win_length=self.win_len, return_complex=False)
-        return istft
+#     def forward(self, x):
+#         istft = torch.istft(x, self.fft_len, hop_length=self.win_inc,
+#                             win_length=self.win_len, return_complex=False)
+#         return istft
