@@ -3,7 +3,7 @@ import torch
 
 from torch.optim.lr_scheduler import MultiStepLR
 from DCNN.models.binaural_attention_model import BinauralAttentionDCNN
-from DCNN.models.binaural_model import BinauralDCNN
+from DCNN.models.binaural_rnn_model import BinauralDCRNN
 
 from DCNN.models.model import DCNN
 from DCNN.loss import BinauralLoss, Loss
@@ -45,7 +45,7 @@ class DCNNLightniningModule(BaseLightningModule):
             if config["model"]["attention"]:
                 model = model = BinauralAttentionDCNN(**self.config["model"])
             else:
-                model = BinauralDCNN(**self.config["model"])
+                model = BinauralDCRNN(**self.config["model"])
             loss = BinauralLoss(
                 rtf_weight=self.config["model"]["rtf_weight"],
                 snr_weight=self.config["model"]["snr_weight"],

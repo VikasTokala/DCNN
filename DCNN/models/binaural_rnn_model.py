@@ -6,7 +6,7 @@ from .model import DCNN
 from DCNN.utils.freq_transform import FAL_enc, FAL_dec
 
 
-class BinauralAttentionDCNN(DCNN):
+class BinauralDCRNN(DCNN):
 
     def forward(self, inputs):
         # batch_size, binaural_channels, time_bins = inputs.shape
@@ -33,11 +33,11 @@ class BinauralAttentionDCNN(DCNN):
         # encoder_attn_r = attention_enc[:, attn_len//2:, :, :]
         # breakpoint()
         # 2. Apply RNN
-        # x_l_rnn = self.rnn(encoder_out_l[-1])
-        # x_r_rnn = self.rnn(encoder_out_r[-1])
+        x_l_rnn = self.rnn(encoder_out_l[-1])
+        x_r_rnn = self.rnn(encoder_out_r[-1])
         # breakpoint()
-        x_l_mattn = self.mattn(encoder_out_l[-1])
-        x_r_mattn = self.mattn(encoder_out_r[-1])
+        # x_l_mattn = self.mattn(encoder_out_l[-1])
+        # x_r_mattn = self.mattn(encoder_out_r[-1])
         # breakpoint()
 
         # rnn_out = torch.cat((x_l_rnn, x_r_rnn), dim=1)
@@ -49,10 +49,10 @@ class BinauralAttentionDCNN(DCNN):
         # decoder_attn_r = attention_dec[:, dec_attn_len//2:, :, :]
 
         # 3. Apply decoder
-        # x_l = self.decoder(x_l_rnn, encoder_out_l)
-        # x_r = self.decoder(x_r_rnn, encoder_out_r)
-        x_l = self.decoder(x_l_mattn, encoder_out_l)
-        x_r = self.decoder(x_r_mattn, encoder_out_r)
+        x_l = self.decoder(x_l_rnn, encoder_out_l)
+        x_r = self.decoder(x_r_rnn, encoder_out_r)
+        # x_l = self.decoder(x_l_mattn, encoder_out_l)
+        # x_r = self.decoder(x_r_mattn, encoder_out_r)
 
         # 4. Apply mask
         out_spec_l = apply_mask(x_l[:, 0], cspecs_l, self.masking_mode)
