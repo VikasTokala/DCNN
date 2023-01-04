@@ -38,7 +38,8 @@ class BinauralLoss(Module):
             snr_r = si_snr(model_output[:, 1], targets[:, 1])
             snr_loss = - (snr_l + snr_r)/2
             bin_snr_loss = self.snr_weight*snr_loss
-            bin_snr_loss.detach()
+            bin_snr_loss
+            print('\n SNR Loss = ', bin_snr_loss )
             loss += bin_snr_loss
 
         if self.stoi_weight > 0:
@@ -48,6 +49,7 @@ class BinauralLoss(Module):
             stoi_loss = (stoi_l+stoi_r)/2
             bin_stoi_loss = self.stoi_weight*stoi_loss.mean()
             # bin_stoi_loss.detach()
+            print('\n STOI Loss = ',bin_stoi_loss )
             loss += bin_stoi_loss
 
         if self.ild_weight > 0:
@@ -55,6 +57,7 @@ class BinauralLoss(Module):
                                    output_stft_l, output_stft_r, avg_mode=self.avg_mode)
             bin_ild_loss = self.ild_weight*ild_loss
             # bin_ild_loss.detach()
+            print('\n ILD Loss = ', bin_ild_loss )
             loss += bin_ild_loss
 
         if self.ipd_weight > 0:
@@ -62,6 +65,7 @@ class BinauralLoss(Module):
                                      output_stft_l, output_stft_r, avg_mode=self.avg_mode)
             bin_ipd_loss = self.ipd_weight*ipd_loss
             # bin_ild_loss.detach()
+            print('\n IPD Loss = ', bin_ipd_loss )
             loss += bin_ipd_loss
 
         if self.rtf_weight > 0:

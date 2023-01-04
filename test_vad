@@ -28,3 +28,4 @@ wav = read_audio('/Users/vtokala/Documents/Research/Databases/Dataset_DCNN_Binau
 # get speech timestamps from full audio file
 speech_timestamps = get_speech_timestamps(wav, model, sampling_rate=SAMPLING_RATE)
 print(speech_timestamps)
+
