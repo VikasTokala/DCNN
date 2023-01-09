@@ -36,6 +36,7 @@ class BinauralLoss(Module):
         if self.snr_weight > 0:
             snr_l = si_snr(model_output[:, 0], targets[:, 0])
             snr_r = si_snr(model_output[:, 1], targets[:, 1])
+            # breakpoint()
             snr_loss = - (snr_l + snr_r)/2
             bin_snr_loss = self.snr_weight*snr_loss
             bin_snr_loss
