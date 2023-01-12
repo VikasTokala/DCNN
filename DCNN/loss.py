@@ -1,5 +1,6 @@
 import torch
 import torch.functional as F
+import torchaudio.transforms as T
 
 from torch.nn import Module
 from DCNN.feature_extractors import Stft, IStft
@@ -158,14 +159,19 @@ def ild_db(s1, s2, eps=EPS, avg_mode=None):
 
 def ild_loss_db(target_stft_l, target_stft_r,
                 output_stft_l, output_stft_r, avg_mode=None):
-
+    amptodB = T.AmplitudeToDB(stype='amplitude')
 
     target_ild = ild_db(target_stft_l, target_stft_r, avg_mode=avg_mode)
     output_ild = ild_db(output_stft_l, output_stft_r, avg_mode=avg_mode)
 
     ild_loss = ((target_ild - output_ild).abs()).mean()
     
-    mask = (target_stft_l.abs() + target_stft_r.abs())/2
+    psd_mag = (target_stft_l.abs() + target_stft_r.abs())/2
+    psd_db = amptodB(psd_mag)
+    # breakpoint()
+    psd_db -= psd_db.min(1, keepdim=True)[0]
+    psd_db /= psd_db.max(1, keepdim=True)[0] #Normalizing the dB values
+    mask = psd_db
     mask_avg = _avg_signal(mask, avg_mode)
     masked_ild_loss = ild_loss*mask_avg
     return masked_ild_loss.mean()
@@ -182,10 +188,17 @@ def ipd_rad(s1, s2, eps=EPS, avg_mode=None):
 
 def ipd_loss_rads(target_stft_l, target_stft_r,
                   output_stft_l, output_stft_r, avg_mode=None):
+    amptodB = T.AmplitudeToDB(stype='amplitude')
     target_ipd = ipd_rad(target_stft_l, target_stft_r, avg_mode=avg_mode)
     output_ipd = ipd_rad(output_stft_l, output_stft_r, avg_mode=avg_mode)
 
     mask = (target_stft_l.abs() + target_stft_r.abs())/2
+    psd_mag = (target_stft_l.abs() + target_stft_r.abs())/2
+    psd_db = amptodB(psd_mag)
+    # breakpoint()
+    psd_db -= psd_db.min(1, keepdim=True)[0]
+    psd_db /= psd_db.max(1, keepdim=True)[0] #Normalizing the dB values
+    mask = psd_db
     mask_avg = _avg_signal(mask, avg_mode)
     ipd_loss = ((target_ipd - output_ipd).abs())
     masked_ipd_loss = ipd_loss*mask_avg

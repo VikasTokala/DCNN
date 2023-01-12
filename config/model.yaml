@@ -7,7 +7,7 @@ model:
   
   rtf_weight: 0
   snr_weight: 1
-  ild_weight: 0.1
+  ild_weight: 1
 
   ipd_weight: 10
   stoi_weight: 10

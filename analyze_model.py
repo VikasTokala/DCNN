@@ -6,8 +6,10 @@ from DCNN.loss import si_snr, ild_db, ipd_rad, _avg_signal
 from omegaconf import DictConfig
 from tqdm import tqdm
 from mbstoi import mbstoi
-
-from DCNN.trainer import DCNNLightniningModule
+from hydra import compose, initialize
+from hydra.core.global_hydra import GlobalHydra
+import yaml
+from DCNN.trainer import DCNNLightningModule
 from DCNN.datasets.base_dataset import BaseDataset
 
 SR = 16000
@@ -16,7 +18,7 @@ SR = 16000
 def load_model(config, model_checkpoint_path):
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    model = DCNNLightniningModule(config)
+    model = DCNNLightningModule(config)
     model.eval()
 
     torch.set_grad_enabled(False)
@@ -158,4 +160,15 @@ def _plot_scatter_graphs(results, savefig=True):
 
 
 if __name__ == "__main__":
-    analyze_dataset()
+    config = {
+    "defaults": [
+        "model",
+        "training",
+        {"dataset": "speech_dataset"}
+    ]}
+    with open('/Users/vtokala/Documents/Research/di_nn/config/config.yaml', 'w') as f_yaml:
+        yaml.dump(config, f_yaml)
+    GlobalHydra.instance().clear()
+    initialize(config_path="config")
+    config = compose("config")
+    analyze_dataset(config)
