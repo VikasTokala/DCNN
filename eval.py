@@ -1,5 +1,5 @@
 from torchmetrics.audio.stoi import ShortTimeObjectiveIntelligibility
-from torchaudio import transforms
+from torchaudio import transforms as T
 from DCNN.loss import si_snr
 from DCNN.utils.eval_utils import ild_db, ipd_rad, _avg_signal
 from DCNN.feature_extractors import Stft, IStft
@@ -37,7 +37,7 @@ with open('/Users/vtokala/Documents/Research/di_nn/config/config.yaml', 'w') as 
 GlobalHydra.instance().clear()
 initialize(config_path="config")
 config = compose("config")
-
+amptodB = T.AmplitudeToDB(stype='amplitude')
 
 win_len = 400
 win_inc = 100
@@ -137,6 +137,12 @@ for i in range(testset_len):  # Enhance 10 samples
     enhanced_ipd = ipd_rad(enhanced_stft_l, enhanced_stft_r, avg_mode=avg_mode)
     
     mask = (target_stft_l.abs() + target_stft_r.abs())/2
+    psd_mag = (target_stft_l.abs() + target_stft_r.abs())/2
+    psd_db = amptodB(psd_mag)
+    # breakpoint()
+    psd_db -= psd_db.min(1, keepdim=True)[0]
+    psd_db /= psd_db.max(1, keepdim=True)[0] #Normalizing the dB values
+    mask = psd_db
     mask_avg = _avg_signal(mask, avg_mode)
 
     ipd_error = ((target_ipd - enhanced_ipd).abs())
@@ -144,7 +150,7 @@ for i in range(testset_len):  # Enhance 10 samples
 
     masked_ild_error[i,:] = (mask_avg * ild_error)
     masked_ipd_error[i,:] = (mask_avg * ipd_error)
-    breakpoint()
+    # breakpoint()
     avg_snr[i] = (noisy_snr_l[i]+noisy_snr_r[i])/2
    
     noisy_signals = noisy_samples[0].detach().cpu().numpy()

@@ -11,7 +11,7 @@ model:
 
   ipd_weight: 10
   stoi_weight: 10
-  binaural_avg_mode: freq # time | freq | null
+  binaural_avg_mode: time # time | freq | null
 
   use_clstm: True
   use_cbn: True
