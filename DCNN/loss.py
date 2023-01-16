@@ -1,7 +1,6 @@
 import torch
 import torch.functional as F
 import torchaudio.transforms as T
-
 from torch.nn import Module
 from DCNN.feature_extractors import Stft, IStft
 from torch_stoi import NegSTOILoss
@@ -24,7 +23,7 @@ class BinauralLoss(Module):
         self.ipd_weight = ipd_weight
         self.stoi_weight = stoi_weight
         self.avg_mode = avg_mode
-
+        
     def forward(self, model_output, targets):
         target_stft_l = self.stft(targets[:, 0])
         target_stft_r = self.stft(targets[:, 1])
@@ -147,8 +146,8 @@ def si_snr(s1, s2, eps=EPS, reduce_mean=True):
 
 
 def ild_db(s1, s2, eps=EPS, avg_mode=None):
-    s1 = _avg_signal(s1, avg_mode)
-    s2 = _avg_signal(s2, avg_mode)
+    # s1 = _avg_signal(s1, avg_mode)
+    # s2 = _avg_signal(s2, avg_mode)
 
     l1 = 20*torch.log10(s1 + eps)
     l2 = 20*torch.log10(s2 + eps)
@@ -159,27 +158,30 @@ def ild_db(s1, s2, eps=EPS, avg_mode=None):
 
 def ild_loss_db(target_stft_l, target_stft_r,
                 output_stft_l, output_stft_r, avg_mode=None):
-    amptodB = T.AmplitudeToDB(stype='amplitude')
-
+    # amptodB = T.AmplitudeToDB(stype='amplitude')
+   
     target_ild = ild_db(target_stft_l, target_stft_r, avg_mode=avg_mode)
     output_ild = ild_db(output_stft_l, output_stft_r, avg_mode=avg_mode)
 
-    ild_loss = ((target_ild - output_ild).abs()).mean()
+    ild_loss = ((target_ild - output_ild).abs())
     
     psd_mag = (target_stft_l.abs() + target_stft_r.abs())/2
-    psd_db = amptodB(psd_mag)
+    bin_mask = BinaryMask(threshold=(psd_mag.mean())/2)
+    # psd_db = amptodB(psd_mag)
     # breakpoint()
-    psd_db -= psd_db.min(1, keepdim=True)[0]
-    psd_db /= psd_db.max(1, keepdim=True)[0] #Normalizing the dB values
-    mask = psd_db
-    mask_avg = _avg_signal(mask, avg_mode)
-    masked_ild_loss = ild_loss*mask_avg
+    # psd_db -= psd_db.min(1, keepdim=True)[0]
+    # psd_db /= psd_db.max(1, keepdim=True)[0] #Normalizing the dB values
+    # mask = psd_db
+    mask = bin_mask(psd_mag)
+    masked_ild_loss = ild_loss * mask
+    # mask_avg = _avg_signal(mask, avg_mode)
+    # masked_ild_loss = ild_loss*mask_avg
     return masked_ild_loss.mean()
 
 
 def ipd_rad(s1, s2, eps=EPS, avg_mode=None):
-    s1 = _avg_signal(s1, avg_mode)
-    s2 = _avg_signal(s2, avg_mode)
+    # s1 = _avg_signal(s1, avg_mode)
+    # s2 = _avg_signal(s2, avg_mode)
 
     ipd_value = ((s1 + eps)/(s2 + eps)).angle()
 
@@ -188,20 +190,24 @@ def ipd_rad(s1, s2, eps=EPS, avg_mode=None):
 
 def ipd_loss_rads(target_stft_l, target_stft_r,
                   output_stft_l, output_stft_r, avg_mode=None):
-    amptodB = T.AmplitudeToDB(stype='amplitude')
+    # amptodB = T.AmplitudeToDB(stype='amplitude')
     target_ipd = ipd_rad(target_stft_l, target_stft_r, avg_mode=avg_mode)
     output_ipd = ipd_rad(output_stft_l, output_stft_r, avg_mode=avg_mode)
-
-    mask = (target_stft_l.abs() + target_stft_r.abs())/2
-    psd_mag = (target_stft_l.abs() + target_stft_r.abs())/2
-    psd_db = amptodB(psd_mag)
-    # breakpoint()
-    psd_db -= psd_db.min(1, keepdim=True)[0]
-    psd_db /= psd_db.max(1, keepdim=True)[0] #Normalizing the dB values
-    mask = psd_db
-    mask_avg = _avg_signal(mask, avg_mode)
+    
     ipd_loss = ((target_ipd - output_ipd).abs())
-    masked_ipd_loss = ipd_loss*mask_avg
+    
+    psd_mag = (target_stft_l.abs() + target_stft_r.abs())/2
+    bin_mask = BinaryMask(threshold=(psd_mag.mean())/2)
+    # psd_db = amptodB(psd_mag)
+    # breakpoint()
+    # psd_db -= psd_db.min(1, keepdim=True)[0]
+    # psd_db /= psd_db.max(1, keepdim=True)[0] #Normalizing the dB values
+    # breakpoint()
+    mask = bin_mask(psd_mag)
+    masked_ipd_loss = ipd_loss * mask
+    # mask_avg = _avg_signal(mask, avg_mode)
+    # ipd_loss = ((target_ipd - output_ipd).abs())
+    # masked_ipd_loss = ipd_loss*mask_avg
     return masked_ipd_loss.mean()
 
 
@@ -213,7 +219,19 @@ def _avg_signal(s, avg_mode):
     elif avg_mode == None:
         return s
 
+class BinaryMask(Module):
+    def __init__(self, threshold=0.5):
+        super(BinaryMask, self).__init__()
+        self.threshold = threshold
 
+    def forward(self, magnitude):
+        # Compute the magnitude of the complex spectrogram
+        # magnitude = torch.sqrt(spectrogram[:,:,0]**2 + spectrogram[:,:,1]**2)
+
+        # Create a binary mask by thresholding the magnitude
+        mask = (magnitude > self.threshold).float()
+
+        return mask
 # class STFT(Module):
 #     def __init__(self, win_len=400, win_inc=100,
 #                  fft_len=512):
