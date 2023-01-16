@@ -1,7 +1,7 @@
 logs*/
 runs/
 .vscode
-
+*.wav
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

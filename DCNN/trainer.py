@@ -52,6 +52,7 @@ class DCNNLightniningModule(BaseLightningModule):
                 ild_weight=self.config["model"]["ild_weight"],
                 ipd_weight=self.config["model"]["ipd_weight"],
                 avg_mode=config["model"]["binaural_avg_mode"],
+                stoi_weight=config["model"]["stoi_weight"],
                 kurt_weight=config["model"]["kurt_weight"])
         else:    
             model = DCNN(**self.config["model"])
