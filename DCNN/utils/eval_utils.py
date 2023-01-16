@@ -8,8 +8,8 @@ EPS= 10e-6
 
 
 def ild_db(s1, s2, eps=EPS, avg_mode=None):
-    s1 = _avg_signal(s1, avg_mode)
-    s2 = _avg_signal(s2, avg_mode)
+    # s1 = _avg_signal(s1, avg_mode)
+    # s2 = _avg_signal(s2, avg_mode)
 
     l1 = 20*torch.log10(s1 + eps)
     l2 = 20*torch.log10(s2 + eps)
@@ -18,9 +18,10 @@ def ild_db(s1, s2, eps=EPS, avg_mode=None):
     return ild_value
 
 
+
 def ipd_rad(s1, s2, eps=EPS, avg_mode=None):
-    s1 = _avg_signal(s1, avg_mode)
-    s2 = _avg_signal(s2, avg_mode)
+    # s1 = _avg_signal(s1, avg_mode)
+    # s2 = _avg_signal(s2, avg_mode)
 
     ipd_value = ((s1 + eps)/(s2 + eps)).angle()
 
