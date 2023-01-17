@@ -41,10 +41,7 @@ class DCNN(nn.Module):
 
         self.stft = Stft(self.fft_len, self.win_inc, self.win_len)
         self.istft = IStft(self.fft_len, self.win_inc, self.win_len)
-        self.attention_enc = FAL_enc(
-            in_channels=256, out_channels=256, f_length=4)
-        self.attention_dec = FAL_dec(
-            in_channels=256, out_channels=256, f_length=4)
+        
 
         self.num_heads = num_heads
         self.embed_dim = embed_dim
@@ -56,8 +53,6 @@ class DCNN(nn.Module):
                                     batch_first=True)
 
         self.encoder = Encoder(self.kernel_num, kernel_size)
-        # self._create_rnn(rnn_layers)
-        # self.attn = FAL(in_channels=1, out_channels=96, f_length=256)
 
         
         self.rnn = RnnBlock(
