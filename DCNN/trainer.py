@@ -14,7 +14,7 @@ from DCNN.utils.base_trainer import (
 
 class DCNNTrainer(BaseTrainer):
     def __init__(self, config):
-        lightning_module = DCNNLightniningModule(config)
+        lightning_module = DCNNLightningModule(config)
         super().__init__(lightning_module,
                          config["training"]["n_epochs"],
                          early_stopping_config=config["training"]["early_stopping"],
@@ -31,7 +31,7 @@ class DCNNTrainer(BaseTrainer):
         super().test(self._lightning_module, test_dataloaders, ckpt_path="best")
 
 
-class DCNNLightniningModule(BaseLightningModule):
+class DCNNLightningModule(BaseLightningModule):
     """This class abstracts the
        training/validation/testing procedures
        used for training a DCNN
