@@ -18,13 +18,18 @@ class BinauralDCRNN(DCNN):
 
         encoder_out_l = self.encoder(cspecs_l.unsqueeze(1))
         encoder_out_r = self.encoder(cspecs_r.unsqueeze(1))
-       
-        # 2. Apply RNN
-        x_l_rnn = self.rnn(encoder_out_l[-1])
-        x_r_rnn = self.rnn(encoder_out_r[-1])
-       
 
+        rnn_in = torch.cat((encoder_out_l[-1],encoder_out_r[-1]), dim=1)
+        
+        # breakpoint()
+        # 2. Apply RNN
+        # x_l_rnn = self.rnn(encoder_out_l[-1])
+        # x_r_rnn = self.rnn(encoder_out_r[-1])
        
+        x_rnn = self.rnn(rnn_in)
+        
+        x_l_rnn = x_rnn[:,:128,:,:]
+        x_r_rnn = x_rnn[:,128:,:,:]
 
         # 3. Apply decoder
         x_l = self.decoder(x_l_rnn, encoder_out_l)

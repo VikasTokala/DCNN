@@ -57,7 +57,7 @@ class DCNN(nn.Module):
         
         self.rnn = RnnBlock(
             # if idx == 0 else self.rnn_units,
-            input_size=hidden_dim * self.kernel_num[-1],
+            input_size=hidden_dim * self.kernel_num[-1]*2,
             hidden_size=self.rnn_units,
             bidirectional=bidirectional,
             num_layers=rnn_layers)
