@@ -74,7 +74,8 @@ class BinauralAttentionDCNN(DCNN):
         # out_wav_r = torch.squeeze(out_wav_r, 1)
         # out_wav_r = torch.clamp_(out_wav_r, -1, 1)
 
+        breakpoint()
         
         out_wav = torch.stack([out_wav_l, out_wav_r], dim=1)
-        
+       
         return out_wav

@@ -1,6 +1,6 @@
 import torch
 
-EPS= 0
+EPS= 10-6
 
 
 

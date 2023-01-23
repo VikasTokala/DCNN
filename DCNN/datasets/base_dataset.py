@@ -34,7 +34,10 @@ class BaseDataset(torch.utils.data.Dataset):
         noisy_audio_sample_path = self.noisy_file_paths[index]
         #path = os.path.dirname(self.audio_dir)
         clean_signal, _ = torchaudio.load(clean_audio_sample_path)
+        # breakpoint()
+
         noisy_signal, _ = torchaudio.load(noisy_audio_sample_path)
+        
 
         if self.mono:
             return (noisy_signal[0], clean_signal[0])
