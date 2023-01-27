@@ -1,9 +1,10 @@
 import torch
 import torch.functional as F
-import torchaudio.transforms as T
+
 from torch.nn import Module
 from DCNN.feature_extractors import Stft, IStft
 from torch_stoi import NegSTOILoss
+# from DCNN.utils.spectral_kurtosis import Spectral_Kurtosis
 
 EPS = 1e-6
 
@@ -11,7 +12,7 @@ EPS = 1e-6
 class BinauralLoss(Module):
     def __init__(self, win_len=400,
                  win_inc=100, fft_len=512, sr=16000, rtf_weight=0.3, snr_weight=0.7,
-                 ild_weight=0.1, ipd_weight=1, stoi_weight=0, avg_mode="freq"):
+                 ild_weight=0.1, ipd_weight=1, stoi_weight=0, avg_mode="freq", kurt_weight=0.1):
 
         super().__init__()
         self.stft = Stft(fft_len, win_inc, win_len)
@@ -23,13 +24,20 @@ class BinauralLoss(Module):
         self.ipd_weight = ipd_weight
         self.stoi_weight = stoi_weight
         self.avg_mode = avg_mode
-        
+        # self.dBA = dBA_Torcolli(fs=16000)
+        # self.Kurtosis = Kurtosis()
+        # self.Spec_Kurt = Spectral_Kurtosis(fs=16000)
+        self.kurt_weight = kurt_weight
+
     def forward(self, model_output, targets):
         target_stft_l = self.stft(targets[:, 0])
         target_stft_r = self.stft(targets[:, 1])
 
         output_stft_l = self.stft(model_output[:, 0])
         output_stft_r = self.stft(model_output[:, 1])
+
+        # sk = self.Spec_Kurt(target_stft_l,output_stft_l)
+        # breakpoint()
 
         loss = 0
 
@@ -40,7 +48,7 @@ class BinauralLoss(Module):
             snr_loss = - (snr_l + snr_r)/2
             bin_snr_loss = self.snr_weight*snr_loss
             bin_snr_loss
-            print('\n SNR Loss = ', bin_snr_loss )
+            print('\n SNR Loss = ', bin_snr_loss)
             loss += bin_snr_loss
 
         if self.stoi_weight > 0:
@@ -50,15 +58,15 @@ class BinauralLoss(Module):
             stoi_loss = (stoi_l+stoi_r)/2
             bin_stoi_loss = self.stoi_weight*stoi_loss.mean()
             # bin_stoi_loss.detach()
-            print('\n STOI Loss = ',bin_stoi_loss )
+            print('\n STOI Loss = ', bin_stoi_loss)
             loss += bin_stoi_loss
 
         if self.ild_weight > 0:
-            ild_loss = ild_loss_db(target_stft_l, target_stft_r,
-                                   output_stft_l, output_stft_r, avg_mode=self.avg_mode)
+            ild_loss = ild_loss_db(target_stft_l.abs(), target_stft_r.abs(),
+                                   output_stft_l.abs(), output_stft_r.abs(), avg_mode=self.avg_mode)
             bin_ild_loss = self.ild_weight*ild_loss
             # bin_ild_loss.detach()
-            print('\n ILD Loss = ', bin_ild_loss )
+            print('\n ILD Loss = ', bin_ild_loss)
             loss += bin_ild_loss
 
         if self.ipd_weight > 0:
@@ -66,7 +74,7 @@ class BinauralLoss(Module):
                                      output_stft_l, output_stft_r, avg_mode=self.avg_mode)
             bin_ipd_loss = self.ipd_weight*ipd_loss
             # bin_ild_loss.detach()
-            print('\n IPD Loss = ', bin_ipd_loss )
+            print('\n IPD Loss = ', bin_ipd_loss)
             loss += bin_ipd_loss
 
         if self.rtf_weight > 0:
@@ -98,8 +106,8 @@ class Loss(Module):
                  SNR_weight=0.1):
         super().__init__()
         self.loss_mode = loss_mode
-        self.stft = ConvSTFT(win_len, win_inc, fft_len,
-                             win_type, "complex", fix=fix)
+        self.stft = Stft(win_len, win_inc, fft_len,
+                         win_type, "complex", fix=fix)
         self.stoi_loss = NegSTOILoss(sample_rate=sr)
         self.STOI_weight = STOI_weight
         self.SNR_weight = SNR_weight
@@ -151,7 +159,7 @@ def ild_db(s1, s2, eps=EPS, avg_mode=None):
 
     l1 = 20*torch.log10(s1 + eps)
     l2 = 20*torch.log10(s2 + eps)
-    ild_value = (l1 - l2).abs()
+    ild_value = (l1 - l2)
 
     return ild_value
 
@@ -159,23 +167,15 @@ def ild_db(s1, s2, eps=EPS, avg_mode=None):
 def ild_loss_db(target_stft_l, target_stft_r,
                 output_stft_l, output_stft_r, avg_mode=None):
     # amptodB = T.AmplitudeToDB(stype='amplitude')
-   
-    target_ild = ild_db(target_stft_l, target_stft_r, avg_mode=avg_mode)
-    output_ild = ild_db(output_stft_l, output_stft_r, avg_mode=avg_mode)
 
-    ild_loss = ((target_ild - output_ild).abs())
+    target_ild = ild_db(target_stft_l.abs(), target_stft_r.abs(), avg_mode=avg_mode)
+    output_ild = ild_db(output_stft_l.abs(), output_stft_r.abs(), avg_mode=avg_mode)
+    mask = speechMask(target_stft_l,target_stft_r)
     
-    psd_mag = (target_stft_l.abs() + target_stft_r.abs())/2
-    bin_mask = BinaryMask(threshold=(psd_mag.mean())/2)
-    # psd_db = amptodB(psd_mag)
+    ild_loss = (target_ild - output_ild).abs()
     # breakpoint()
-    # psd_db -= psd_db.min(1, keepdim=True)[0]
-    # psd_db /= psd_db.max(1, keepdim=True)[0] #Normalizing the dB values
-    # mask = psd_db
-    mask = bin_mask(psd_mag)
-    masked_ild_loss = ild_loss * mask
-    # mask_avg = _avg_signal(mask, avg_mode)
-    # masked_ild_loss = ild_loss*mask_avg
+    masked_ild_loss = ((ild_loss * mask).sum(dim=2)).sum(dim=1)/(mask.sum(dim=2)).sum(dim=1)
+   
     return masked_ild_loss.mean()
 
 
@@ -193,22 +193,37 @@ def ipd_loss_rads(target_stft_l, target_stft_r,
     # amptodB = T.AmplitudeToDB(stype='amplitude')
     target_ipd = ipd_rad(target_stft_l, target_stft_r, avg_mode=avg_mode)
     output_ipd = ipd_rad(output_stft_l, output_stft_r, avg_mode=avg_mode)
-    
+
     ipd_loss = ((target_ipd - output_ipd).abs())
+
+    mask = speechMask(target_stft_l,target_stft_r)
     
-    psd_mag = (target_stft_l.abs() + target_stft_r.abs())/2
-    bin_mask = BinaryMask(threshold=(psd_mag.mean())/2)
-    # psd_db = amptodB(psd_mag)
-    # breakpoint()
-    # psd_db -= psd_db.min(1, keepdim=True)[0]
-    # psd_db /= psd_db.max(1, keepdim=True)[0] #Normalizing the dB values
-    # breakpoint()
-    mask = bin_mask(psd_mag)
-    masked_ipd_loss = ipd_loss * mask
-    # mask_avg = _avg_signal(mask, avg_mode)
-    # ipd_loss = ((target_ipd - output_ipd).abs())
-    # masked_ipd_loss = ipd_loss*mask_avg
+    masked_ipd_loss = ((ipd_loss * mask).sum(dim=2)).sum(dim=1)/(mask.sum(dim=2)).sum(dim=1)
     return masked_ipd_loss.mean()
+
+
+
+def speechMask(stft_l,stft_r):
+    # breakpoint()
+    _,_,time_bins = stft_l.shape
+    thresh_l,_ = (((stft_l.abs())**2)).max(dim=2) 
+    thresh_l_db = 10*torch.log10(thresh_l) - 10
+    thresh_l_db=thresh_l_db.unsqueeze(2).repeat(1,1,time_bins)
+    
+    thresh_r,_ = (((stft_r.abs())**2)).max(dim=2) 
+    thresh_r_db = 10*torch.log10(thresh_r) - 10
+    thresh_r_db=thresh_r_db.unsqueeze(2).repeat(1,1,time_bins)
+    
+    
+    bin_mask_l = BinaryMask(threshold=thresh_l_db)
+    bin_mask_r = BinaryMask(threshold=thresh_r_db)
+    
+    mask_l = bin_mask_l(20*torch.log10((stft_l.abs())))
+    mask_r = bin_mask_r(20*torch.log10((stft_r.abs())))
+    mask = torch.bitwise_and(mask_l.int(), mask_r.int())
+    
+    return mask
+
 
 
 def _avg_signal(s, avg_mode):
@@ -218,6 +233,7 @@ def _avg_signal(s, avg_mode):
         return s.mean(dim=2)
     elif avg_mode == None:
         return s
+
 
 class BinaryMask(Module):
     def __init__(self, threshold=0.5):
@@ -230,33 +246,35 @@ class BinaryMask(Module):
 
         # Create a binary mask by thresholding the magnitude
         mask = (magnitude > self.threshold).float()
-
+        # breakpoint()
         return mask
-# class STFT(Module):
-#     def __init__(self, win_len=400, win_inc=100,
-#                  fft_len=512):
-#         self.win_len = win_len
-#         self.win_inc = win_inc
-#         self.fft_len = fft_len
-
-#         super().__init__()
-
-#     def forward(self, x):
-#         stft = torch.stft(x, self.fft_len, hop_length=self.win_inc,
-#                           win_length=self.win_len, return_complex=True)
-#         return stft
 
 
-# class ISTFT(Module):
-#     def __init__(self, win_len=400, win_inc=100,
-#                  fft_len=512):
-#         self.win_len = win_len
-#         self.win_inc = win_inc
-#         self.fft_len = fft_len
+class STFT(Module):
+    def __init__(self, win_len=400, win_inc=100,
+                 fft_len=512):
+        self.win_len = win_len
+        self.win_inc = win_inc
+        self.fft_len = fft_len
 
-#         super().__init__()
+        super().__init__()
 
-#     def forward(self, x):
-#         istft = torch.istft(x, self.fft_len, hop_length=self.win_inc,
-#                             win_length=self.win_len, return_complex=False)
-#         return istft
+    def forward(self, x):
+        stft = torch.stft(x, self.fft_len, hop_length=self.win_inc,
+                          win_length=self.win_len, return_complex=True)
+        return stft
+
+
+class ISTFT(Module):
+    def __init__(self, win_len=400, win_inc=100,
+                 fft_len=512):
+        self.win_len = win_len
+        self.win_inc = win_inc
+        self.fft_len = fft_len
+
+        super().__init__()
+
+    def forward(self, x):
+        istft = torch.istft(x, self.fft_len, hop_length=self.win_inc,
+                            win_length=self.win_len, return_complex=False)
+        return istft
