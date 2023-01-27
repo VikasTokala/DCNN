@@ -13,7 +13,7 @@ def ild_db(s1, s2, eps=EPS, avg_mode=None):
 
     l1 = 20*torch.log10(s1 + eps)
     l2 = 20*torch.log10(s2 + eps)
-    ild_value = (l1 - l2).abs()
+    ild_value = (l1 - l2)
 
     return ild_value
 

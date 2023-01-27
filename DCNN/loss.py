@@ -4,7 +4,7 @@ import torch.functional as F
 from torch.nn import Module
 from DCNN.feature_extractors import Stft, IStft
 from torch_stoi import NegSTOILoss
-from DCNN.utils.spectral_kurtosis import Spectral_Kurtosis
+# from DCNN.utils.spectral_kurtosis import Spectral_Kurtosis
 
 EPS = 1e-6
 
@@ -26,7 +26,7 @@ class BinauralLoss(Module):
         self.avg_mode = avg_mode
         # self.dBA = dBA_Torcolli(fs=16000)
         # self.Kurtosis = Kurtosis()
-        self.Spec_Kurt = Spectral_Kurtosis(fs=16000)
+        # self.Spec_Kurt = Spectral_Kurtosis(fs=16000)
         self.kurt_weight = kurt_weight
 
     def forward(self, model_output, targets):
@@ -62,8 +62,8 @@ class BinauralLoss(Module):
             loss += bin_stoi_loss
 
         if self.ild_weight > 0:
-            ild_loss = ild_loss_db(target_stft_l, target_stft_r,
-                                   output_stft_l, output_stft_r, avg_mode=self.avg_mode)
+            ild_loss = ild_loss_db(target_stft_l.abs(), target_stft_r.abs(),
+                                   output_stft_l.abs(), output_stft_r.abs(), avg_mode=self.avg_mode)
             bin_ild_loss = self.ild_weight*ild_loss
             # bin_ild_loss.detach()
             print('\n ILD Loss = ', bin_ild_loss)
@@ -159,7 +159,7 @@ def ild_db(s1, s2, eps=EPS, avg_mode=None):
 
     l1 = 20*torch.log10(s1 + eps)
     l2 = 20*torch.log10(s2 + eps)
-    ild_value = (l1 - l2).abs()
+    ild_value = (l1 - l2)
 
     return ild_value
 
@@ -168,22 +168,14 @@ def ild_loss_db(target_stft_l, target_stft_r,
                 output_stft_l, output_stft_r, avg_mode=None):
     # amptodB = T.AmplitudeToDB(stype='amplitude')
 
-    target_ild = ild_db(target_stft_l, target_stft_r, avg_mode=avg_mode)
-    output_ild = ild_db(output_stft_l, output_stft_r, avg_mode=avg_mode)
-
-    ild_loss = ((target_ild - output_ild).abs())
-
-    psd_mag = (target_stft_l.abs() + target_stft_r.abs())/2
-    bin_mask = BinaryMask(threshold=(psd_mag.mean())/2)
-    # psd_db = amptodB(psd_mag)
+    target_ild = ild_db(target_stft_l.abs(), target_stft_r.abs(), avg_mode=avg_mode)
+    output_ild = ild_db(output_stft_l.abs(), output_stft_r.abs(), avg_mode=avg_mode)
+    mask = speechMask(target_stft_l,target_stft_r)
+    
+    ild_loss = (target_ild - output_ild).abs()
     # breakpoint()
-    # psd_db -= psd_db.min(1, keepdim=True)[0]
-    # psd_db /= psd_db.max(1, keepdim=True)[0] #Normalizing the dB values
-    # mask = psd_db
-    mask = bin_mask(psd_mag)
-    masked_ild_loss = ild_loss * mask
-    # mask_avg = _avg_signal(mask, avg_mode)
-    # masked_ild_loss = ild_loss*mask_avg
+    masked_ild_loss = ((ild_loss * mask).sum(dim=2)).sum(dim=1)/(mask.sum(dim=2)).sum(dim=1)
+   
     return masked_ild_loss.mean()
 
 
@@ -204,19 +196,34 @@ def ipd_loss_rads(target_stft_l, target_stft_r,
 
     ipd_loss = ((target_ipd - output_ipd).abs())
 
-    psd_mag = (target_stft_l.abs() + target_stft_r.abs())/2
-    bin_mask = BinaryMask(threshold=(psd_mag.mean())/2)
-    # psd_db = amptodB(psd_mag)
-    # breakpoint()
-    # psd_db -= psd_db.min(1, keepdim=True)[0]
-    # psd_db /= psd_db.max(1, keepdim=True)[0] #Normalizing the dB values
-    # breakpoint()
-    mask = bin_mask(psd_mag)
-    masked_ipd_loss = ipd_loss * mask
-    # mask_avg = _avg_signal(mask, avg_mode)
-    # ipd_loss = ((target_ipd - output_ipd).abs())
-    # masked_ipd_loss = ipd_loss*mask_avg
+    mask = speechMask(target_stft_l,target_stft_r)
+    
+    masked_ipd_loss = ((ipd_loss * mask).sum(dim=2)).sum(dim=1)/(mask.sum(dim=2)).sum(dim=1)
     return masked_ipd_loss.mean()
+
+
+
+def speechMask(stft_l,stft_r):
+    # breakpoint()
+    _,_,time_bins = stft_l.shape
+    thresh_l,_ = (((stft_l.abs())**2)).max(dim=2) 
+    thresh_l_db = 10*torch.log10(thresh_l) - 10
+    thresh_l_db=thresh_l_db.unsqueeze(2).repeat(1,1,time_bins)
+    
+    thresh_r,_ = (((stft_r.abs())**2)).max(dim=2) 
+    thresh_r_db = 10*torch.log10(thresh_r) - 10
+    thresh_r_db=thresh_r_db.unsqueeze(2).repeat(1,1,time_bins)
+    
+    
+    bin_mask_l = BinaryMask(threshold=thresh_l_db)
+    bin_mask_r = BinaryMask(threshold=thresh_r_db)
+    
+    mask_l = bin_mask_l(20*torch.log10((stft_l.abs())))
+    mask_r = bin_mask_r(20*torch.log10((stft_r.abs())))
+    mask = torch.bitwise_and(mask_l.int(), mask_r.int())
+    
+    return mask
+
 
 
 def _avg_signal(s, avg_mode):
@@ -239,7 +246,7 @@ class BinaryMask(Module):
 
         # Create a binary mask by thresholding the magnitude
         mask = (magnitude > self.threshold).float()
-
+        # breakpoint()
         return mask
 
 
