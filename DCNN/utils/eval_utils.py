@@ -34,3 +34,4 @@ def _avg_signal(s, avg_mode):
         return s.mean(dim=1)
     elif avg_mode == None:
         return s
+    
