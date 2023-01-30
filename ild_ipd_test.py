@@ -6,8 +6,8 @@ from hydra.core.global_hydra import GlobalHydra
 from hydra import compose, initialize
 from train import train
 from torchmetrics.audio.stoi import ShortTimeObjectiveIntelligibility
-from DCNN.loss import si_snr, BinaryMask
-from DCNN.utils.eval_utils import ild_db, ipd_rad, _avg_signal
+from DCNN.loss import si_snr
+from DCNN.utils.eval_utils import ild_db, ipd_rad, speechMask
 from DCNN.feature_extractors import Stft, IStft
 from hydra import compose, initialize
 from hydra.core.global_hydra import GlobalHydra
@@ -165,47 +165,36 @@ for i in range(testset_len):  # Enhance 10 samples
     target_stft_l = stft(clean_samples[0, :])
     target_stft_r = stft(clean_samples[1, :])
     
-    target_stft_l = target_stft_l/target_stft_l.abs().max()
-    target_stft_r = target_stft_r/target_stft_r.abs().max()
     
-    enhanced_stft_l = enhanced_stft_l/enhanced_stft_l.abs().max()
-    enhanced_stft_r = enhanced_stft_r/enhanced_stft_r.abs().max()
-    _,time_bins = target_stft_l.shape
-    # breakpoint()
-    thresh_l,_ = (((target_stft_l.abs())**2)).max(dim=1) 
-    thresh_l_db = 10*torch.log10(thresh_l) - 6
-    thresh_l_db=thresh_l_db.unsqueeze(1).repeat(1,time_bins)
-    
-    breakpoint()
-    
-    thresh_r,_ = (((target_stft_r.abs())**2)).max(dim=1) 
-    thresh_r_db = 10*torch.log10(thresh_r) - 6
-    thresh_r_db=thresh_r_db.unsqueeze(1).repeat(1,time_bins)
-    
-    
-    
-    bin_mask_l = BinaryMask(threshold=thresh_l_db)
-    bin_mask_r = BinaryMask(threshold=thresh_r_db)
-    
-    mask_l = bin_mask_l(20*torch.log10((target_stft_l.abs())))
-    mask_r = bin_mask_r(20*torch.log10((target_stft_r.abs())))
-    mask = torch.bitwise_and(mask_l.int(), mask_r.int())
-    
+    mask = speechMask(target_stft_l,target_stft_r).squeeze(0)
     target_ild = ild_db(target_stft_l.abs(), target_stft_r.abs())
     enhanced_ild = ild_db(enhanced_stft_l.abs(), enhanced_stft_r.abs())
 
-    # breakpoint()
     target_ipd = ipd_rad(target_stft_l, target_stft_r)
     enhanced_ipd = ipd_rad(enhanced_stft_l, enhanced_stft_r)
+
+    ild_loss = (target_ild - enhanced_ild).abs()
+
+    ipd_loss = (target_ipd - enhanced_ipd).abs()
+   
+    masked_ild_error[i,:] = (ild_loss*mask).sum(dim=1)/ mask.sum(dim=1)
+    masked_ipd_error[i,:] = (ipd_loss*mask).sum(dim=1)/ mask.sum(dim=1)
     
-    masked_target_ild[i,:] = (target_ild * mask).sum(dim=1)/mask.sum(dim=1)
-    masked_target_ipd[i,:] = (target_ipd * mask).sum(dim=1)/mask.sum(dim=1)
-    # breakpoint()
+    # target_ild = ild_db(target_stft_l.abs(), target_stft_r.abs())
+    # enhanced_ild = ild_db(enhanced_stft_l.abs(), enhanced_stft_r.abs())
+
+    # # breakpoint()
+    # target_ipd = ipd_rad(target_stft_l, target_stft_r)
+    # enhanced_ipd = ipd_rad(enhanced_stft_l, enhanced_stft_r)
     
-    masked_ild_error[i,:] = ((target_ild*mask).sum(dim=1)/mask.sum(dim=1) - ((enhanced_ild*mask).sum(dim=1)/mask.sum(dim=1)) ).abs() #/ mask.sum(dim=1)
-    masked_ipd_error[i,:] = ((target_ipd*mask).sum(dim=1)/mask.sum(dim=1) - ((enhanced_ipd*mask).sum(dim=1)/mask.sum(dim=1)) ).abs() #/ mask.sum(dim=1)
+    # masked_target_ild[i,:] = (target_ild * mask).sum(dim=1)/mask.sum(dim=1)
+    # masked_target_ipd[i,:] = (target_ipd * mask).sum(dim=1)/mask.sum(dim=1)
+    # # breakpoint()
     
-    rms_ild_error[i,:] = torch.sqrt((torch.sum(target_ild*mask-enhanced_ild*mask,dim=1)/mask.sum(dim=1))**2)
+    # masked_ild_error[i,:] = ((target_ild*mask).sum(dim=1)/mask.sum(dim=1) - ((enhanced_ild*mask).sum(dim=1)/mask.sum(dim=1)) ).abs() #/ mask.sum(dim=1)
+    # masked_ipd_error[i,:] = ((target_ipd*mask).sum(dim=1)/mask.sum(dim=1) - ((enhanced_ipd*mask).sum(dim=1)/mask.sum(dim=1)) ).abs() #/ mask.sum(dim=1)
+    
+    # rms_ild_error[i,:] = torch.sqrt((torch.sum(target_ild*mask-enhanced_ild*mask,dim=1)/mask.sum(dim=1))**2)
     avg_snr[i] = (noisy_snr_l[i] + noisy_snr_r[i])/2
     # breakpoint()
     

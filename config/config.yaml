@@ -10,16 +10,16 @@ defaults:
 - training
 - dataset: speech_dataset
 model:
-  attention: False
+  attention: true
   avg_mode: freq
   ild_weight: 1
-  ipd_weight: 1
+  ipd_weight: 10
   kurt_weight: 0
   rtf_weight: 0
   snr_weight: 1
   stoi_weight: 10
 training:
-  accelerator: 'cpu'
+  accelerator: 'null'
   batch_size: 32
   learning_rate: 0.0001
   n_epochs: 30
