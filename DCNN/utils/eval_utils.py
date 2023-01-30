@@ -1,5 +1,5 @@
 import torch
-from loss import BinaryMask
+from DCNN.loss import BinaryMask
 EPS= 10-6
 
 
