@@ -1,6 +1,6 @@
 import torch
 from DCNN.loss import BinaryMask
-EPS= 1e-6
+EPS= 10-6
 
 
 
@@ -24,7 +24,7 @@ def ipd_rad(s1, s2, eps=EPS, avg_mode=None):
     # s2 = _avg_signal(s2, avg_mode)
 
     ipd_value = ((s1 + eps)/(s2 + eps)).angle()
-    # ipd_value = s1.angle() - s2.angle()
+
     return ipd_value
 
 def _avg_signal(s, avg_mode):
@@ -34,8 +34,7 @@ def _avg_signal(s, avg_mode):
         return s.mean(dim=1)
     elif avg_mode == None:
         return s
-
-
+    
 def speechMask(stft_l,stft_r):
     # breakpoint()
     _,time_bins = stft_l.shape
