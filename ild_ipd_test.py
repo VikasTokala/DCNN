@@ -147,7 +147,7 @@ for i in range(testset_len):  # Enhance 10 samples
     
     clean_samples=(clean_samples)/(torch.max(clean_samples))
     model_output=(model_output)/(torch.max(model_output))
-    sf.write('myfile.wav',clean_samples.transpose(0,1).numpy(),samplerate=16000)
+    # sf.write('myfile.wav',clean_samples.transpose(0,1).numpy(),samplerate=16000)
     # mo = model_output.numpy()
     # breakpoint()
     noisy_snr_l[i] = si_snr(noisy_samples[0][0, :], clean_samples[0, :])
@@ -176,6 +176,9 @@ for i in range(testset_len):  # Enhance 10 samples
     ild_loss = (target_ild - enhanced_ild).abs()
 
     ipd_loss = (target_ipd - enhanced_ipd).abs()
+    
+    mask_sum = mask.sum(dim=1)
+    breakpoint()
    
     masked_ild_error[i,:] = (ild_loss*mask).sum(dim=1)/ mask.sum(dim=1)
     masked_ipd_error[i,:] = (ipd_loss*mask).sum(dim=1)/ mask.sum(dim=1)
