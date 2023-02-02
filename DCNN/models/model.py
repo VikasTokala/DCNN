@@ -6,7 +6,7 @@ import DCNN.utils.complexPyTorch.complexLayers as torch_complex
 from DCNN.utils.show import show_params, show_model
 
 from DCNN.utils.apply_mask import apply_mask
-from DCNN.utils.freq_transform import FAL_enc, FAL_dec
+
 
 
 class DCNN(nn.Module):
@@ -41,10 +41,7 @@ class DCNN(nn.Module):
 
         self.stft = Stft(self.fft_len, self.win_inc, self.win_len)
         self.istft = IStft(self.fft_len, self.win_inc, self.win_len)
-        self.attention_enc = FAL_enc(
-            in_channels=256, out_channels=256, f_length=4)
-        self.attention_dec = FAL_dec(
-            in_channels=256, out_channels=256, f_length=4)
+        
 
         self.num_heads = num_heads
         self.embed_dim = embed_dim
