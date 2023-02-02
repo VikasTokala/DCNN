@@ -21,7 +21,7 @@ class Stft(nn.Module):
 
         y = torch.stft(x, self.n_dft, hop_length=self.hop_size,
                        win_length=self.win_length, onesided=self.onesided,
-                       return_complex=True, window=window, normalized=True)
+                       return_complex=True, window=window)
         
         y = y[:, 1:] # Remove DC component (f=0hz)
 
@@ -42,6 +42,6 @@ class IStft(Stft):
 
         y = torch.istft(x, self.n_dft, hop_length=self.hop_size,
                         win_length=self.win_length, onesided=self.onesided,
-                        window=window,normalized=True)
+                        window=window)
 
         return y

@@ -39,11 +39,11 @@ def speechMask(stft_l,stft_r):
     # breakpoint()
     _,time_bins = stft_l.shape
     thresh_l,_ = (((stft_l.abs())**2)).max(dim=1) 
-    thresh_l_db = 10*torch.log10(thresh_l) - 10
+    thresh_l_db = 10*torch.log10(thresh_l) - 15
     thresh_l_db=thresh_l_db.unsqueeze(1).repeat(1,1,time_bins)
     
     thresh_r,_ = (((stft_r.abs())**2)).max(dim=1) 
-    thresh_r_db = 10*torch.log10(thresh_r) - 10
+    thresh_r_db = 10*torch.log10(thresh_r) - 15
     thresh_r_db=thresh_r_db.unsqueeze(1).repeat(1,1,time_bins)
     
     

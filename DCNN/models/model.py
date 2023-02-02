@@ -14,7 +14,7 @@ class DCNN(nn.Module):
             self,
             rnn_layers=2, rnn_units=128,
             win_len=400, win_inc=100, fft_len=512, win_type='hann',
-            masking_mode='R', use_clstm=False,
+            masking_mode='E', use_clstm=False,
             kernel_size=5, kernel_num=[16, 32, 64, 128, 256, 256],
             bidirectional=False, embed_dim=512, num_heads=8, **kwargs
     ):
