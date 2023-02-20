@@ -158,3 +158,5 @@ checkpoints_old/
 vad_test.py
 test_vad.py/
 *.wav
+plottest.py
+test_metrics.py
