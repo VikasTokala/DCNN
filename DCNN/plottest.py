@@ -33,6 +33,6 @@
 
 import plotly.express as px
 df = px.data.tips()
-breakpoint()
+# breakpoint()
 fig = px.box(df, x="time", y="total_bill")
 fig.show()

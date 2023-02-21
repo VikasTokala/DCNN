@@ -23,7 +23,7 @@ class EvalMetrics(nn.Module):
         self.istft = IStft(n_dft=fft_len, hop_size=win_inc, win_length=win_len)
         self.stoi = ShortTimeObjectiveIntelligibility(fs=16000)
 
-    def forward(self,NOISY_DATASET_PATH, CLEAN_DATASET_PATH, model):
+    def forward(self,NOISY_DATASET_PATH, CLEAN_DATASET_PATH, model, testset_len=5):
 
         dataset = BaseDataset(NOISY_DATASET_PATH,
                               CLEAN_DATASET_PATH, mono=False)
@@ -37,7 +37,7 @@ class EvalMetrics(nn.Module):
 
         dataloader = iter(dataloader)
         # testset_len = len(dataloader)
-        testset_len = 250
+        
 
         noisy_snr_l = torch.zeros((testset_len))
 
