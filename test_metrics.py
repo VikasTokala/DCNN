@@ -7,6 +7,8 @@ import torch
 from DCNN.trainer import DCNNLightningModule
 from DCNN.utils import evalFunction
 import plotly.graph_objects as go
+import numpy as np
+import matplotlib.pyplot as plt
 config = {
     "defaults": [
         "model",
@@ -132,3 +134,54 @@ fig.add_trace(go.Box(
 ))
 fig.update_layout(yaxis_range=[0, 3])
 fig.show()
+
+
+
+
+avg_snr_ssn = (noisy_snr_l_ssn + noisy_snr_r_ssn)/2                                                                                                                                                                                        
+f=np.fft.rfftfreq(n=512, d=1./16000)
+fig, axs = plt.subplots(nrows=1, ncols=1, figsize=(10, 5))
+import math
+axs.errorbar( f,(masked_ipd_error_ssn.mean(dim=0)), ((masked_ipd_error_ssn.std(dim=0))))
+axs.set_title("IPD error [rad]")
+axs.set_xlabel("Frequency")
+axs.set_ylabel("Frequency averaged IPD error in Radians")
+fig, axs = plt.subplots(nrows=1, ncols=1, figsize=(10, 5))
+plt.savefig("ipd_error_bin_ssn.png")
+
+axs.errorbar(f, masked_ild_error_ssn.mean(dim=0), masked_ild_error_ssn.std(dim=0))
+axs.set_title("ILD error [dB]")
+axs.set_xlabel("Frequency")
+axs.set_ylabel("Frequency averaged ILD error in dB")
+plt.savefig("ild_error_bin_ssn.png")
+
+fig, axs = plt.subplots(nrows=2, ncols=2, figsize=(10, 10))
+
+axs[0, 0].scatter(noisy_snr_l_ssn, improved_snr_l_ssn)
+axs[0, 0].set_title("SI-SNR improvement - Left")
+axs[0, 0].set_xlabel("Input Noisy SI-SNR")
+axs[0, 0].set_ylabel("SI-SNR improvement")
+
+axs[0, 1].scatter(noisy_snr_r_ssn, improved_snr_r_ssn)
+axs[0, 1].set_title("SI-SNR improvement - Right")
+axs[0, 1].set_xlabel("Input Noisy SI-SNR")
+axs[0, 1].set_ylabel("SI-SNR improvement")
+
+axs[1, 0].scatter(noisy_snr_l_ssn, improved_stoi_l_ssn)
+axs[1, 0].set_title("STOI improvement - Left")
+axs[1, 0].set_xlabel("Input Noisy SI-SNR")
+axs[1, 0].set_ylabel("STOI improvement")
+
+axs[1, 1].scatter(noisy_snr_r_ssn, improved_stoi_r_snn)
+axs[1, 1].set_title("STOI improvement - Right")
+axs[1, 1].set_xlabel("Input Noisy SI-SNR")
+axs[1, 1].set_ylabel("STOI improvement")
+plt.savefig("snr_stoi_bin_ssn.png")
+
+fig, axs = plt.subplots(nrows=1, ncols=1, figsize=(5, 5))
+
+axs.scatter(avg_snr_ssn, improved_mbstoi_ssn)
+axs.set_title("MBSTOI improvement")
+axs.set_xlabel("Input Noisy SI-SNR")
+axs.set_ylabel("MBSTOI improvement")
+plt.savefig("mbstoi_bin.png")

@@ -37,7 +37,7 @@ class EvalMetrics(nn.Module):
 
         dataloader = iter(dataloader)
         # testset_len = len(dataloader)
-        testset_len = 5
+        testset_len = 250
 
         noisy_snr_l = torch.zeros((testset_len))
 
