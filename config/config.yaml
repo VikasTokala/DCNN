@@ -1,5 +1,29 @@
+dataset:
+  noisy_test_dataset_dir: /kaggle/input/isotropic-testset/Isotropic_testset/SSN/Noisy_testset
+  noisy_training_dataset_dir: /kaggle/input/isotropicdataset/Noisy_trainset_iso
+  noisy_validation_dataset_dir: /kaggle/input/isotropicdataset/Noisy_valset_iso
+  target_test_dataset_dir: /kaggle/input/isotropic-testset/Isotropic_testset/SSN/Clean_testset
+  target_training_dataset_dir: /kaggle/input/isotropicdataset/Clean_trainset_iso
+  target_validation_dataset_dir: /kaggle/input/isotropicdataset/Clean_valset_iso
 defaults:
-  - model
-  - training
-  - dataset: speech_dataset
-  - test_rtf
+- model
+- training
+- dataset: speech_dataset
+model:
+  attention: true
+  avg_mode: time
+  ild_weight: 1
+  ipd_weight: 1
+  kurt_weight: 0
+  rtf_weight: 0
+  snr_weight: 1
+  stoi_weight: 10
+training:
+  accelerator: cuda
+  batch_size: 32
+  learning_rate: 0.0001
+  n_epochs: 40
+  n_workers: 4
+  pin_memory: true
+  strategy: ddp
+  train_checkpoint_path: null
