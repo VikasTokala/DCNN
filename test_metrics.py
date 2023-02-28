@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.express as px
 from DCNN.matFileGen import writeMatFile
+
 config = {
     "defaults": [
         "model",
@@ -69,7 +70,7 @@ checkpoint = torch.load(MODEL_CHECKPOINT_PATH, map_location=device)
 # checkpoint = torch.load(MODEL_CHECKPOINT_PATH)
 model.load_state_dict(checkpoint["state_dict"], strict=False)
 
-TESTSET_LEN = 250
+TESTSET_LEN = 5
 
 NOISY_DATASET_PATH =  "/Users/vtokala/Documents/Research/Databases/Dataset_Binaural_2S/Testset_Experiments/Isotropic_testset/SSN/Noisy_testset"
 CLEAN_DATASET_PATH = '/Users/vtokala/Documents/Research/Databases/Dataset_Binaural_2S/Testset_Experiments/Isotropic_testset/SSN/Clean_testset'
@@ -85,6 +86,7 @@ CLEAN_DATASET_PATH = '/Users/vtokala/Documents/Research/Databases/Dataset_Binaur
 
 noisy_snr_l_ssn, noisy_snr_r_ssn, enhanced_snr_r_ssn, enhanced_snr_l_ssn, masked_ild_error_ssn, masked_ipd_error_ssn, improved_mbstoi_ssn, improved_snr_l_ssn,improved_snr_r_ssn, improved_stoi_l_ssn,improved_stoi_r_snn = evalMet(NOISY_DATASET_PATH,
                                                                                                                                                                                                                                     CLEAN_DATASET_PATH,model,TESTSET_LEN )
+# breakpoint()
 writeMatFile(noisy_snr_l_ssn, noisy_snr_r_ssn, enhanced_snr_r_ssn, enhanced_snr_l_ssn, masked_ild_error_ssn, masked_ipd_error_ssn, improved_mbstoi_ssn, improved_snr_l_ssn,improved_snr_r_ssn, improved_stoi_l_ssn,improved_stoi_r_snn,folPath='SSN')
 
 
