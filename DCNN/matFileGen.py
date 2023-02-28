@@ -11,7 +11,7 @@ import os
 
 
 
-SAVE_PATH = 'DCNN/MatFiles/'
+SAVE_PATH = '/kaggle/working/SE_DCNN/DCNN/Matfiles'
 
 
 def writeMatFile(noisy_snr_l, noisy_snr_r, enhanced_snr_r, enhanced_snr_l, masked_ild_error, masked_ipd_error, improved_mbstoi, improved_snr_l,improved_snr_r, improved_stoi_l,improved_stoi_r,folPath = 'General'):
