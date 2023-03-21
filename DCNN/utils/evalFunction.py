@@ -79,17 +79,17 @@ class EvalMetrics(nn.Module):
             # breakpoint()
             
             
-            noisy_snr_l[i] = si_snr(noisy_samples[0][0, :], clean_samples[0, :])
-            noisy_snr_r[i] = si_snr(noisy_samples[0][1, :], clean_samples[1, :])
+            # noisy_snr_l[i] = si_snr(noisy_samples[0][0, :], clean_samples[0, :])
+            # noisy_snr_r[i] = si_snr(noisy_samples[0][1, :], clean_samples[1, :])
 
-            enhanced_snr_l[i] = si_snr(model_output[0, :], clean_samples[0, :])
-            enhanced_snr_r[i] = si_snr(model_output[1, :], clean_samples[1, :])
+            # enhanced_snr_l[i] = si_snr(model_output[0, :], clean_samples[0, :])
+            # enhanced_snr_r[i] = si_snr(model_output[1, :], clean_samples[1, :])
             
-            noisy_stoi_l[i] = self.stoi(noisy_samples[0][0, :], clean_samples[0, :])
-            noisy_stoi_r[i] = self.stoi(noisy_samples[0][1, :], clean_samples[1, :])
+            # noisy_stoi_l[i] = self.stoi(noisy_samples[0][0, :], clean_samples[0, :])
+            # noisy_stoi_r[i] = self.stoi(noisy_samples[0][1, :], clean_samples[1, :])
 
-            enhanced_stoi_l[i] = self.stoi(model_output[0, :], clean_samples[0, :])
-            enhanced_stoi_r[i] = self.stoi(model_output[1, :], clean_samples[1, :])
+            # enhanced_stoi_l[i] = self.stoi(model_output[0, :], clean_samples[0, :])
+            # enhanced_stoi_r[i] = self.stoi(model_output[1, :], clean_samples[1, :])
 
             noisy_stft_l = self.stft(noisy_samples[0][0, :])
             noisy_stft_r = self.stft(noisy_samples[0][1, :])
@@ -122,25 +122,25 @@ class EvalMetrics(nn.Module):
             
             avg_snr[i] = (noisy_snr_l[i] + noisy_snr_r[i])/2
         
-            noisy_signals = noisy_samples[0].detach().cpu().numpy()
-            clean_signals = clean_samples.detach().cpu().numpy()
-            enhanced_signals = model_output.detach().cpu().numpy()
-            noisy_mbstoi[i] = mbstoi(clean_signals[0,:], clean_signals[1,:],
-                    noisy_signals[0,:], noisy_signals[1,:], fsi=SR)
-            enhanced_mbstoi[i] = mbstoi(clean_signals[0,:], clean_signals[1,:],
-                    enhanced_signals[0,:], enhanced_signals[1,:], fsi=SR)
+            # noisy_signals = noisy_samples[0].detach().cpu().numpy()
+            # clean_signals = clean_samples.detach().cpu().numpy()
+            # enhanced_signals = model_output.detach().cpu().numpy()
+            # noisy_mbstoi[i] = mbstoi(clean_signals[0,:], clean_signals[1,:],
+            #         noisy_signals[0,:], noisy_signals[1,:], fsi=SR)
+            # enhanced_mbstoi[i] = mbstoi(clean_signals[0,:], clean_signals[1,:],
+            #         enhanced_signals[0,:], enhanced_signals[1,:], fsi=SR)
             
             print('Processed Signal ', i+1 , ' of ', testset_len)
 
     
 
         
-        improved_snr_l = (enhanced_snr_l - noisy_snr_l)
-        improved_snr_r = (enhanced_snr_r - noisy_snr_r)
+        # improved_snr_l = (enhanced_snr_l - noisy_snr_l)
+        # improved_snr_r = (enhanced_snr_r - noisy_snr_r)
 
-        improved_stoi_l = (enhanced_stoi_l - noisy_stoi_l)
-        improved_stoi_r = (enhanced_stoi_r - noisy_stoi_r)
+        # improved_stoi_l = (enhanced_stoi_l - noisy_stoi_l)
+        # improved_stoi_r = (enhanced_stoi_r - noisy_stoi_r)
 
-        improved_mbstoi = enhanced_mbstoi - noisy_mbstoi
+        # improved_mbstoi = enhanced_mbstoi - noisy_mbstoi
 
-        return noisy_snr_l, noisy_snr_r, enhanced_snr_r, enhanced_snr_l, masked_ild_error, masked_ipd_error, improved_mbstoi, improved_snr_l,improved_snr_r, improved_stoi_l,improved_stoi_r
+        return masked_ild_error, masked_ipd_error
