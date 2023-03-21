@@ -8,6 +8,10 @@ import torch
 from mbstoi import mbstoi
 import warnings
 warnings.simplefilter('ignore')
+import torch
+from torchmetrics import SNR
+
+snr = SNR()
 
 
 class EvalMetrics(nn.Module):
@@ -89,11 +93,17 @@ class EvalMetrics(nn.Module):
             # breakpoint()
             
             
-            noisy_snr_l[i] = si_snr(noisy_samples[0][0, :], clean_samples[0, :])
-            noisy_snr_r[i] = si_snr(noisy_samples[0][1, :], clean_samples[1, :])
+            # noisy_snr_l[i] = si_snr(noisy_samples[0][0, :], clean_samples[0, :])
+            # noisy_snr_r[i] = si_snr(noisy_samples[0][1, :], clean_samples[1, :])
 
-            enhanced_snr_l[i] = si_snr(model_output[0, :], clean_samples[0, :])
-            enhanced_snr_r[i] = si_snr(model_output[1, :], clean_samples[1, :])
+            # enhanced_snr_l[i] = si_snr(model_output[0, :], clean_samples[0, :])
+            # enhanced_snr_r[i] = si_snr(model_output[1, :], clean_samples[1, :])
+            
+            noisy_snr_l[i] = snr(noisy_samples[0][0, :], clean_samples[0, :])
+            noisy_snr_r[i] = snr(noisy_samples[0][1, :], clean_samples[1, :])
+
+            enhanced_snr_l[i] = snr(model_output[0, :], clean_samples[0, :])
+            enhanced_snr_r[i] = snr(model_output[1, :], clean_samples[1, :])
             
             noisy_stoi_l[i] = self.stoi(noisy_samples[0][0, :], clean_samples[0, :])
             noisy_stoi_r[i] = self.stoi(noisy_samples[0][1, :], clean_samples[1, :])
