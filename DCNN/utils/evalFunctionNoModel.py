@@ -9,9 +9,9 @@ from mbstoi import mbstoi
 import warnings
 warnings.simplefilter('ignore')
 import torch
-from torchmetrics import SNR
+from torchmetrics import SignalNoiseRatio
 
-snr = SNR()
+snr = SignalNoiseRatio()
 
 
 class EvalMetrics(nn.Module):
