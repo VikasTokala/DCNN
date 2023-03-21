@@ -22,7 +22,7 @@ class EvalMetrics(nn.Module):
         self.istft = IStft(n_dft=fft_len, hop_size=win_inc, win_length=win_len)
         self.stoi = ShortTimeObjectiveIntelligibility(fs=16000)
 
-    def forward(self,NOISY_DATASET_PATH, CLEAN_DATASET_PATH,ENHANCED_DATASET_PATH, model, testset_len=5,SR=16000):
+    def forward(self,NOISY_DATASET_PATH, CLEAN_DATASET_PATH,ENHANCED_DATASET_PATH, testset_len=5,SR=16000):
 
         dataset = BaseDataset(NOISY_DATASET_PATH, CLEAN_DATASET_PATH, mono=False)
         datasetEn = BaseDataset(ENHANCED_DATASET_PATH, CLEAN_DATASET_PATH, mono=False)
