@@ -1,15 +1,15 @@
-from torchmetrics.audio.stoi import ShortTimeObjectiveIntelligibility
-from DCNN.loss import si_snr
 from DCNN.utils.eval_utils import ild_db, ipd_rad, speechMask
 from DCNN.feature_extractors import Stft, IStft
 from DCNN.datasets.base_dataset import BaseDataset
 import torch.nn as nn
 import torch
-from mbstoi import mbstoi
 import warnings
 warnings.simplefilter('ignore')
+import torch
+from torchmetrics import SignalNoiseRatio
 
-SR=16000
+snr = SignalNoiseRatio()
+
 
 class EvalMetrics(nn.Module):
     def __init__(self, win_len=400, win_inc=100, fft_len=512) -> None:
@@ -21,12 +21,13 @@ class EvalMetrics(nn.Module):
         self.fbins = int(fft_len/2 + 1)
         self.stft = Stft(n_dft=fft_len, hop_size=win_inc, win_length=win_len)
         self.istft = IStft(n_dft=fft_len, hop_size=win_inc, win_length=win_len)
-        self.stoi = ShortTimeObjectiveIntelligibility(fs=16000)
+    
 
-    def forward(self,NOISY_DATASET_PATH, CLEAN_DATASET_PATH, model, testset_len=5):
+    def forward(self,NOISY_DATASET_PATH, CLEAN_DATASET_PATH,ENHANCED_DATASET_PATH, testset_len=5,SR=16000):
 
-        dataset = BaseDataset(NOISY_DATASET_PATH,
-                              CLEAN_DATASET_PATH, mono=False)
+        dataset = BaseDataset(NOISY_DATASET_PATH, CLEAN_DATASET_PATH, mono=False)
+        datasetEn = BaseDataset(ENHANCED_DATASET_PATH, CLEAN_DATASET_PATH, mono=False)
+        breakpoint()
 
         dataloader = torch.utils.data.DataLoader(
             dataset,
@@ -34,30 +35,43 @@ class EvalMetrics(nn.Module):
             shuffle=False,
             pin_memory=True,
             drop_last=False)
+        
+        dataloaderEn = torch.utils.data.DataLoader(
+        datasetEn,
+        batch_size=1,
+        shuffle=False,
+        pin_memory=True,
+        drop_last=False)
 
         dataloader = iter(dataloader)
+        dataloaderEn = iter(dataloaderEn)
         # testset_len = len(dataloader)
         
 
+        noisy_snr_l = torch.zeros((testset_len))
 
+
+        noisy_snr_r = torch.zeros((testset_len))
 
         masked_ild_error = torch.zeros((testset_len, self.fbins))
         masked_ipd_error = torch.zeros((testset_len, self.fbins))
 
 
+
+        avg_snr = torch.zeros(testset_len)
         
         for i in range(testset_len):  # Enhance 10 samples
             try:
                 batch = next(dataloader)
+                batchEn = next(dataloaderEn)
             except StopIteration:
                 break
 
 
             noisy_samples = (batch[0])
             clean_samples = (batch[1])[0]
-            model_output = model(noisy_samples)[0]
+            model_output = (batchEn[0])[0]
             clean_samples=(clean_samples)/(torch.max(clean_samples))
-            model_output=(model_output)/(torch.max(model_output))
 
 
             noisy_stft_l = self.stft(noisy_samples[0][0, :])
@@ -89,12 +103,11 @@ class EvalMetrics(nn.Module):
             masked_ild_error[i,:] = (ild_loss*mask).sum(dim=1)/ mask_sum
             masked_ipd_error[i,:] = (ipd_loss*mask).sum(dim=1)/ mask_sum
             
-            
+            avg_snr[i] = (noisy_snr_l[i] + noisy_snr_r[i])/2
         
+
+            
             print('Processed Signal ', i+1 , ' of ', testset_len)
 
-    
-
-       
 
         return masked_ild_error, masked_ipd_error
