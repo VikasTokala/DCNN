@@ -12,7 +12,10 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.express as px
 from DCNN.matFileGen import writeMatFile
-from DCNN.datasets.base_dataset import BaseDataset
+from DCNN.datasets.test_dataset import BaseDataset
+from glob import glob
+import soundfile as sf
+import os
 
 config = {
     "defaults": [
@@ -70,3 +73,52 @@ device = torch.device('cpu')
 checkpoint = torch.load(MODEL_CHECKPOINT_PATH, map_location=device)
 # checkpoint = torch.load(MODEL_CHECKPOINT_PATH)
 model.load_state_dict(checkpoint["state_dict"], strict=False)
+
+paths=glob("/Users/vtokala/Documents/Research/Databases/Dataset_Binaural_2S/WASPAA_Testset/TIMIT/*/", recursive = True)
+pathsEn=glob("/Users/vtokala/Documents/Research/Databases/Dataset_Binaural_2S/WASPAA_Testset/Enhanced_signals/WGN/TIMIT/*/", recursive = True)
+
+
+
+for j in range(len(paths)):
+    
+    paths = sorted(paths)
+    pathsEn = sorted(pathsEn)
+    NOISY_DATASET_PATH = os.path.join(paths[j],"Noisy_testset/")
+    print(NOISY_DATASET_PATH)
+    CLEAN_DATASET_PATH = os.path.join(paths[j],"Clean_testset/")
+    ENHANCED_DATASET_PATH = pathsEn[j]
+    dataset = BaseDataset(NOISY_DATASET_PATH, CLEAN_DATASET_PATH, mono=False)
+
+    dataloader = torch.utils.data.DataLoader(
+        dataset,
+        batch_size=1,
+        shuffle=False,
+        pin_memory=True,
+        drop_last=False
+        
+
+    )
+
+
+    dataloader = iter(dataloader)
+    # k = len(dataloader)
+
+    for i in range (len(dataloader)): # Enhance 10 samples
+        try:
+            batch = next(dataloader)
+
+        except StopIteration:
+            break
+    #     print(os.path.basename(batchEn[2][0]))
+
+        noisy_samples = (batch[0])
+        clean_samples = (batch[1])[0]
+        model_output = model(noisy_samples)[0].detach().cpu()
+        model_output = model_output/torch.max(model_output)
+        # print(model_output.shape)
+
+        # breakpoint()
+    #     torchaudio.save(path, waveform, sample_rate)
+        sf.write(ENHANCED_DATASET_PATH +"/DCCTN/"+ os.path.basename(batch[2][0])[:len(os.path.basename(batch[2][0]))-4] + "_DCCTN.wav", model_output.numpy().transpose(), 16000) 
+        # print(ENHANCED_DATASET_PATH + os.path.basename(batch[2][0])[:len(os.path.basename(batch[2][0]))-4] + "_DCCTN.wav")
+        print(f"=====Computing Signal {i} of ", len(dataloader))
