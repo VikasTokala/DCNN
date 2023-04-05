@@ -6,9 +6,6 @@ import torch
 import warnings
 warnings.simplefilter('ignore')
 import torch
-from torchmetrics import SignalNoiseRatio
-
-snr = SignalNoiseRatio()
 
 
 class EvalMetrics(nn.Module):
