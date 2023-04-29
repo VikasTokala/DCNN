@@ -12,9 +12,9 @@ from DCNN.utils.apply_mask import apply_mask
 class DCNN(nn.Module):
     def __init__(
             self,
-            rnn_layers=2, rnn_units=128,
+            rnn_layers=8, rnn_units=128,
             win_len=400, win_inc=100, fft_len=512, win_type='hann',
-            masking_mode='E', use_clstm=False,
+            masking_mode='E', use_clstm=True,
             kernel_size=5, kernel_num=[16, 32, 64, 128, 256, 256],
             bidirectional=False, embed_dim=512, num_heads=8, **kwargs
     ):

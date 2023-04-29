@@ -42,7 +42,7 @@ config = {
         "train_checkpoint_path": None, #"/kaggle/working/SE_DCNN/DCNN/checkpoints/weights-epoch=19-validation_loss=-17.90.ckpt",
         "strategy": "ddp",
         "pin_memory": True,
-        "accelerator": "cuda"
+        "accelerator": "cpu"
     },
     "model":{
         "rtf_weight" : 0,
@@ -52,7 +52,7 @@ config = {
         "stoi_weight": 10, #10
         "kurt_weight": 0,
         "avg_mode": "time",
-        "attention": True
+        "attention": False
     }
 }
 
@@ -64,7 +64,7 @@ config = compose("config")
 
 
 evalMet = evalFunction.EvalMetrics()
-MODEL_CHECKPOINT_PATH = "/Users/vtokala/Documents/Research/di_nn/DCNN/checkpoints/Complex-Attn-40E-iso-com.ckpt"
+MODEL_CHECKPOINT_PATH = "/Users/vtokala/Documents/Research/di_nn/DCNN/checkpoints/Complex_RNN_40E_iso.ckpt"
 # MODEL_CHECKPOINT_PATH = "/kaggle/input/lss-resources/code/se/demo/last.ckpt"
 model = DCNNLightningModule(config)
 model.eval()
@@ -74,8 +74,8 @@ checkpoint = torch.load(MODEL_CHECKPOINT_PATH, map_location=device)
 # checkpoint = torch.load(MODEL_CHECKPOINT_PATH)
 model.load_state_dict(checkpoint["state_dict"], strict=False)
 
-paths=glob("/Users/vtokala/Documents/Research/Databases/Dataset_Binaural_2S/WASPAA_Testset/Enhanced_signals/WGN/VCTK/*/", recursive = True)
-pathsEn=glob("/Users/vtokala/Documents/Research/Databases/Dataset_Binaural_2S/WASPAA_Testset/Enhanced_signals/WGN/VCTK/*/", recursive = True)
+paths=glob("/Users/vtokala/Documents/Research/Databases/Dataset_Binaural_2S/WASPAA_Testset/Enhanced_signals/SSN/VCTK/*/", recursive = True)
+pathsEn=glob("/Users/vtokala/Documents/Research/Databases/Dataset_Binaural_2S/WASPAA_Testset/Enhanced_signals/SSN/VCTK/*/", recursive = True)
 
 
 
@@ -119,6 +119,6 @@ for j in range(len(paths)):
 
         # breakpoint()
     #     torchaudio.save(path, waveform, sample_rate)
-        sf.write(ENHANCED_DATASET_PATH +"/DCCTN/"+ os.path.basename(batch[2][0])[:len(os.path.basename(batch[2][0]))-4] + "_DCCTN.wav", model_output.numpy().transpose(), 16000) 
+        sf.write(ENHANCED_DATASET_PATH +"/DCCRN/"+ os.path.basename(batch[2][0])[:len(os.path.basename(batch[2][0]))-4] + "_DCCRN.wav", model_output.numpy().transpose(), 16000) 
         # print(ENHANCED_DATASET_PATH + os.path.basename(batch[2][0])[:len(os.path.basename(batch[2][0]))-4] + "_DCCTN.wav")
         print(f"=====Computing Signal {i+1} of ", len(dataloader))
