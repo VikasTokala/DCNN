@@ -170,12 +170,12 @@ def ild_loss_db(target_stft_l, target_stft_r,
 
     target_ild = ild_db(target_stft_l.abs(), target_stft_r.abs(), avg_mode=avg_mode)
     output_ild = ild_db(output_stft_l.abs(), output_stft_r.abs(), avg_mode=avg_mode)
-    mask = speechMask(target_stft_l,target_stft_r, threshold=20)
+    mask = speechMask(target_stft_l,target_stft_r,threshold=20)
     
     ild_loss = (target_ild - output_ild).abs()
     # breakpoint()
     masked_ild_loss = ((ild_loss * mask).sum(dim=2)).sum(dim=1)/(mask.sum(dim=2)).sum(dim=1)
-    # breakpoint()
+   
     return masked_ild_loss.mean()
 
 
@@ -203,7 +203,7 @@ def ipd_loss_rads(target_stft_l, target_stft_r,
 
 
 
-def speechMask(stft_l,stft_r,threshold=15):
+def speechMask(stft_l,stft_r, threshold=15):
     # breakpoint()
     _,_,time_bins = stft_l.shape
     thresh_l,_ = (((stft_l.abs())**2)).max(dim=2) 
