@@ -188,36 +188,36 @@ class Decoder(nn.Module):
         return x
 
 
-class RnnBlock(nn.Module):
-    def __init__(self, input_size, hidden_size, bidirectional, num_layers) -> None:
-        super().__init__()
+# class RnnBlock(nn.Module):
+#     def __init__(self, input_size, hidden_size, bidirectional, num_layers) -> None:
+#         super().__init__()
 
-        self.rnn = torch_complex.ComplexLSTM(
-            input_size=input_size,  # if idx == 0 else self.rnn_units,
-            hidden_size=hidden_size,
-            bidirectional=bidirectional,
-            num_layers=num_layers,
-            batch_first=True
-        )
+#         self.rnn = torch_complex.ComplexLSTM(
+#             input_size=input_size,  # if idx == 0 else self.rnn_units,
+#             hidden_size=hidden_size,
+#             bidirectional=bidirectional,
+#             num_layers=num_layers,
+#             batch_first=True
+#         )
 
-        self.transform = nn.Linear(
-            hidden_size,
-            input_size,
-            dtype=torch.complex64
-        )
+#         self.transform = nn.Linear(
+#             hidden_size,
+#             input_size,
+#             dtype=torch.complex64
+#         )
 
-    def forward(self, x):
-        batch_size, channels, freqs, time_bins = x.shape
-        x = x.flatten(start_dim=1, end_dim=2)
-        x = x.transpose(1, 2)  # (batch_size, time_bins, rnn_channels)
-        # breakpoint()
-        x = self.rnn(x)[0]
-        x = self.transform(x)
-        # breakpoint()
-        x = x.unflatten(-1, (channels, freqs))
-        x = x.movedim(1, -1)
+#     def forward(self, x):
+#         batch_size, channels, freqs, time_bins = x.shape
+#         x = x.flatten(start_dim=1, end_dim=2)
+#         x = x.transpose(1, 2)  # (batch_size, time_bins, rnn_channels)
+#         # breakpoint()
+#         x = self.rnn(x)[0]
+#         x = self.transform(x)
+#         # breakpoint()
+#         x = x.unflatten(-1, (channels, freqs))
+#         x = x.movedim(1, -1)
 
-        return x
+#         return x
 
 
 class MultiAttnBlock(nn.Module):
@@ -239,7 +239,7 @@ class MultiAttnBlock(nn.Module):
         batch_size, channels, freqs, time_bins = x.shape
         x = x.flatten(start_dim=1, end_dim=2)
         x = x.transpose(1, 2)
-        # breakpoint()
+        breakpoint()
         x = self.mattn(x)
         # breakpoint()
         x = self.transform(x)
