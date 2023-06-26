@@ -35,6 +35,7 @@ class BinauralDCRNN(DCNN):
         x_l = self.decoder(x_l_rnn, encoder_out_l)
         x_r = self.decoder(x_r_rnn, encoder_out_r)
     
+    
 
         # 4. Apply mask
         out_spec_l = apply_mask(x_l[:, 0], cspecs_l, self.masking_mode)

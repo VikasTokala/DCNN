@@ -64,7 +64,7 @@ config = compose("config")
 
 
 evalMet = evalFunction.EvalMetrics()
-MODEL_CHECKPOINT_PATH = "/Users/vtokala/Documents/Research/di_nn/DCNN/checkpoints/Complex_RNN_40E_iso.ckpt"
+MODEL_CHECKPOINT_PATH = "/Users/vtokala/Documents/Research/di_nn/DCNN/checkpoints/Complex_RNN_40E_iso_1.ckpt"
 # MODEL_CHECKPOINT_PATH = "/kaggle/input/lss-resources/code/se/demo/last.ckpt"
 model = DCNNLightningModule(config)
 model.eval()
@@ -74,8 +74,8 @@ checkpoint = torch.load(MODEL_CHECKPOINT_PATH, map_location=device)
 # checkpoint = torch.load(MODEL_CHECKPOINT_PATH)
 model.load_state_dict(checkpoint["state_dict"], strict=False)
 
-paths=glob("/Users/vtokala/Documents/Research/Databases/Dataset_Binaural_2S/WASPAA_Testset/Enhanced_signals/SSN/VCTK/*/", recursive = True)
-pathsEn=glob("/Users/vtokala/Documents/Research/Databases/Dataset_Binaural_2S/WASPAA_Testset/Enhanced_signals/SSN/VCTK/*/", recursive = True)
+paths=glob("/Users/vtokala/Documents/Research/Databases/Dataset_Binaural_2S/WASPAA_Testset/Enhanced_signals/Car/VCTK/*/", recursive = True)
+pathsEn=glob("/Users/vtokala/Documents/Research/Databases/Dataset_Binaural_2S/WASPAA_Testset/Enhanced_signals/Car/VCTK/*/", recursive = True)
 
 
 

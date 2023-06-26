@@ -44,7 +44,7 @@ for i in range (len(SNRfolders)):
     CLEAN_DATASET_PATH_10k =  os.path.join(SNRfolders[i],"Clean_testset_10kHz")
     CLEAN_DATASET_PATH_10k_eval =  os.path.join(SNRfolders[i],"Clean_testset_10k_eval")
     ENHANCED_DATASET_PATH_DCCTN = os.path.join(SNRfolders[i],"DCCTN")
-    ENHANCED_DATASET_PATH_BLDC = os.path.join(SNRfolders[i],"BLDCCTN")
+    ENHANCED_DATASET_PATH_DCCRN = os.path.join(SNRfolders[i],"DCCRN")
     ENHANCED_DATASET_PATH_BMWF = os.path.join(SNRfolders[i],"BMWF")
     ENHANCED_DATASET_PATH_BSOBM = os.path.join(SNRfolders[i],"BSOBM")
     
@@ -52,7 +52,7 @@ for i in range (len(SNRfolders)):
     dataset = BaseDataset(NOISY_DATASET_PATH, CLEAN_DATASET_PATH, mono=False)
     dataset_bsobm_noisy = BaseDataset(NOISY_DATASET_PATH_10k, CLEAN_DATASET_PATH_10k, mono=False,sr=10000)
     dataset_dcctn = BaseDataset(ENHANCED_DATASET_PATH_DCCTN, CLEAN_DATASET_PATH, mono=False)
-    dataset_bldc = BaseDataset(ENHANCED_DATASET_PATH_BLDC, CLEAN_DATASET_PATH, mono=False)
+    dataset_dccrn = BaseDataset(ENHANCED_DATASET_PATH_DCCRN, CLEAN_DATASET_PATH, mono=False)
     dataset_bmwf = BaseDataset(ENHANCED_DATASET_PATH_BMWF, CLEAN_DATASET_PATH, mono=False)
     dataset_bsobm = BaseDataset(ENHANCED_DATASET_PATH_BSOBM, CLEAN_DATASET_PATH_10k_eval, mono=False,sr=10000)
     
@@ -78,8 +78,8 @@ for i in range (len(SNRfolders)):
         pin_memory=True,
         drop_last=False)
     
-    dataloader_bldc = torch.utils.data.DataLoader(
-        dataset_bldc,
+    dataloader_dccrn = torch.utils.data.DataLoader(
+        dataset_dccrn,
         batch_size=1,
         shuffle=False,
         pin_memory=True,
@@ -101,28 +101,28 @@ for i in range (len(SNRfolders)):
 
     dataloader = iter(dataloader)
     dataloader_bsobm_noisy = iter(dataloader_bsobm_noisy)
-    dataloader_bldc = iter(dataloader_bldc)
+    dataloader_dccrn = iter(dataloader_dccrn)
     dataloader_dcctn = iter(dataloader_dcctn)
     dataloader_bsobm = iter(dataloader_bsobm)
     dataloader_bmwf =  iter(dataloader_bmwf)
     
-    masked_ild_error_dcctn = torch.zeros((24, fbins))
-    masked_ipd_error_dcctn = torch.zeros((24, fbins))
+    masked_ild_error_dcctn = torch.zeros((len(dataloader), fbins))
+    masked_ipd_error_dcctn = torch.zeros((len(dataloader), fbins))
     
-    masked_ild_error_bldc = torch.zeros((24, fbins))
-    masked_ipd_error_bldc = torch.zeros((24, fbins))
+    masked_ild_error_dccrn = torch.zeros((len(dataloader), fbins))
+    masked_ipd_error_dccrn = torch.zeros((len(dataloader), fbins))
     
-    masked_ild_error_bsobm = torch.zeros((24, fbins))
-    masked_ipd_error_bsobm = torch.zeros((24, fbins))
+    masked_ild_error_bsobm = torch.zeros((len(dataloader), fbins))
+    masked_ipd_error_bsobm = torch.zeros((len(dataloader), fbins))
     
-    masked_ild_error_bmwf = torch.zeros((24, fbins))
-    masked_ipd_error_bmwf = torch.zeros((24, fbins))
+    masked_ild_error_bmwf = torch.zeros((len(dataloader), fbins))
+    masked_ipd_error_bmwf = torch.zeros((len(dataloader), fbins))
     
-    for j in range(24):#():
+    for j in range(len(dataloader)):#():
         try:
             batch = next(dataloader)
             batch_bsobm_noisy = next(dataloader_bsobm_noisy)
-            batch_bldc = next(dataloader_bldc)
+            batch_dccrn = next(dataloader_dccrn)
             batch_dcctn = next(dataloader_dcctn)
             batch_bsobm = next(dataloader_bsobm)
             batch_bmwf = next(dataloader_bmwf)
@@ -133,7 +133,7 @@ for i in range (len(SNRfolders)):
         noisy_sobm = (batch_bsobm_noisy[0])[0]
         clean_samples = (batch[1])[0]
         clean_bsobm = (batch_bsobm[1])[0]
-        enhanced_bldc = (batch_bldc[0])[0]
+        enhanced_dccrn = (batch_dccrn[0])[0]
         enhanced_dcctn = (batch_dcctn[0])[0]
         enhanced_bsobm = (batch_bsobm[0])[0]
         enhanced_bmwf = (batch_bmwf[0])[0]
@@ -149,8 +149,8 @@ for i in range (len(SNRfolders)):
         bsobm_target_stft_l = stft(clean_bsobm[0, :])
         bsobm_target_stft_r = stft(clean_bsobm[1, :])
         
-        bldc_enhanced_stft_l = stft(enhanced_bldc[0, :])
-        bldc_enhanced_stft_r = stft(enhanced_bldc[1, :])
+        dccrn_enhanced_stft_l = stft(enhanced_dccrn[0, :])
+        dccrn_enhanced_stft_r = stft(enhanced_dccrn[1, :])
         
         bsobm_enhanced_stft_l = stft(enhanced_bsobm[0, :])
         bsobm_enhanced_stft_r = stft(enhanced_bsobm[1, :])
@@ -165,7 +165,7 @@ for i in range (len(SNRfolders)):
         target_ild_10k = ild_db(bsobm_target_stft_l.abs(), bsobm_target_stft_r.abs())
         
         dcctn_enhanced_ild = ild_db(dcctn_enhanced_stft_l.abs(), dcctn_enhanced_stft_r.abs())
-        bldc_enhanced_ild = ild_db(bldc_enhanced_stft_l.abs(), bldc_enhanced_stft_r.abs())
+        dccrn_enhanced_ild = ild_db(dccrn_enhanced_stft_l.abs(), dccrn_enhanced_stft_r.abs())
         bsobm_enhanced_ild = ild_db(bsobm_enhanced_stft_l.abs(), bsobm_enhanced_stft_r.abs())
         bmwf_enhanced_ild = ild_db(bmwf_enhanced_stft_l.abs(), bmwf_enhanced_stft_r.abs())
         
@@ -173,18 +173,18 @@ for i in range (len(SNRfolders)):
         target_ipd_10k = ipd_rad(bsobm_target_stft_l, bsobm_target_stft_r)
         
         dcctn_enhanced_ipd = ipd_rad(dcctn_enhanced_stft_l, dcctn_enhanced_stft_r)
-        bldc_enhanced_ipd = ipd_rad(bldc_enhanced_stft_l, bldc_enhanced_stft_r)
+        dccrn_enhanced_ipd = ipd_rad(dccrn_enhanced_stft_l, dccrn_enhanced_stft_r)
         bsobm_enhanced_ipd = ipd_rad(bsobm_enhanced_stft_l, bsobm_enhanced_stft_r)
         bmwf_enhanced_ipd = ipd_rad(bmwf_enhanced_stft_l, bmwf_enhanced_stft_r)
         
         
         dcctn_ild_error = (target_ild_16k - dcctn_enhanced_ild).abs()
-        bldc_ild_error = (target_ild_16k - bldc_enhanced_ild).abs()
+        dccrn_ild_error = (target_ild_16k - dccrn_enhanced_ild).abs()
         bmwf_ild_error = (target_ild_16k - bmwf_enhanced_ild).abs()
         bsobm_ild_error = (target_ild_10k - bsobm_enhanced_ild).abs()
         
         dcctn_ipd_error = (target_ipd_16k - dcctn_enhanced_ipd).abs()
-        bldc_ipd_error = (target_ipd_16k - bldc_enhanced_ipd).abs()
+        dccrn_ipd_error = (target_ipd_16k - dccrn_enhanced_ipd).abs()
         bmwf_ipd_error = (target_ipd_16k - bmwf_enhanced_ipd).abs()
         bsobm_ipd_error = (target_ipd_10k - bsobm_enhanced_ipd).abs()
         
@@ -197,8 +197,8 @@ for i in range (len(SNRfolders)):
         masked_ild_error_dcctn[j,:] = (dcctn_ild_error*mask).sum(dim=1)/ mask_sum
         masked_ipd_error_dcctn[j,:] = (dcctn_ipd_error*mask).sum(dim=1)/ mask_sum
         
-        masked_ild_error_bldc[j,:] = (bldc_ild_error*mask).sum(dim=1)/ mask_sum
-        masked_ipd_error_bldc[j,:] = (bldc_ipd_error*mask).sum(dim=1)/ mask_sum
+        masked_ild_error_dccrn[j,:] = (dccrn_ild_error*mask).sum(dim=1)/ mask_sum
+        masked_ipd_error_dccrn[j,:] = (dccrn_ipd_error*mask).sum(dim=1)/ mask_sum
         
         masked_ild_error_bmwf[j,:] = (bmwf_ild_error*mask).sum(dim=1)/ mask_sum
         masked_ipd_error_bmwf[j,:] = (bmwf_ipd_error*mask).sum(dim=1)/ mask_sum
@@ -215,9 +215,10 @@ for i in range (len(SNRfolders)):
     folpath = os.path.join(SNRfolders[i],'ILD_IPD_Errors')
     writeMatFile(masked_ild_error_dcctn,masked_ipd_error_dcctn, folPath=folpath,method='DCCTN' )
     # breakpoint()
-    # writeMatFile(masked_ild_error_bldc,masked_ipd_error_bldc, folPath=folpath  , method='BLDC')  
+    writeMatFile(masked_ild_error_dccrn,masked_ipd_error_dccrn, folPath=folpath  , method='DCCRN')  
     writeMatFile(masked_ild_error_bsobm,masked_ipd_error_bsobm, folPath=folpath, method='BSOBM' )       
-    writeMatFile(masked_ild_error_bmwf,masked_ipd_error_bmwf, folPath=folpath, method='BMWF'  )       
+    writeMatFile(masked_ild_error_bmwf,masked_ipd_error_bmwf, folPath=folpath, method='BMWF'  )  
+         
         
         
         
