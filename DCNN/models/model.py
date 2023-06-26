@@ -239,7 +239,7 @@ class MultiAttnBlock(nn.Module):
         batch_size, channels, freqs, time_bins = x.shape
         x = x.flatten(start_dim=1, end_dim=2)
         x = x.transpose(1, 2)
-        breakpoint()
+        # breakpoint()
         x = self.mattn(x)
         # breakpoint()
         x = self.transform(x)
