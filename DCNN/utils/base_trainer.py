@@ -55,7 +55,7 @@ class BaseTrainer(pl.Trainer):
                        ],
             logger=[tb_logger], # csv_logger],
             accelerator=accelerator,
-            strategy=strategy,
+            # strategy=strategy,
             # gpus=gpu_count,
             log_every_n_steps=400, enable_progress_bar=True, detect_anomaly=False)
 
