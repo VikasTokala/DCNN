@@ -28,7 +28,7 @@ class BaseTrainer(pl.Trainer):
         #     accelerator = "auto" 
 
 
-        strategy = strategy if gpu_count > 1 else 'auto'
+        strategy = strategy if gpu_count > 1 else 'None'
 
         progress_bar = CustomProgressBar()
         early_stopping = EarlyStopping(early_stopping_config["key_to_monitor"],
