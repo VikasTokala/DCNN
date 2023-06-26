@@ -18,7 +18,7 @@ class BaseTrainer(pl.Trainer):
     def __init__(self, lightning_module, n_epochs,
                  use_checkpoint_callback=True, checkpoint_path=None,
                  early_stopping_config=None, strategy="ddp",
-                 accelerator=None, profiler='advanced'):
+                 accelerator='auto', profiler='advanced'):
 
         gpu_count = torch.cuda.device_count()
 
@@ -28,7 +28,7 @@ class BaseTrainer(pl.Trainer):
         #     accelerator = "auto" 
 
 
-        strategy = strategy if gpu_count > 1 else None
+        strategy = strategy if gpu_count > 1 else 'auto'
 
         progress_bar = CustomProgressBar()
         early_stopping = EarlyStopping(early_stopping_config["key_to_monitor"],
