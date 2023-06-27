@@ -17,8 +17,8 @@ SAVE_DIR = "logs/"
 class BaseTrainer(pl.Trainer):
     def __init__(self, lightning_module, n_epochs,
                  use_checkpoint_callback=True, checkpoint_path=None,
-                 early_stopping_config=None,
-                 accelerator='auto', profiler='advanced'):
+                 early_stopping_config=None,strategy="ddp",
+                 accelerator='None', profiler='advanced'):
 
         gpu_count = torch.cuda.device_count()
 
@@ -28,7 +28,7 @@ class BaseTrainer(pl.Trainer):
         #     accelerator = "auto" 
 
 
-        # strategy = strategy if gpu_count > 1 else 'ddp'
+        strategy = strategy if gpu_count > 1 else 'ddp'
 
         progress_bar = CustomProgressBar()
         early_stopping = EarlyStopping(early_stopping_config["key_to_monitor"],
@@ -55,8 +55,8 @@ class BaseTrainer(pl.Trainer):
                        ],
             logger=[tb_logger], # csv_logger],
             accelerator=accelerator,
-            # strategy=strategy,
-            # gpus=gpu_count,
+            strategy=strategy,
+            gpus=gpu_count,
             log_every_n_steps=400, enable_progress_bar=True, detect_anomaly=False)
 
         if checkpoint_path is not None:
