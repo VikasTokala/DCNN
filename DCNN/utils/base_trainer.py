@@ -82,7 +82,7 @@ class BaseLightningModule(pl.LightningModule):
 
         self.log_step = log_step
 
-    def _step(self, batch, batch_idx, log_model_output=True,
+    def _step(self, batch, batch_idx, log_model_output=False,
               log_labels=False):
 
         x, y = batch

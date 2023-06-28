@@ -12,11 +12,11 @@ from DCNN.utils.apply_mask import apply_mask
 class DCNN(nn.Module):
     def __init__(
             self,
-            rnn_layers=2, rnn_units=128,
+            rnn_layers=2, rnn_units=64,
             win_len=400, win_inc=100, fft_len=512, win_type='hann',
             masking_mode='E', use_clstm=False,
             kernel_size=5, kernel_num=[16, 32, 64, 128, 256, 256],
-            bidirectional=False, embed_dim=1024, num_heads=32, **kwargs
+            bidirectional=False, embed_dim=1024, num_heads=8, **kwargs
     ):
         ''' 
             rnn_layers: the number of lstm layers in the crn,
