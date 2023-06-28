@@ -12,11 +12,11 @@ from DCNN.utils.apply_mask import apply_mask
 class DCNN(nn.Module):
     def __init__(
             self,
-            rnn_layers=2, rnn_units=64,
+            rnn_layers=2, rnn_units=128,
             win_len=400, win_inc=100, fft_len=512, win_type='hann',
             masking_mode='E', use_clstm=False,
-            kernel_size=5, kernel_num=[16, 32, 64, 128, 256, 256],
-            bidirectional=False, embed_dim=1024, num_heads=8, **kwargs
+            kernel_size=5, kernel_num=[8, 16, 32, 64, 128, 128],
+            bidirectional=False, embed_dim=512, num_heads=32, **kwargs
     ):
         ''' 
             rnn_layers: the number of lstm layers in the crn,
@@ -46,7 +46,7 @@ class DCNN(nn.Module):
         self.num_heads = num_heads
         self.embed_dim = embed_dim
         hidden_dim = self.fft_len // (2 ** (len(self.kernel_num) + 1))
-        self.mattn = MultiAttnBlock(input_size=1024,
+        self.mattn = MultiAttnBlock(input_size=512,
                                     hidden_size=self.rnn_units,
                                     embed_dim=self.embed_dim,
                                     num_heads=self.num_heads,
@@ -229,8 +229,8 @@ class MultiAttnBlock(nn.Module):
             embed_dim=embed_dim, num_heads=num_heads, batch_first=batch_first)
 
         self.transform = nn.Linear(
-            in_features=1024,
-            out_features=1024,
+            in_features=input_size,
+            out_features=input_size,
             dtype=torch.complex64
         )
 
