@@ -1,6 +1,6 @@
 import torch
 import torch.functional as F
-
+from torchmetrics import SNR
 from torch.nn import Module
 from DCNN.feature_extractors import Stft, IStft
 from torch_stoi import NegSTOILoss
@@ -53,7 +53,7 @@ class BinauralLoss(Module):
             snr_cat = si_snr(model_output_cat,target_output_cat) 
             # breakpoint()
             # snr_loss = - (snr_l + snr_r)/2
-            snr_loss = snr_cat
+            snr_loss = - snr_cat
             bin_snr_loss = self.snr_weight*snr_loss
             bin_snr_loss
             print('\n SNR Loss = ', bin_snr_loss)
