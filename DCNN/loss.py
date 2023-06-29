@@ -30,12 +30,12 @@ class BinauralLoss(Module):
         self.kurt_weight = kurt_weight
         self.snr = SignalNoiseRatio()
 
-    def forward(self, model_output, targets, model_target):
+    def forward(self, model_output, targets):
         target_stft_l = self.stft(targets[:, 0])
         target_stft_r = self.stft(targets[:, 1])
         
-        model_target_stft_l = self.stft(model_target[:, 0])
-        model_target_stft_r = self.stft(model_target[:, 1])
+        # model_target_stft_l = self.stft(model_target[:, 0])
+        # model_target_stft_r = self.stft(model_target[:, 1])
 
         output_stft_l = self.stft(model_output[:, 0])
         output_stft_r = self.stft(model_output[:, 1])
@@ -73,20 +73,20 @@ class BinauralLoss(Module):
             loss += bin_stoi_loss
 
         if self.ild_weight > 0:
-            # ild_loss = ild_loss_db(target_stft_l.abs(), target_stft_r.abs(),
-            #                        output_stft_l.abs(), output_stft_r.abs(), avg_mode=self.avg_mode)
             ild_loss = ild_loss_db(target_stft_l.abs(), target_stft_r.abs(),
-                                   model_target_stft_l.abs(), model_target_stft_r.abs(), avg_mode=self.avg_mode)
+                                   output_stft_l.abs(), output_stft_r.abs(), avg_mode=self.avg_mode)
+            # ild_loss = ild_loss_db(target_stft_l.abs(), target_stft_r.abs(),
+            #                        model_target_stft_l.abs(), model_target_stft_r.abs(), avg_mode=self.avg_mode)
             bin_ild_loss = self.ild_weight*ild_loss
             # bin_ild_loss.detach()
             print('\n ILD Loss = ', bin_ild_loss)
             loss += bin_ild_loss
 
         # if self.ipd_weight > 0:
-        #     ipd_loss = ipd_loss_rads(target_stft_l, target_stft_r,
-        #                              output_stft_l, output_stft_r, avg_mode=self.avg_mode)
             ipd_loss = ipd_loss_rads(target_stft_l, target_stft_r,
-                                     model_target_stft_l, model_target_stft_r, avg_mode=self.avg_mode)
+                                     output_stft_l, output_stft_r, avg_mode=self.avg_mode)
+            # ipd_loss = ipd_loss_rads(target_stft_l, target_stft_r,
+            #                          model_target_stft_l, model_target_stft_r, avg_mode=self.avg_mode)
             bin_ipd_loss = self.ipd_weight*ipd_loss
             # bin_ild_loss.detach()
             print('\n IPD Loss = ', bin_ipd_loss)
@@ -191,7 +191,7 @@ def ild_loss_db(target_stft_l, target_stft_r,
     # breakpoint()
     masked_ild_loss = ((ild_loss * mask).sum(dim=2)).sum(dim=1)/(mask.sum(dim=2)).sum(dim=1)
    
-    return ild_loss.mean()
+    return masked_ild_loss.mean()
 
 
 def ipd_rad(s1, s2, eps=EPS, avg_mode=None):
@@ -214,7 +214,7 @@ def ipd_loss_rads(target_stft_l, target_stft_r,
     mask = speechMask(target_stft_l,target_stft_r, threshold=20)
     
     masked_ipd_loss = ((ipd_loss * mask).sum(dim=2)).sum(dim=1)/(mask.sum(dim=2)).sum(dim=1)
-    return ipd_loss.mean()
+    return masked_ipd_loss.mean()
 
 
 

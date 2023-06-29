@@ -53,8 +53,8 @@ class BinauralAttentionDCNN(DCNN):
         # _, dec_attn_len, _, _ = attention_dec.shape
         # decoder_attn_l = attention_dec[:, :dec_attn_len//2, :, :]
         # decoder_attn_r = attention_dec[:, dec_attn_len//2:, :, :]
-        x_l_mattn = x_attn[:,:64,:,:]
-        x_r_mattn = x_attn[:,64:,:,:]
+        x_l_mattn = x_attn[:,:128,:,:]
+        x_r_mattn = x_attn[:,128:,:,:]
         # 3. Apply decoder
         # x_l = self.decoder(x_l_rnn, encoder_out_l)
         # x_r = self.decoder(x_r_rnn, encoder_out_r)

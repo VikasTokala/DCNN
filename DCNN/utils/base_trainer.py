@@ -88,8 +88,8 @@ class BaseLightningModule(pl.LightningModule):
         x, y = batch
         # 1. Compute model output and loss
         output = self.model(x)
-        model_target = self.model(y)
-        loss = self.loss(output, y, model_target)
+        # model_target = self.model(y)
+        loss = self.loss(output, y)
         # from GPUtil import showUtilization as gpu_usage
 
         output_dict = {
