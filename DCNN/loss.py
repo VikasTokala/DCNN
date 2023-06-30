@@ -1,6 +1,7 @@
 import torch
+import torch.nn as nn
 import torch.functional as F
-from torchmetrics import SignalNoiseRatio
+from torchmetrics import SignalNoiseRatio, SignalDistortionRatio
 from torch.nn import Module
 from DCNN.feature_extractors import Stft, IStft
 from torch_stoi import NegSTOILoss
@@ -12,7 +13,7 @@ EPS = 1e-6
 class BinauralLoss(Module):
     def __init__(self, win_len=400,
                  win_inc=100, fft_len=512, sr=16000, rtf_weight=0.3, snr_weight=0.7,
-                 ild_weight=0.1, ipd_weight=1, stoi_weight=0, avg_mode="freq", kurt_weight=0.1):
+                 ild_weight=0.1, ipd_weight=1, stoi_weight=0, avg_mode="freq", kurt_weight=0.1, mse_weight=0, sdr_weight=0):
 
         super().__init__()
         self.stft = Stft(fft_len, win_inc, win_len)
@@ -24,12 +25,15 @@ class BinauralLoss(Module):
         self.ipd_weight = ipd_weight
         self.stoi_weight = stoi_weight
         self.avg_mode = avg_mode
+        self.mse_weight = mse_weight
         # self.dBA = dBA_Torcolli(fs=16000)
         # self.Kurtosis = Kurtosis()
         # self.Spec_Kurt = Spectral_Kurtosis(fs=16000)
         self.kurt_weight = kurt_weight
+        self.sdr_weight = sdr_weight
         self.snr = SignalNoiseRatio()
-
+        self.sdr = SignalDistortionRatio()
+        self.mse = nn.MSELoss(reduction='mean')
     def forward(self, model_output, targets):
         target_stft_l = self.stft(targets[:, 0])
         target_stft_r = self.stft(targets[:, 1])
@@ -61,6 +65,23 @@ class BinauralLoss(Module):
             bin_snr_loss
             print('\n SNR Loss = ', bin_snr_loss)
             loss += bin_snr_loss
+        
+        if self.sdr_weight > 0:
+            
+            # snr_l = si_snr(model_output[:, 0], targets[:, 0])
+            # snr_r = si_snr(model_output[:, 1], targets[:, 1])
+            sdr_l = self.sdr(model_output[:, 0], targets[:, 0])
+            sdr_r = self.sdr(model_output[:, 1], targets[:, 1])
+            # model_output_cat = torch.cat((model_output[:,0],model_output[:,1]),dim=1)
+            # target_output_cat = torch.cat((targets[:,0],targets[:,1]),dim=1)
+            # snr_cat = self.snr(model_output_cat,target_output_cat) 
+            # breakpoint()
+            sdr_loss = - (sdr_l + sdr_r)/2
+            # snr_loss = - snr_cat
+            bin_sdr_loss = self.sdr_weight*sdr_loss
+            bin_sdr_loss
+            print('\n SNR Loss = ', bin_sdr_loss)
+            loss += bin_sdr_loss
 
         if self.stoi_weight > 0:
             stoi_l = self.stoi_loss(model_output[:, 0], targets[:, 0])
@@ -91,7 +112,15 @@ class BinauralLoss(Module):
             # bin_ild_loss.detach()
             print('\n IPD Loss = ', bin_ipd_loss)
             loss += bin_ipd_loss
-
+        
+        if self.mse_weight > 0:
+            # b, d, t = model_output.shape
+            # targets[:, 0, :] = 0
+            # targets[:, d // 2, :] = 0
+            bin_mse_loss = self.mse(model_output, targets) 
+            print('\n MSE Loss = ', bin_mse_loss)
+            loss += bin_mse_loss
+           
         if self.rtf_weight > 0:
             target_rtf_td_full = self.istft(
                 target_stft_l/(target_stft_r + EPS))

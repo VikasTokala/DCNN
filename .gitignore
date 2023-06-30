@@ -162,3 +162,4 @@ vad_test.py
 *.png
 # *.mat
 # MatFiles/
+checkpoints/

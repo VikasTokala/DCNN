@@ -12,12 +12,14 @@ defaults:
 model:
   attention: true
   avg_mode: time
-  ild_weight: 1
-  ipd_weight: 10
+  ild_weight: 0
+  ipd_weight: 0
   kurt_weight: 0
   rtf_weight: 0
-  snr_weight: 1
-  stoi_weight: 10
+  snr_weight: 0
+  stoi_weight: 0
+  sdr_weight: 0
+  mse_weight: 1
 training:
   accelerator: cpu
   batch_size: 20
