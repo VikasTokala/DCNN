@@ -1,10 +1,11 @@
 import torch
 import torch.nn as nn
 import torch.functional as F
-from torchmetrics import SignalNoiseRatio, SignalDistortionRatio
+from torchmetrics import SignalNoiseRatio, SignalDistortionRatio, ScaleInvariantSignalDistortionRatio
 from torch.nn import Module
 from DCNN.feature_extractors import Stft, IStft
 from torch_stoi import NegSTOILoss
+
 # from DCNN.utils.spectral_kurtosis import Spectral_Kurtosis
 
 EPS = 1e-6
@@ -13,7 +14,8 @@ EPS = 1e-6
 class BinauralLoss(Module):
     def __init__(self, win_len=400,
                  win_inc=100, fft_len=512, sr=16000, rtf_weight=0.3, snr_weight=0.7,
-                 ild_weight=0.1, ipd_weight=1, stoi_weight=0, avg_mode="freq", kurt_weight=0.1, mse_weight=0, sdr_weight=0):
+                 ild_weight=0.1, ipd_weight=1, stoi_weight=0, avg_mode="freq", kurt_weight=0.1, mse_weight=0, sdr_weight=0,
+                 si_sdr_weight=0):
 
         super().__init__()
         self.stft = Stft(fft_len, win_inc, win_len)
@@ -26,6 +28,7 @@ class BinauralLoss(Module):
         self.stoi_weight = stoi_weight
         self.avg_mode = avg_mode
         self.mse_weight = mse_weight
+        self.si_sdr_weight = si_sdr_weight
         # self.dBA = dBA_Torcolli(fs=16000)
         # self.Kurtosis = Kurtosis()
         # self.Spec_Kurt = Spectral_Kurtosis(fs=16000)
@@ -34,6 +37,8 @@ class BinauralLoss(Module):
         self.snr = SignalNoiseRatio()
         self.sdr = SignalDistortionRatio()
         self.mse = nn.MSELoss(reduction='mean')
+        self.sisdr = ScaleInvariantSignalDistortionRatio()
+        
     def forward(self, model_output, targets):
         target_stft_l = self.stft(targets[:, 0])
         target_stft_r = self.stft(targets[:, 1])
@@ -82,6 +87,23 @@ class BinauralLoss(Module):
             bin_sdr_loss
             print('\n SNR Loss = ', bin_sdr_loss)
             loss += bin_sdr_loss
+        
+        if self.si_sdr_weight > 0:
+            
+            # snr_l = si_snr(model_output[:, 0], targets[:, 0])
+            # snr_r = si_snr(model_output[:, 1], targets[:, 1])
+            sisdr_l = self.sisdr(model_output[:, 0], targets[:, 0])
+            sisdr_r = self.sisdr(model_output[:, 1], targets[:, 1])
+            # model_output_cat = torch.cat((model_output[:,0],model_output[:,1]),dim=1)
+            # target_output_cat = torch.cat((targets[:,0],targets[:,1]),dim=1)
+            # snr_cat = self.snr(model_output_cat,target_output_cat) 
+            # breakpoint()
+            sisdr_loss = - (sisdr_l + sisdr_r)/2
+            # snr_loss = - snr_cat
+            bin_sisdr_loss = self.si_sdr_weight*sisdr_loss
+            
+            print('\n SI-SDR Loss = ', bin_sisdr_loss)
+            loss += bin_sisdr_loss
 
         if self.stoi_weight > 0:
             stoi_l = self.stoi_loss(model_output[:, 0], targets[:, 0])
