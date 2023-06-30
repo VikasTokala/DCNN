@@ -20,7 +20,8 @@ model:
   sdr_weight: 0
   snr_weight: 0
   stoi_weight: 0
-  si_sdr_weight: 1
+  si_sdr_weight: 0
+  si_snr_weight: 1
 training:
   accelerator: cpu
   batch_size: 20

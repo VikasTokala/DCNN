@@ -57,6 +57,7 @@ class DCNNLightningModule(BaseLightningModule):
                 sdr_weight=self.config["model"]["sdr_weight"],
                 mse_weight=self.config["model"]["mse_weight"],
                 si_sdr_weight=self.config["model"]["si_sdr_weight"],
+                si_snr_weight=self.config["model"]["si_snr_weight"]
                 )
         else:    
             model = DCNN(**self.config["model"])
