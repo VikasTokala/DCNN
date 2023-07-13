@@ -15,7 +15,9 @@ class DCNN(nn.Module):
             rnn_layers=2, rnn_units=128,
             win_len=400, win_inc=100, fft_len=512, win_type='hann',
             masking_mode='E', use_clstm=False,
-            kernel_size=5, kernel_num=[16, 32, 64, 128, 256, 256],
+            kernel_size=5, 
+            kernel_num=[16, 32, 64, 128, 256, 256], 
+            # kernel_num = [ 8, 16, 32, 64, 128, 128],
             bidirectional=False, embed_dim=1024, num_heads=32, **kwargs
     ):
         ''' 

@@ -15,7 +15,7 @@ class BinauralLoss(Module):
     def __init__(self, win_len=400,
                  win_inc=100, fft_len=512, sr=16000, rtf_weight=0.3, snr_weight=0.7,
                  ild_weight=0.1, ipd_weight=1, stoi_weight=0, avg_mode="freq", kurt_weight=0.1, mse_weight=0, sdr_weight=0,
-                 si_sdr_weight=0, si_snr_weight=1):
+                 si_sdr_weight=0, si_snr_weight=1, comp_loss_weight=0):
 
         super().__init__()
         self.stft = Stft(fft_len, win_inc, win_len)
@@ -35,6 +35,8 @@ class BinauralLoss(Module):
         # self.Spec_Kurt = Spectral_Kurtosis(fs=16000)
         self.kurt_weight = kurt_weight
         self.sdr_weight = sdr_weight
+        self.comp_loss_weight = comp_loss_weight
+        
         self.snr = SignalNoiseRatio()
         self.sdr = SignalDistortionRatio()
         self.mse = nn.MSELoss(reduction='mean')
@@ -159,7 +161,19 @@ class BinauralLoss(Module):
             bin_mse_loss = self.mse(model_output, targets) 
             print('\n MSE Loss = ', bin_mse_loss)
             loss += bin_mse_loss
-           
+        
+        if self.comp_loss_weight > 0:
+            # b, d, t = model_output.shape
+            # targets[:, 0, :] = 0
+            # targets[:, d // 2, :] = 0
+            # bin_comp_loss = comp_loss_old(target_stft_l, target_stft_r,
+            #                          output_stft_l, output_stft_r,c=0.3) 
+            comp_loss_l = comp_loss(target_stft_l,output_stft_l,comp_exp=0.3)
+            comp_loss_r = comp_loss(target_stft_r,output_stft_r,comp_exp=0.3)
+            bin_comp_loss = (comp_loss_l + comp_loss_r) * self.comp_loss_weight
+            print('\n Compressed Loss = ', bin_comp_loss)
+            loss += bin_comp_loss
+        
         if self.rtf_weight > 0:
             target_rtf_td_full = self.istft(
                 target_stft_l/(target_stft_r + EPS))
@@ -284,7 +298,39 @@ def ipd_loss_rads(target_stft_l, target_stft_r,
     masked_ipd_loss = ((ipd_loss * mask).sum(dim=2)).sum(dim=1)/(mask.sum(dim=2)).sum(dim=1)
     return masked_ipd_loss.mean()
 
+def comp_loss_old(target_stft_l,target_stft_r,output_stft_l, output_stft_r,c=0.3):
+    
+    # EPS = 0+1e-10j
+    target_stft_l_abs = torch.nan_to_num(target_stft_l.abs(), nan=0,posinf=0,neginf=0)
+    output_stft_l_abs = torch.nan_to_num(output_stft_l.abs(), nan=0,posinf=0,neginf=0)
+    target_stft_r_abs = torch.nan_to_num(target_stft_r.abs(), nan=0,posinf=0,neginf=0)
+    output_stft_r_abs = torch.nan_to_num(output_stft_r.abs(), nan=0,posinf=0,neginf=0)
+    
+    loss_l = torch.abs(torch.pow(target_stft_l_abs,c) * torch.exp(1j*(target_stft_l.angle())) - torch.pow(output_stft_l_abs,c) * torch.exp(1j*(output_stft_l.angle())))
+    loss_r = torch.abs(torch.pow(target_stft_r_abs,c) * torch.exp(1j*(target_stft_r.angle())) - torch.pow(output_stft_r_abs,c) * torch.exp(1j*(output_stft_r.angle())))
+    # breakpoint()
+    comp_loss_value = loss_l.mean() + loss_r.mean()
+    
+    
+    return comp_loss_value
 
+def comp_loss(target, output, comp_exp=0.3):
+    
+    EPS = 1e-6
+    # target = torch.nan_to_num(target, nan=0,posinf=0,neginf=0)
+    # output = torch.nan_to_num(output, nan=0,posinf=0,neginf=0)
+    # target = target + EPS
+    # output = output + EPS
+    loss_comp = (
+                    output.abs().pow(comp_exp) * output / (output.abs() + EPS) 
+                    - target.abs().pow(comp_exp) * target / (target.abs() + EPS) 
+                    ).abs()
+    
+    # loss_comp = torch.nan_to_num(loss_comp, nan=0,posinf=0,neginf=0)
+    
+    loss_comp = loss_comp.pow(2).mean()
+    
+    return loss_comp
 
 def speechMask(stft_l,stft_r, threshold=15):
     # breakpoint()
