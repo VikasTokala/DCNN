@@ -1,6 +1,7 @@
 import torch
 from DCNN.loss import BinaryMask
 EPS= 10-6
+import numpy as np
 
 
 
@@ -55,4 +56,40 @@ def speechMask(stft_l,stft_r, threshold=15):
     mask = torch.bitwise_and(mask_l.int(), mask_r.int())
     
     return mask
+
+
+
+
+
+def gcc_phat_itd(stft_left, stft_right, target_stft_l, target_stft_r, fs=16000):
+    """
+    Calculate Interaural Time Difference (ITD) using GCC-PHAT from complex STFT.
+
+    Args:
+    stft_left (torch.Tensor): Complex STFT of the left channel with shape [freq_bins, time_frames].
+    stft_right (torch.Tensor): Complex STFT of the right channel with shape [freq_bins, time_frames].
+    fs (int): Sampling rate of the signal.
+
+    Returns:
+    torch.Tensor: Estimated ITD for each frequency bin in seconds.
+    """
+    # Calculate cross-correlation
+    cross_corr = stft_left * torch.conj(stft_right)
+    mask=speechMask(target_stft_l, target_stft_r,threshold=10)
+    breakpoint()
+    # Calculate GCC-PHAT
+    gcc_phat = torch.fft.ifft(cross_corr / (torch.abs(cross_corr) + 1e-6), dim=-1)
+
+    # Find peak index
+    peak_indices = torch.argmax(torch.abs(gcc_phat), dim=-1)
+
+    # Calculate time delay
+    freq_bins = gcc_phat.shape[0]
+    max_delay = stft_left.shape[-1] / (2 * fs)  # Maximum possible delay
+
+    itd = (peak_indices - stft_left.shape[-1] // 2) * max_delay 
+
+    return itd
+
+# Example usage
 

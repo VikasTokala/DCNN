@@ -14,7 +14,7 @@ import sys
 #sys.path.append("../")
 
 from DCNN.datasets.base_dataset import BaseDataset
-from DCNN.models.model import DCNN
+from DCNN.models.model_mse import DCNN
 from DCNN.trainer import DCNNLightniningModule
 
 GlobalHydra.instance().clear()

@@ -12,6 +12,7 @@ defaults:
 model:
   attention: true
   avg_mode: time
+  comp_loss_weight: 0
   ild_weight: 0
   ipd_weight: 0
   kurt_weight: 0
@@ -20,15 +21,15 @@ model:
   sdr_weight: 0
   si_sdr_weight: 0
   si_snr_weight: 0
-  snr_weight: 0
+  snr_weight: 1
   stoi_weight: 0
-  comp_loss_weight: 1
+  msc_weight: 10
 training:
-  accelerator: cpu
-  batch_size: 20
-  learning_rate: 0.00001
-  n_epochs: 20
+  accelerator: cuda
+  batch_size: 32
+  learning_rate: 0.0001
+  n_epochs: 40
   n_workers: 4
   pin_memory: true
-  strategy: ddp_spawn
+  strategy: ddp
   train_checkpoint_path: null

@@ -1,6 +1,6 @@
 import torch
 
-from .model import DCNN
+from .model_mse import DCNN
 
 
 class BinauralDCNN(DCNN):
