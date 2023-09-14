@@ -86,23 +86,23 @@ plt.show()
 
 
 
-# fig, (ax1,ax2) = plt.subplots(1,2, sharey=True,figsize=(13, 5))
-# D = librosa.amplitude_to_db(np.abs(stft(sig_clean[0]).numpy()), ref=np.max)
-# img1 = librosa.display.specshow(D, y_axis='hz', x_axis='time',
-#                                 sr=16000, ax=ax1,hop_length=win_inc, win_length=win_len)
-# ax1.set(title='Spectrogram of the clean speech (Left Ch.)')
+fig, (ax1,ax2) = plt.subplots(1,2, sharey=True,figsize=(13, 5))
+D = librosa.amplitude_to_db(np.abs(stft(sig_clean[0]).numpy()), ref=np.max)
+img1 = librosa.display.specshow(D, y_axis='hz', x_axis='time',
+                                sr=16000, ax=ax1,hop_length=win_inc, win_length=win_len)
+ax1.set(title='Spectrogram of the clean speech (Left Ch.)')
 
-# ax1.label_outer()
+ax1.label_outer()
 
-# D = librosa.amplitude_to_db(np.abs(stft(sig_clean[1]).numpy()), ref=np.max)
-# img = librosa.display.specshow(D, y_axis='hz', x_axis='time',
-#                                 sr=16000, ax=ax2, hop_length=win_inc, win_length=win_len)
-# ax2.set(title='Spectrogram of the clean speech (Right Ch.)')
-# ax2.label_outer()
-# fig.colorbar(img1,ax=[ax1,ax2],format="%+2.0f dB")
+D = librosa.amplitude_to_db(np.abs(stft(sig_clean[1]).numpy()), ref=np.max)
+img = librosa.display.specshow(D, y_axis='hz', x_axis='time',
+                                sr=16000, ax=ax2, hop_length=win_inc, win_length=win_len)
+ax2.set(title='Spectrogram of the clean speech (Right Ch.)')
+ax2.label_outer()
+fig.colorbar(img1,ax=[ax1,ax2],format="%+2.0f dB")
 
-# # plt.tight_layout()
-# plt.show()
+plt.tight_layout()
+plt.show()
 
 # # breakpoint()
 
