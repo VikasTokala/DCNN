@@ -1,10 +1,18 @@
+# dataset:
+#   noisy_test_dataset_dir: /kaggle/input/isotropic-testset/Isotropic_testset/SSN/Noisy_testset
+#   noisy_training_dataset_dir: /kaggle/input/isotropicdataset/Noisy_trainset_iso
+#   noisy_validation_dataset_dir: /kaggle/input/isotropicdataset/Noisy_valset_iso
+#   target_test_dataset_dir: /kaggle/input/isotropic-testset/Isotropic_testset/SSN/Clean_testset
+#   target_training_dataset_dir: /kaggle/input/isotropicdataset/Clean_trainset_iso
+#   target_validation_dataset_dir: /kaggle/input/isotropicdataset/Clean_valset_iso
+
 dataset:
-  noisy_test_dataset_dir: /kaggle/input/isotropic-testset/Isotropic_testset/SSN/Noisy_testset
-  noisy_training_dataset_dir: /kaggle/input/isotropicdataset/Noisy_trainset_iso
-  noisy_validation_dataset_dir: /kaggle/input/isotropicdataset/Noisy_valset_iso
-  target_test_dataset_dir: /kaggle/input/isotropic-testset/Isotropic_testset/SSN/Clean_testset
-  target_training_dataset_dir: /kaggle/input/isotropicdataset/Clean_trainset_iso
-  target_validation_dataset_dir: /kaggle/input/isotropicdataset/Clean_valset_iso
+  noisy_test_dataset_dir: /Users/vtokala/Documents/Research/di_nn/Dataset/noisy_testset_1f
+  noisy_training_dataset_dir: /Users/vtokala/Documents/Research/di_nn/Dataset/noisy_trainset_1f
+  noisy_validation_dataset_dir: /Users/vtokala/Documents/Research/di_nn/Dataset/noisy_valset_1f
+  target_test_dataset_dir: /Users/vtokala/Documents/Research/di_nn/Dataset/clean_testset_1f
+  target_training_dataset_dir: /Users/vtokala/Documents/Research/di_nn/Dataset/clean_trainset_1f
+  target_validation_dataset_dir: /Users/vtokala/Documents/Research/di_nn/Dataset/clean_valset_1f
 defaults:
 - model
 - training
