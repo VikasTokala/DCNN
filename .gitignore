@@ -160,3 +160,4 @@ test_vad.py/
 *.wav
 plottest.py
 test_metrics.py
+checkpoints/
