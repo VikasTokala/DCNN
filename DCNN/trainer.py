@@ -19,7 +19,7 @@ class DCNNTrainer(BaseTrainer):
                          config["training"]["n_epochs"],
                          early_stopping_config=config["training"]["early_stopping"],
                          checkpoint_path=None,
-                         strategy=config["training"]["strategy"],
+                        #  strategy=config["training"]["strategy"],
                          accelerator=config["training"]["accelerator"])
                         # accelerator='mps')
 
@@ -51,8 +51,16 @@ class DCNNLightningModule(BaseLightningModule):
                 snr_weight=self.config["model"]["snr_weight"],
                 ild_weight=self.config["model"]["ild_weight"],
                 ipd_weight=self.config["model"]["ipd_weight"],
-                stoi_weight=self.config["model"]["stoi_weight"],
-                avg_mode=config["model"]["binaural_avg_mode"])
+                avg_mode=config["model"]["binaural_avg_mode"],
+                stoi_weight=config["model"]["stoi_weight"],
+                kurt_weight=config["model"]["kurt_weight"],
+                sdr_weight=self.config["model"]["sdr_weight"],
+                mse_weight=self.config["model"]["mse_weight"],
+                si_sdr_weight=self.config["model"]["si_sdr_weight"],
+                si_snr_weight=self.config["model"]["si_snr_weight"],
+                comp_loss_weight=self.config["model"]["comp_loss_weight"],
+                msc_weight=self.config["model"]["msc_weight"]
+                )
         else:    
             model = DCNN(**self.config["model"])
 

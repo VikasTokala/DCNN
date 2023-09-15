@@ -1,9 +1,12 @@
 import torch
+import torch.nn as nn
 import torch.functional as F
-
+from torchmetrics import SignalNoiseRatio, SignalDistortionRatio, ScaleInvariantSignalDistortionRatio
 from torch.nn import Module
 from DCNN.feature_extractors import Stft, IStft
 from torch_stoi import NegSTOILoss
+import matplotlib.pyplot as plt
+
 # from DCNN.utils.spectral_kurtosis import Spectral_Kurtosis
 
 EPS = 1e-6
@@ -12,7 +15,8 @@ EPS = 1e-6
 class BinauralLoss(Module):
     def __init__(self, win_len=400,
                  win_inc=100, fft_len=512, sr=16000, rtf_weight=0.3, snr_weight=0.7,
-                 ild_weight=0.1, ipd_weight=1, stoi_weight=0, avg_mode="freq", kurt_weight=0.1):
+                 ild_weight=0.1, ipd_weight=1, stoi_weight=0, avg_mode="freq", kurt_weight=0.1, mse_weight=0, sdr_weight=0,
+                 si_sdr_weight=0, si_snr_weight=1, comp_loss_weight=0, msc_weight=0):
 
         super().__init__()
         self.stft = Stft(fft_len, win_inc, win_len)
@@ -24,14 +28,29 @@ class BinauralLoss(Module):
         self.ipd_weight = ipd_weight
         self.stoi_weight = stoi_weight
         self.avg_mode = avg_mode
+        self.mse_weight = mse_weight
+        self.si_sdr_weight = si_sdr_weight
+        self.si_snr_weight = si_snr_weight
         # self.dBA = dBA_Torcolli(fs=16000)
         # self.Kurtosis = Kurtosis()
         # self.Spec_Kurt = Spectral_Kurtosis(fs=16000)
         self.kurt_weight = kurt_weight
-
+        self.sdr_weight = sdr_weight
+        self.comp_loss_weight = comp_loss_weight
+        
+        self.snr = SignalNoiseRatio()
+        self.sdr = SignalDistortionRatio()
+        self.mse = nn.MSELoss(reduction='mean')
+        # self.mse = complex_mse_loss()
+        self.sisdr = ScaleInvariantSignalDistortionRatio()
+        self.msc_weight = msc_weight
+        
     def forward(self, model_output, targets):
         target_stft_l = self.stft(targets[:, 0])
         target_stft_r = self.stft(targets[:, 1])
+        
+        # model_target_stft_l = self.stft(model_target[:, 0])
+        # model_target_stft_r = self.stft(model_target[:, 1])
 
         output_stft_l = self.stft(model_output[:, 0])
         output_stft_r = self.stft(model_output[:, 1])
@@ -40,16 +59,73 @@ class BinauralLoss(Module):
         # breakpoint()
 
         loss = 0
-
+        if self.si_snr_weight > 0:
+            
+            sisnr_l = si_snr(model_output[:, 0], targets[:, 0])
+            sisnr_r = si_snr(model_output[:, 1], targets[:, 1])
+            # sisnr_l = self.snr(model_output[:, 0], targets[:, 0])
+            # sisnr_r = self.sisnr(model_output[:, 1], targets[:, 1])
+            # model_output_cat = torch.cat((model_output[:,0],model_output[:,1]),dim=1)
+            # target_output_cat = torch.cat((targets[:,0],targets[:,1]),dim=1)
+            # snr_cat = self.snr(model_output_cat,target_output_cat) 
+            # breakpoint()
+            sisnr_loss = - (sisnr_l + sisnr_r)/2
+            # snr_loss = - snr_cat
+            bin_sisnr_loss = self.si_snr_weight*sisnr_loss
+            
+            print('\n SI-SNR Loss = ', bin_sisnr_loss)
+            loss += bin_sisnr_loss
+        
         if self.snr_weight > 0:
-            snr_l = si_snr(model_output[:, 0], targets[:, 0])
-            snr_r = si_snr(model_output[:, 1], targets[:, 1])
+            
+            # snr_l = si_snr(model_output[:, 0], targets[:, 0])
+            # snr_r = si_snr(model_output[:, 1], targets[:, 1])
+            snr_l = self.snr(model_output[:, 0], targets[:, 0])
+            snr_r = self.snr(model_output[:, 1], targets[:, 1])
+            # model_output_cat = torch.cat((model_output[:,0],model_output[:,1]),dim=1)
+            # target_output_cat = torch.cat((targets[:,0],targets[:,1]),dim=1)
+            # snr_cat = self.snr(model_output_cat,target_output_cat) 
             # breakpoint()
             snr_loss = - (snr_l + snr_r)/2
+            # snr_loss = - snr_cat
             bin_snr_loss = self.snr_weight*snr_loss
             bin_snr_loss
             print('\n SNR Loss = ', bin_snr_loss)
             loss += bin_snr_loss
+        
+        if self.sdr_weight > 0:
+            
+            # snr_l = si_snr(model_output[:, 0], targets[:, 0])
+            # snr_r = si_snr(model_output[:, 1], targets[:, 1])
+            sdr_l = self.sdr(model_output[:, 0], targets[:, 0])
+            sdr_r = self.sdr(model_output[:, 1], targets[:, 1])
+            # model_output_cat = torch.cat((model_output[:,0],model_output[:,1]),dim=1)
+            # target_output_cat = torch.cat((targets[:,0],targets[:,1]),dim=1)
+            # snr_cat = self.snr(model_output_cat,target_output_cat) 
+            # breakpoint()
+            sdr_loss = - (sdr_l + sdr_r)/2
+            # snr_loss = - snr_cat
+            bin_sdr_loss = self.sdr_weight*sdr_loss
+            
+            print('\n SDR Loss = ', bin_sdr_loss)
+            loss += bin_sdr_loss
+        
+        if self.si_sdr_weight > 0:
+            
+            # snr_l = si_snr(model_output[:, 0], targets[:, 0])
+            # snr_r = si_snr(model_output[:, 1], targets[:, 1])
+            sisdr_l = self.sisdr(model_output[:, 0], targets[:, 0])
+            sisdr_r = self.sisdr(model_output[:, 1], targets[:, 1])
+            # model_output_cat = torch.cat((model_output[:,0],model_output[:,1]),dim=1)
+            # target_output_cat = torch.cat((targets[:,0],targets[:,1]),dim=1)
+            # snr_cat = self.snr(model_output_cat,target_output_cat) 
+            # breakpoint()
+            sisdr_loss = - (sisdr_l + sisdr_r)/2
+            # snr_loss = - snr_cat
+            bin_sisdr_loss = self.si_sdr_weight*sisdr_loss
+            
+            print('\n SI-SDR Loss = ', bin_sisdr_loss)
+            loss += bin_sisdr_loss
 
         if self.stoi_weight > 0:
             stoi_l = self.stoi_loss(model_output[:, 0], targets[:, 0])
@@ -64,19 +140,67 @@ class BinauralLoss(Module):
         if self.ild_weight > 0:
             ild_loss = ild_loss_db(target_stft_l.abs(), target_stft_r.abs(),
                                    output_stft_l.abs(), output_stft_r.abs(), avg_mode=self.avg_mode)
+            # ild_loss = ild_loss_db(target_stft_l.abs(), target_stft_r.abs(),
+            #                        model_target_stft_l.abs(), model_target_stft_r.abs(), avg_mode=self.avg_mode)
             bin_ild_loss = self.ild_weight*ild_loss
             # bin_ild_loss.detach()
             print('\n ILD Loss = ', bin_ild_loss)
             loss += bin_ild_loss
 
-        if self.ipd_weight > 0:
+        # if self.ipd_weight > 0:
             ipd_loss = ipd_loss_rads(target_stft_l, target_stft_r,
                                      output_stft_l, output_stft_r, avg_mode=self.avg_mode)
+            # ipd_loss = ipd_loss_rads(target_stft_l, target_stft_r,
+            #                          model_target_stft_l, model_target_stft_r, avg_mode=self.avg_mode)
             bin_ipd_loss = self.ipd_weight*ipd_loss
             # bin_ild_loss.detach()
             print('\n IPD Loss = ', bin_ipd_loss)
             loss += bin_ipd_loss
+        
+        if self.mse_weight > 0:
+            # b, d, t = model_output.shape
+            # targets[:, 0, :] = 0
+            # targets[:, d // 2, :] = 0
+            # bin_mse_loss = (self.mse(output_stft_l, target_stft_l) + self.mse(output_stft_r,target_stft_r))/2.0 
+            bin_mse_loss = (complex_mse_loss(output_stft_l, target_stft_l) + complex_mse_loss(output_stft_r,target_stft_r))/2.0 
+            bin_mse_loss = bin_mse_loss.abs()
+            print('\n MSE Loss = ', bin_mse_loss)
+            loss += bin_mse_loss
+            
+        if self.msc_weight > 0:
+                # Calculate the Cross-Power Spectral Density (CPSD)
 
+            
+            bin_msc_loss = msc_loss(target_stft_l, target_stft_r,
+                             output_stft_l, output_stft_r)
+            # breakpoint()
+            bin_msc_loss = bin_msc_loss*self.msc_weight
+            print('\n MSC Loss = ', bin_msc_loss)
+            
+            
+            
+            loss += bin_msc_loss
+            
+        
+        
+        
+        
+        
+        
+        
+        
+        if self.comp_loss_weight > 0:
+            # b, d, t = model_output.shape
+            # targets[:, 0, :] = 0
+            # targets[:, d // 2, :] = 0
+            # bin_comp_loss = comp_loss_old(target_stft_l, target_stft_r,
+            #                          output_stft_l, output_stft_r,c=0.3) 
+            comp_loss_l = self.mse(target_stft_l.abs(),output_stft_l.abs())
+            comp_loss_r = self.mse(target_stft_r.abs(),output_stft_r.abs())
+            bin_comp_loss = (comp_loss_l + comp_loss_r)/2 * self.comp_loss_weight
+            print('\n Magnitude MSE Loss = ', bin_comp_loss)
+            loss += bin_comp_loss
+        
         if self.rtf_weight > 0:
             target_rtf_td_full = self.istft(
                 target_stft_l/(target_stft_r + EPS))
@@ -178,6 +302,41 @@ def ild_loss_db(target_stft_l, target_stft_r,
    
     return masked_ild_loss.mean()
 
+def msc_loss(target_stft_l, target_stft_r,
+                output_stft_l, output_stft_r):
+    
+    
+
+    # Calculate the Auto-Power Spectral Density (APSD) for left and right signals
+    # Calculate the Auto-Power Spectral Density (APSD) for left and right signals
+    cpsd = target_stft_l * target_stft_r.conj()
+    cpsd_op = output_stft_l * output_stft_r.conj()
+    
+    # Calculate the Aucpsd = target_stft_l * target_stft_r.conj()to-Power Spectral Density (APSD) for left and right signals
+    left_apsd = target_stft_l * target_stft_l.conj()
+    right_apsd = target_stft_r * target_stft_r.conj()
+    
+    left_apsd_op = output_stft_l * output_stft_l.conj()
+    right_apsd_op = output_stft_r * output_stft_r.conj()
+    
+    # Calculate the Magnitude Squared Coherence (MSC)
+    msc_target = torch.abs(cpsd)**2 / ((left_apsd.abs() * right_apsd.abs())+1e-8)
+    msc_output = torch.abs(cpsd_op)**2 / ((left_apsd_op.abs() * right_apsd_op.abs())+1e-8)
+    
+    mask = speechMask(target_stft_l,target_stft_r,threshold=20)
+    
+    msc_error = (msc_target - msc_output).abs()
+    
+
+
+    # Plot the MSC values as a function of frequency
+    
+    
+    # breakpoint()
+    # masked_msc_error = ((msc_error * mask).sum(dim=2)).sum(dim=1)/(mask.sum(dim=2)).sum(dim=1)
+    
+    return msc_error.mean()
+    
 
 def ipd_rad(s1, s2, eps=EPS, avg_mode=None):
     # s1 = _avg_signal(s1, avg_mode)
@@ -201,7 +360,43 @@ def ipd_loss_rads(target_stft_l, target_stft_r,
     masked_ipd_loss = ((ipd_loss * mask).sum(dim=2)).sum(dim=1)/(mask.sum(dim=2)).sum(dim=1)
     return masked_ipd_loss.mean()
 
+def comp_loss_old(target_stft_l,target_stft_r,output_stft_l, output_stft_r,c=0.3):
+    
+    # EPS = 0+1e-10j
+    target_stft_l_abs = torch.nan_to_num(target_stft_l.abs(), nan=0,posinf=0,neginf=0)
+    output_stft_l_abs = torch.nan_to_num(output_stft_l.abs(), nan=0,posinf=0,neginf=0)
+    target_stft_r_abs = torch.nan_to_num(target_stft_r.abs(), nan=0,posinf=0,neginf=0)
+    output_stft_r_abs = torch.nan_to_num(output_stft_r.abs(), nan=0,posinf=0,neginf=0)
+    
+    loss_l = torch.abs(torch.pow(target_stft_l_abs,c) * torch.exp(1j*(target_stft_l.angle())) - torch.pow(output_stft_l_abs,c) * torch.exp(1j*(output_stft_l.angle())))
+    loss_r = torch.abs(torch.pow(target_stft_r_abs,c) * torch.exp(1j*(target_stft_r.angle())) - torch.pow(output_stft_r_abs,c) * torch.exp(1j*(output_stft_r.angle())))
+    # breakpoint()
+    loss_l = torch.norm(loss_l,p='nuc')
+    loss_r = torch.norm(loss_r,p='nuc')
+    comp_loss_value = loss_l.mean() + loss_r.mean()
+    
+    
+    return comp_loss_value
 
+def comp_loss(target, output, comp_exp=0.3):
+    
+    EPS = 1e-6
+    # target = torch.nan_to_num(target, nan=0,posinf=0,neginf=0)
+    # output = torch.nan_to_num(output, nan=0,posinf=0,neginf=0)
+    # target = target + EPS
+    # output = output + EPS
+    loss_comp = (
+                    output.abs().pow(comp_exp) * output / (output.abs() + EPS) 
+                    - target.abs().pow(comp_exp) * target / (target.abs() + EPS) 
+                    )
+    
+    # loss_comp = torch.nan_to_num(loss_comp, nan=0,posinf=0,neginf=0)
+    # breakpoint()
+    loss_comp = torch.linalg.norm(loss_comp,ord=2,dim=(1,2))
+    
+    # loss_comp = loss_comp.pow(2).mean()
+    
+    return loss_comp.mean()
 
 def speechMask(stft_l,stft_r, threshold=15):
     # breakpoint()
@@ -278,3 +473,20 @@ class ISTFT(Module):
         istft = torch.istft(x, self.fft_len, hop_length=self.win_inc,
                             win_length=self.win_len, return_complex=False)
         return istft
+
+def complex_mse_loss(output, target):
+    return ((output - target)**2).mean(dtype=torch.complex64)
+
+class CLinear(nn.Module):
+    def __init__(self, size_in, size_out):
+        super().__init__()
+        self.weights = nn.Parameter(torch.randn(size_in, size_out, dtype=torch.complex64))
+        self.bias = nn.Parameter(torch.zeros(size_out, dtype=torch.complex64))
+
+    def forward(self, x):
+        if not x.dtype == torch.complex64: x = x.type(torch.complex64)
+        return x@self.weights + self.bias
+    
+    
+    
+    
