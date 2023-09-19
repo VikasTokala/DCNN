@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 EPS = 1e-6
 
-
+  
 class BinauralLoss(Module):
     def __init__(self, win_len=400,
                  win_inc=100, fft_len=512, sr=16000, rtf_weight=0.3, snr_weight=0.7,
