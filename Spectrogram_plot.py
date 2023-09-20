@@ -64,7 +64,7 @@ ax2.set_xlabel('Time [s]', fontname="Times New Roman",fontweight='bold',fontsize
 ax2.tick_params(axis='x', which='major', labelsize=16)
 ax2.set_title( 'Right Channel',fontname="Times New Roman",fontweight='bold', fontsize='17')
 # ax2.set_ylabel('Frequency (Hz)', fontname="Times New Roman",fontweight='bold')
-fig.colorbar(img1,ax=[ax1,ax2],format="%+2.0f dB", pad=0.03)
+fig.colorbar(img1,ax=[ax1,ax2],format="%+2.0f dB")
 
 
 D = mask.numpy()
@@ -106,41 +106,60 @@ plt.show()
 
 # # breakpoint()
 
-# fig, (ax1,ax2) = plt.subplots(1,2, sharey=True,figsize=(13, 5))
-# D = librosa.amplitude_to_db(np.abs(stft(sig_noisy[0]).numpy()), ref=np.max)
-# img1 = librosa.display.specshow(D, y_axis='hz', x_axis='time',
-#                                 sr=16000, ax=ax1,hop_length=win_inc, win_length=win_len)
-# ax1.set(title='Spectrogram of the noisy speech (Left Ch.)')
-# ax1.label_outer()
+fig, (ax1,ax2) = plt.subplots(1,2, sharey=True,figsize=(13, 5))
+D = librosa.amplitude_to_db(np.abs(stft(sig_noisy[0]).numpy()), ref=np.max)
+img1 = librosa.display.specshow(D, y_axis='hz', x_axis='time',
+                                sr=16000, ax=ax1,hop_length=win_inc, win_length=win_len)
+ax1.set_title('Noisy speech (Left Ch.)',fontname="Times New Roman",fontweight='bold', fontsize='17')
+ax1.set_xlabel('Time [s]', fontname="Times New Roman",fontweight='bold',fontsize='16')
+ax1.set_ylabel('Frequency [Hz]', fontname="Times New Roman",fontweight='bold',fontsize='16')
+ax1.label_outer()
+ax1.tick_params(axis='y', which='major', labelsize=14)
+ax1.tick_params(axis='x', which='major', labelsize=14)
+scale = 1e3                     # KHz
+ticks = matplotlib.ticker.FuncFormatter(numfmt)
 
-# D = librosa.amplitude_to_db(np.abs(stft(sig_noisy[1]).numpy()), ref=np.max)
-# img = librosa.display.specshow(D, y_axis='hz', x_axis='time',
-#                                 sr=16000, ax=ax2, hop_length=win_inc, win_length=win_len)
-# ax2.set(title='Spectrogram of the noisy speech (Right Ch.)')
-# ax2.label_outer()
-# fig.colorbar(img1,ax=[ax1,ax2],format="%+2.0f dB")
-# plt.show()
-# fig, (ax1,ax2) = plt.subplots(1,2, sharey=True,figsize=(13, 5))
-# D = librosa.amplitude_to_db(np.abs(stft(sig_enhanced[0]).numpy()), ref=np.max)
-# img1 = librosa.display.specshow(D, y_axis='hz', x_axis='time',
-#                                 sr=16000, ax=ax1,hop_length=win_inc, win_length=win_len)
-# ax1.set(title='Spectrogram of the enhanced speech (Left Ch.)')
-# ax1.label_outer()
+D = librosa.amplitude_to_db(np.abs(stft(sig_noisy[1]).numpy()), ref=np.max)
+img = librosa.display.specshow(D, y_axis='hz', x_axis='time',
+                                sr=16000, ax=ax2, hop_length=win_inc, win_length=win_len)
+ax2.set_title('Noisy speech (Right Ch.)',fontname="Times New Roman",fontweight='bold', fontsize='17')
+ax2.set_xlabel('Time [s]', fontname="Times New Roman",fontweight='bold',fontsize='16')
+ax2.set_ylabel('Frequency [kHz]', fontname="Times New Roman",fontweight='bold',fontsize='16')
+ax2.label_outer()
+fig.colorbar(img1,ax=[ax1,ax2],format="%+2.0f dB")
+plt.savefig("nsig.pdf", format="pdf", bbox_inches="tight")
+plt.show()
+fig, (ax1,ax2) = plt.subplots(1,2, sharey=True,figsize=(13, 5))
+D = librosa.amplitude_to_db(np.abs(stft(sig_enhanced[0]).numpy()), ref=np.max)
+img1 = librosa.display.specshow(D, y_axis='hz', x_axis='time',
+                                sr=16000, ax=ax1,hop_length=win_inc, win_length=win_len)
+ax1.set_title('Enhanced speech (Left Ch.)',fontname="Times New Roman",fontweight='bold', fontsize='14')
+ax1.tick_params(axis='y', which='major', labelsize=14)
+ax1.tick_params(axis='x', which='major', labelsize=14)
+scale = 1e3                     # KHz
+ticks = matplotlib.ticker.FuncFormatter(numfmt)
+scale = 1e3                     # KHz
+ticks = matplotlib.ticker.FuncFormatter(numfmt)
 
-# D = librosa.amplitude_to_db(np.abs(stft(sig_enhanced[1]).numpy()), ref=np.max)
-# img = librosa.display.specshow(D, y_axis='hz', x_axis='time',
-#                                 sr=16000, ax=ax2, hop_length=win_inc, win_length=win_len)
-# ax2.set(title='Spectrogram of the enhanced speech (Right Ch.)')
-# ax2.label_outer()
-# fig.colorbar(img1,ax=[ax1,ax2],format="%+2.0f dB")
-# plt.show()
-# # breakpoint()
+D = librosa.amplitude_to_db(np.abs(stft(sig_enhanced[1]).numpy()), ref=np.max)
+img = librosa.display.specshow(D, y_axis='hz', x_axis='time',
+                                sr=16000, ax=ax2, hop_length=win_inc, win_length=win_len)
+ax2.set_title('Enhanced speech (Right Ch.)',fontname="Times New Roman",fontweight='bold', fontsize='14')
+ax2.label_outer()
+fig.colorbar(img1,ax=[ax1,ax2],format="%+2.0f dB")
+plt.savefig("ensig.pdf", format="pdf", bbox_inches="tight")
+ax1.tick_params(axis='y', which='major', labelsize=14)
+ax1.tick_params(axis='x', which='major', labelsize=14)
+scale = 1e3                     # KHz
+ticks = matplotlib.ticker.FuncFormatter(numfmt)
+plt.show()
+# breakpoint()
 
-# fig, ax = plt.subplots()
-# D = mask.numpy()
-# img1 = librosa.display.specshow(D, y_axis='hz', x_axis='time',
-#                                 sr=16000, ax=ax,hop_length=win_inc, win_length=win_len)
-# ax.set(title='IBM for the ILD and IPD Loss')
-# ax.label_outer()
-# # fig.colorbar(img1,ax=ax)
-# plt.show()
+fig, ax = plt.subplots()
+D = mask.numpy()
+img1 = librosa.display.specshow(D, y_axis='hz', x_axis='time',
+                                sr=16000, ax=ax,hop_length=win_inc, win_length=win_len)
+ax.set(title='IBM for the ILD and IPD Loss')
+ax.label_outer()
+# fig.colorbar(img1,ax=ax)
+plt.show()
