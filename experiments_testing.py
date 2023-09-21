@@ -57,7 +57,8 @@ config = {
         'mse_weight': 0,
         'si_sdr_weight':0,
         'si_snr_weight':0,
-        'comp_loss_weight':0
+        'comp_loss_weight':0,
+        'msc_weight':0
     
     }
 }
@@ -70,7 +71,7 @@ config = compose("config")
 
 test_name = 'PL_SISNR_Clean'
 evalMet = evalFunction.EvalMetrics()
-MODEL_CHECKPOINT_PATH = "/Users/vtokala/Documents/Research/di_nn/DCNN/checkpoints/Complex-Attn-FL-SISNR-HPC.ckpt"
+MODEL_CHECKPOINT_PATH = "/Users/vtokala/Documents/Research/di_nn/DCNN/Checkpoints_old/Complex-Attn-40E-iso-com.ckpt"
 # MODEL_CHECKPOINT_PATH = "/kaggle/input/lss-resources/code/se/demo/last.ckpt"
 model = DCNNLightningModule(config)
 model.eval()
@@ -152,7 +153,7 @@ for j in range(2):
         model_output = model_output/torch.max(model_output)
         # print(model_output.shape)
 
-        # breakpoint()
+        breakpoint()
     #     torchaudio.save(path, waveform, sample_rate)
         sf.write(ENHANCED_DATASET_PATH + os.path.basename(batch[2][0])[:len(os.path.basename(batch[2][0]))-4] + "_" + test_name + ".wav", model_output.numpy().transpose(), 16000) 
         # print(ENHANCED_DATASET_PATH + os.path.basename(batch[2][0])[:len(os.path.basename(batch[2][0]))-4] + "_DCCTN.wav")
