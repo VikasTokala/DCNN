@@ -294,12 +294,15 @@ def ild_loss_db(target_stft_l, target_stft_r,
 
     target_ild = ild_db(target_stft_l.abs(), target_stft_r.abs(), avg_mode=avg_mode)
     output_ild = ild_db(output_stft_l.abs(), output_stft_r.abs(), avg_mode=avg_mode)
-    mask = speechMask(target_stft_l,target_stft_r,threshold=20)
-    
+    mask = speechMask(target_stft_l,target_stft_r,threshold=10)
+    mask = mask[:,35:,:]
+    mask_sum=mask.sum(dim=1)
+    mask_sum[mask_sum==0]=1
+    mask_sum = mask_sum.sum(dim=1)
     ild_loss = (target_ild - output_ild).abs()
-    # breakpoint()
-    masked_ild_loss = ((ild_loss * mask).sum(dim=2)).sum(dim=1)/(mask.sum(dim=2)).sum(dim=1)
-   
+    ild_loss = ild_loss[:,35:,:]
+    masked_ild_loss = ((ild_loss * mask).sum(dim=2)).sum(dim=1)/mask_sum
+    
     return masked_ild_loss.mean()
 
 def msc_loss(target_stft_l, target_stft_r,
@@ -323,7 +326,7 @@ def msc_loss(target_stft_l, target_stft_r,
     msc_target = torch.abs(cpsd)**2 / ((left_apsd.abs() * right_apsd.abs())+1e-8)
     msc_output = torch.abs(cpsd_op)**2 / ((left_apsd_op.abs() * right_apsd_op.abs())+1e-8)
     
-    mask = speechMask(target_stft_l,target_stft_r,threshold=20)
+    mask = speechMask(target_stft_l,target_stft_r,threshold=10)
     
     msc_error = (msc_target - msc_output).abs()
     
@@ -352,12 +355,18 @@ def ipd_loss_rads(target_stft_l, target_stft_r,
     # amptodB = T.AmplitudeToDB(stype='amplitude')
     target_ipd = ipd_rad(target_stft_l, target_stft_r, avg_mode=avg_mode)
     output_ipd = ipd_rad(output_stft_l, output_stft_r, avg_mode=avg_mode)
-
-    ipd_loss = ((target_ipd - output_ipd).abs())
-
-    mask = speechMask(target_stft_l,target_stft_r, threshold=20)
     
-    masked_ipd_loss = ((ipd_loss * mask).sum(dim=2)).sum(dim=1)/(mask.sum(dim=2)).sum(dim=1)
+    mask = speechMask(target_stft_l,target_stft_r, threshold=10)
+    mask = mask[:,0:35,:]
+    mask_sum=mask.sum(dim=1)
+    mask_sum[mask_sum==0]=1
+    mask_sum = mask_sum.sum(dim=1)
+    ipd_loss = ((target_ipd - output_ipd).abs())
+    ipd_loss = ipd_loss[:,0:35,:]
+   
+    
+    
+    masked_ipd_loss = ((ipd_loss * mask).sum(dim=2)).sum(dim=1)/(mask_sum)
     return masked_ipd_loss.mean()
 
 def comp_loss_old(target_stft_l,target_stft_r,output_stft_l, output_stft_r,c=0.3):

@@ -72,7 +72,7 @@ config = compose("config")
 
 test_name = 'SNR_PL'
 evalMet = evalFunction.EvalMetrics()
-MODEL_CHECKPOINT_PATH = "/Users/vtokala/Documents/Research/di_nn/DCNN/checkpoints/full_loss_Binaural_RNN.ckpt"
+MODEL_CHECKPOINT_PATH = "/Users/vtokala/Documents/Research/di_nn/DCNN/checkpoints/BCCRN_HPC_PL_2.ckpt"
 # MODEL_CHECKPOINT_PATH = "/kaggle/input/lss-resources/code/se/demo/last.ckpt"
 model = DCNNLightningModule(config)
 model.eval()
@@ -156,7 +156,7 @@ for j in range(len(paths)):
         model_output = model_output/torch.max(model_output)
         # print(model_output.shape)
 
-        breakpoint()
+        # breakpoint()
     #     torchaudio.save(path, waveform, sample_rate)
         sf.write(ENHANCED_DATASET_PATH + os.path.basename(batch[2][0])[:len(os.path.basename(batch[2][0]))-4] + "_" + test_name + ".wav", model_output.numpy().transpose(), 16000) 
         # print(ENHANCED_DATASET_PATH + os.path.basename(batch[2][0])[:len(os.path.basename(batch[2][0]))-4] + "_DCCTN.wav")
