@@ -295,14 +295,14 @@ def ild_loss_db(target_stft_l, target_stft_r,
     target_ild = ild_db(target_stft_l.abs(), target_stft_r.abs(), avg_mode=avg_mode)
     output_ild = ild_db(output_stft_l.abs(), output_stft_r.abs(), avg_mode=avg_mode)
     mask = speechMask(target_stft_l,target_stft_r,threshold=10)
-    mask = mask[:,35:,:]
+    mask = mask[:,50:,:]
     mask_sum=mask.sum(dim=1)
     mask_sum[mask_sum==0]=1
     mask_sum = mask_sum.sum(dim=1)
     ild_loss = (target_ild - output_ild).abs()
-    ild_loss = ild_loss[:,35:,:]
+    ild_loss = ild_loss[:,50:,:]
     masked_ild_loss = ((ild_loss * mask).sum(dim=2)).sum(dim=1)/mask_sum
-    
+    breakpoint()
     return masked_ild_loss.mean()
 
 def msc_loss(target_stft_l, target_stft_r,
@@ -345,7 +345,10 @@ def ipd_rad(s1, s2, eps=EPS, avg_mode=None):
     # s1 = _avg_signal(s1, avg_mode)
     # s2 = _avg_signal(s2, avg_mode)
 
-    ipd_value = ((s1 + eps)/(s2 + eps)).angle()
+    ipd_value_uw = torch.angle(s1) - torch.angle(s2)
+    ipd_value = torch.remainder(ipd_value_uw + torch.pi, 2 * torch.pi) - torch.pi
+        # Check for phase wrapping
+    
 
     return ipd_value
 

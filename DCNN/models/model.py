@@ -12,7 +12,7 @@ from DCNN.utils.apply_mask import apply_mask
 class DCNN(nn.Module):
     def __init__(
             self,
-            rnn_layers=2, rnn_units=128,
+            rnn_layers=8, rnn_units=128,
             win_len=400, win_inc=100, fft_len=512, win_type='hann',
             masking_mode='E', use_clstm=True,
             kernel_size=5, kernel_num=[32, 64, 128, 256, 256, 256],
@@ -46,11 +46,11 @@ class DCNN(nn.Module):
         self.num_heads = num_heads
         self.embed_dim = embed_dim
         hidden_dim = self.fft_len // (2 ** (len(self.kernel_num) + 1))
-        self.mattn = MultiAttnBlock(input_size=512,
-                                    hidden_size=self.rnn_units,
-                                    embed_dim=self.embed_dim,
-                                    num_heads=self.num_heads,
-                                    batch_first=True)
+        # self.mattn = MultiAttnBlock(input_size=512,
+        #                             hidden_size=self.rnn_units,
+        #                             embed_dim=self.embed_dim,
+        #                             num_heads=self.num_heads,
+        #                             batch_first=True)
 
         self.encoder = Encoder(self.kernel_num, kernel_size)
 
@@ -218,29 +218,29 @@ class RnnBlock(nn.Module):
         return x
 
 
-class MultiAttnBlock(nn.Module):
-    def __init__(self, input_size, hidden_size, embed_dim=128, num_heads=8, batch_first=True):
-        super().__init__()
+# class MultiAttnBlock(nn.Module):
+#     def __init__(self, input_size, hidden_size, embed_dim=128, num_heads=8, batch_first=True):
+#         super().__init__()
 
-        self.mattn = torch_complex.ComplexMultiheadAttention(
-            embed_dim=embed_dim, num_heads=num_heads, batch_first=batch_first)
+#         self.mattn = torch_complex.ComplexMultiheadAttention(
+#             embed_dim=embed_dim, num_heads=num_heads, batch_first=batch_first)
 
-        self.transform = nn.Linear(
-            in_features=512,
-            out_features=512,
-            dtype=torch.complex64
-        )
+#         self.transform = nn.Linear(
+#             in_features=512,
+#             out_features=512,
+#             dtype=torch.complex64
+#         )
 
-    def forward(self, x):
+#     def forward(self, x):
 
-        batch_size, channels, freqs, time_bins = x.shape
-        x = x.flatten(start_dim=1, end_dim=2)
-        x = x.transpose(1, 2)
-        # breakpoint()
-        x = self.mattn(x)
-        # breakpoint()
-        x = self.transform(x)
-        x = x.unflatten(-1, (channels, freqs))
-        x = x.movedim(1, -1)
+#         batch_size, channels, freqs, time_bins = x.shape
+#         x = x.flatten(start_dim=1, end_dim=2)
+#         x = x.transpose(1, 2)
+#         # breakpoint()
+#         x = self.mattn(x)
+#         # breakpoint()
+#         x = self.transform(x)
+#         x = x.unflatten(-1, (channels, freqs))
+#         x = x.movedim(1, -1)
 
-        return x
+#         return x

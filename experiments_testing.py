@@ -52,7 +52,7 @@ config = {
         "stoi_weight": 10, #10
         "kurt_weight": 0,
         "avg_mode": "time",
-        "attention": True,
+        "attention": False,
         'sdr_weight': 0,
         'mse_weight': 0,
         'si_sdr_weight':0,
@@ -70,7 +70,7 @@ GlobalHydra.instance().clear()
 initialize(config_path="./config")
 config = compose("config")
 
-test_name = 'SNR_PL'
+test_name = 'SNR_PL_4RNN'
 evalMet = evalFunction.EvalMetrics()
 MODEL_CHECKPOINT_PATH = "/Users/vtokala/Documents/Research/di_nn/DCNN/checkpoints/BCCRN_HPC_PL_2.ckpt"
 # MODEL_CHECKPOINT_PATH = "/kaggle/input/lss-resources/code/se/demo/last.ckpt"
