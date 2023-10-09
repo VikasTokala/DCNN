@@ -30,7 +30,8 @@ SNRfolders = sorted(glob(parentdir, recursive=True))
 win_len = 400
 win_inc = 100
 fft_len = 512
-fbins = int(fft_len/2 + 1)
+fbins = int(fft_len/2 + 1) - 50
+fbins_ipd = 50
 
 stft = Stft(n_dft=fft_len, hop_size=win_inc, win_length=win_len)
 istft = IStft(n_dft=fft_len, hop_size=win_inc, win_length=win_len)
@@ -44,11 +45,11 @@ for i in range (len(SNRfolders)):
     CLEAN_DATASET_PATH =  os.path.join(SNRfolders[i],"Clean_testset")
     # CLEAN_DATASET_PATH_10k =  os.path.join(SNRfolders[i],"Clean_testset_10k")
     # CLEAN_DATASET_PATH_10k_eval =  os.path.join(SNRfolders[i],"Clean_testset_10k_eval")
-    ENHANCED_DATASET_PATH_DCCTN_PL_SISNR = os.path.join(SNRfolders[i],"BCCRN_PL")
+    ENHANCED_DATASET_PATH_DCCTN_PL_SISNR = os.path.join(SNRfolders[i],"BCCRN_SNR_PL_ASLM")
     # ENHANCED_DATASET_PATH_PL_SISDR = os.path.join(SNRfolders[i],"DCCTN_SDR_PL")
     # ENHANCED_DATASET_PATH_SISDR = os.path.join(SNRfolders[i],"DCCTN_SISDR")
     # ENHANCED_DATASET_PATH_BSOBM = os.path.join(SNRfolders[i],"BSOBM")
-    ENHANCED_DATASET_PATH_SNR = os.path.join(SNRfolders[i],"BCCRN_SNR")
+    ENHANCED_DATASET_PATH_SNR = os.path.join(SNRfolders[i],"BCCRN_SNR_ASLM")
     # ENHANCED_DATASET_PATH_BTN = os.path.join(SNRfolders[i],"BiTasNet_17M")
     # ENHANCED_DATASET_PATH_MMSE = os.path.join(SNRfolders[i],"DCCTN_MagMSE")
     
@@ -152,12 +153,12 @@ for i in range (len(SNRfolders)):
     mie_bitas= torch.zeros((375,fbins))
     mie_bsobm = torch.zeros((375,fbins))
     
-    mpe_dcctn_pl_sisnr = torch.zeros((375,fbins))
-    mpe_dcctn_sisdr = torch.zeros((375,fbins))
-    mpe_dcctn_snr = torch.zeros((375,fbins))
-    mpe_dcctn_mmse = torch.zeros((375,fbins))
-    mpe_bitas= torch.zeros((375,fbins))
-    mpe_bsobm = torch.zeros((375,fbins))
+    mpe_dcctn_pl_sisnr = torch.zeros((375,fbins_ipd))
+    mpe_dcctn_sisdr = torch.zeros((375,fbins_ipd))
+    mpe_dcctn_snr = torch.zeros((375,fbins_ipd))
+    mpe_dcctn_mmse = torch.zeros((375,fbins_ipd))
+    mpe_bitas= torch.zeros((375,fbins_ipd))
+    mpe_bsobm = torch.zeros((375,fbins_ipd))
     
     
     
@@ -218,7 +219,7 @@ for i in range (len(SNRfolders)):
         # bsobm_stft_l = stft(bsobm[0,:])
         # bsobm_stft_r = stft(bsobm[1,:])
         
-        mask = speechMask(target_stft_l,target_stft_r, threshold=10).squeeze(0)
+        mask = speechMask(target_stft_l,target_stft_r, threshold=15).squeeze(0)
         # mask_sobm = speechMask(bsobm_target_stft_l,bsobm_target_stft_r, threshold=10).squeeze(0)
         # test=gcc_phat_itd(target_stft_l, target_stft_r, target_stft_l,target_stft_r)
         # breakpoint()n
@@ -244,11 +245,20 @@ for i in range (len(SNRfolders)):
         # dcctn_mmse_ild_error = (target_ild_16k - dcctn_mmse_ild).abs()
         
         # breakpoint()
+        mask = speechMask(target_stft_l,target_stft_r,threshold=15).squeeze()
+        # breakpoint()
+        mask = mask[50:,:]
         mask_sum=mask.sum(dim=1)
         mask_sum[mask_sum==0]=1
         
+        dcctn_pl_sisnr_ild_error = dcctn_pl_sisnr_ild_error[50:,:]
+        dcctn_snr_ild_error = dcctn_snr_ild_error[50:,:]
+        
+        #  [:,50:,:]
+        
         # mask_sum_sobm=mask_sobm.sum(dim=1)
         # mask_sum_sobm[mask_sum_sobm==0]=1
+        
         
         # mie_dcctn_pl_sisdr[j,:] = (dcctn_pl_sisdr_ild_error*mask).sum(dim=1)/mask_sum
         mie_dcctn_pl_sisnr[j,:] = (dcctn_pl_sisnr_ild_error*mask).sum(dim=1)/mask_sum
@@ -272,14 +282,25 @@ for i in range (len(SNRfolders)):
         # breakpoint()
         
         # dcctn_pl_sisdr_ild_error = (target_ild_16k - dcctn_pl_sisdr_ild).abs()
-        dcctn_pl_sisnr_ipd_error = (target_ipd_16k - dcctn_pl_sisnr_ipd).abs()*180/np.pi
+        
+        dcctn_pl_sisnr_ipd_error = (target_ipd_16k - dcctn_pl_sisnr_ipd)
+        dcctn_pl_sisnr_ipd_error = (torch.remainder(dcctn_pl_sisnr_ipd_error + torch.pi, 2 * torch.pi) - torch.pi).abs()*180/torch.pi
         # dcctn_sisdr_ild_error = (target_ild_16k - dcctn_sisdr_ild).abs()
-        dcctn_snr_ipd_error = (target_ipd_16k - dcctn_snr_ipd).abs()*180/np.pi
+        dcctn_snr_ipd_error = (target_ipd_16k - dcctn_snr_ipd)
+        dcctn_snr_ipd_error = (torch.remainder(dcctn_snr_ipd_error + torch.pi, 2 * torch.pi) - torch.pi).abs()*180/torch.pi
         # bitas_ipd_error = (target_ipd_16k - bitas_ipd).abs()*180/np.pi
         # bsobm_ipd_error = (target_ipd_10k - bsobm_ipd).abs()*180/np.pi
         # dcctn_mmse_ipd_error = (target_ipd_16k - dcctn_mmse_ipd).abs()*180/np.pi
         
         # breakpoint()
+        mask = speechMask(target_stft_l,target_stft_r,threshold=15).squeeze()
+        # breakpoint()
+        mask = mask[:fbins_ipd,:]
+        mask_sum=mask.sum(dim=1)
+        mask_sum[mask_sum==0]=1
+        
+        dcctn_pl_sisnr_ipd_error = dcctn_pl_sisnr_ipd_error[:fbins_ipd,:]
+        dcctn_snr_ipd_error = dcctn_snr_ipd_error[:fbins_ipd,:]
         mask_sum=mask.sum(dim=1)
         mask_sum[mask_sum==0]=1
         
@@ -297,18 +318,18 @@ for i in range (len(SNRfolders)):
         print('Processed Signal ', j+1 , ' of ', len(dataloader_dcctn_pl_sisnr))
         
     # writeMatFile(mie_dcctn_pl_sisdr, folPath=SNRfolders[i], method='pl_sisdr_'+ SNRnames[i])
-    writeMatFile(mie_dcctn_pl_sisnr, folPath=SNRfolders[i], method='bccrn_pl'+ SNRnames[i])  
+    writeMatFile(mie_dcctn_pl_sisnr, folPath=SNRfolders[i], method='bccrn_pl_'+ SNRnames[i])  
     # writeMatFile(mie_dcctn_sisdr, folPath=SNRfolders[i], method='sisdr_'+ SNRnam8es[i])
-    writeMatFile(mie_dcctn_snr, folPath=SNRfolders[i], method='bccrn_snr'+ SNRnames[i])
+    writeMatFile(mie_dcctn_snr, folPath=SNRfolders[i], method='bccrn_snr_'+ SNRnames[i])
     # writeMatFile(mie_bitas, folPath=SNRfolders[i], method='bitas_'+ SNRnames[i] )
     # writeMatFile(mie_bsobm, folPath=SNRfolders[i], method='bsobm_'+ SNRnames[i])
     # writeMatFile(mie_dcctn_mmse, folPath=SNRfolders[i], method='mmse_'+ SNRnames[i])
     
         
     # writeMatFile(mie_dcctn_pl_sisdr, folPath=SNRfolders[i], method='pl_sisdr_'+ SNRnames[i])
-    writeMatFileIPD(mpe_dcctn_pl_sisnr, folPath=SNRfolders[i], method='bccrn_pl'+ SNRnames[i])  
+    writeMatFileIPD(mpe_dcctn_pl_sisnr, folPath=SNRfolders[i], method='bccrn_pl_'+ SNRnames[i])  
     # writeMatFile(mie_dcctn_sisdr, folPath=SNRfolders[i], method='sisdr_'+ SNRnam8es[i])
-    writeMatFileIPD(mpe_dcctn_snr, folPath=SNRfolders[i], method='bccrn_snr'+ SNRnames[i])
+    writeMatFileIPD(mpe_dcctn_snr, folPath=SNRfolders[i], method='bccrn_snr_'+ SNRnames[i])
     # writeMatFileIPD(mpe_bitas, folPath=SNRfolders[i], method='bitas_'+ SNRnames[i])
     # writeMatFileIPD(mpe_bsobm, folPath=SNRfolders[i], method='bsobm_'+ SNRnames[i])
     # writeMatFileIPD(mpe_dcctn_mmse, folPath=SNRfolders[i], method='mmse_'+ SNRnames[i])

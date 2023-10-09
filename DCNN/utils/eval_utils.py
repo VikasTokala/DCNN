@@ -23,7 +23,10 @@ def ipd_rad(s1, s2, eps=EPS, avg_mode=None):
     # s1 = _avg_signal(s1, avg_mode)
     # s2 = _avg_signal(s2, avg_mode)
 
-    ipd_value = ((s1 + eps)/(s2 + eps)).angle()
+    ipd_value_uw = torch.angle(s1) - torch.angle(s2)
+    ipd_value = torch.remainder(ipd_value_uw + torch.pi, 2 * torch.pi) - torch.pi
+        # Check for phase wrapping
+    
 
     return ipd_value
 
