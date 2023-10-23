@@ -23,7 +23,7 @@ import librosa
 import librosa.display 
 
 
-parentdir = "/Users/vtokala/Documents/Research/Databases/Dataset_Binaural_2S/ICASSP_Testset/audio_files/*/"
+parentdir = "/Users/vtokala/Documents/Research/Databases/Dataset_Binaural_2S/ICASSP_Testset/audio_files_rb/*/"
 
 SNRfolders = sorted(glob(parentdir, recursive=True))
 
@@ -45,12 +45,12 @@ for i in range (len(SNRfolders)):
     CLEAN_DATASET_PATH =  os.path.join(SNRfolders[i],"Clean_testset")
     # CLEAN_DATASET_PATH_10k =  os.path.join(SNRfolders[i],"Clean_testset_10k")
     # CLEAN_DATASET_PATH_10k_eval =  os.path.join(SNRfolders[i],"Clean_testset_10k_eval")
-    ENHANCED_DATASET_PATH_DCCTN_PL_SISNR = os.path.join(SNRfolders[i],"BCCRN_SNR_PL_ASLM")
+    ENHANCED_DATASET_PATH_DCCTN_PL_SISNR = os.path.join(SNRfolders[i],"BCCRN_PL_ASLM_RVRB")
     # ENHANCED_DATASET_PATH_PL_SISDR = os.path.join(SNRfolders[i],"DCCTN_SDR_PL")
     # ENHANCED_DATASET_PATH_SISDR = os.path.join(SNRfolders[i],"DCCTN_SISDR")
     # ENHANCED_DATASET_PATH_BSOBM = os.path.join(SNRfolders[i],"BSOBM")
-    ENHANCED_DATASET_PATH_SNR = os.path.join(SNRfolders[i],"BCCRN_SNR_ASLM")
-    # ENHANCED_DATASET_PATH_BTN = os.path.join(SNRfolders[i],"BiTasNet_17M")
+    ENHANCED_DATASET_PATH_SNR = os.path.join(SNRfolders[i],"BCCRN_SNR_ASLM_RVRB")
+    ENHANCED_DATASET_PATH_BTN = os.path.join(SNRfolders[i],"BiTasNet_17M_ASLM_RVRB")
     # ENHANCED_DATASET_PATH_MMSE = os.path.join(SNRfolders[i],"DCCTN_MagMSE")
     
     # breakpoint()
@@ -61,7 +61,7 @@ for i in range (len(SNRfolders)):
     # dataset_dcctn_sisdr = BaseDataset(ENHANCED_DATASET_PATH_SISDR, CLEAN_DATASET_PATH, mono=False)
     # dataset_bsobm = BaseDataset(ENHANCED_DATASET_PATH_BSOBM, CLEAN_DATASET_PATH_10k_eval, mono=False,sr=10000)
     dataset_dcctn_snr = BaseDataset(ENHANCED_DATASET_PATH_SNR, CLEAN_DATASET_PATH, mono=False)
-    # dataset_bitas = BaseDataset(ENHANCED_DATASET_PATH_BTN, CLEAN_DATASET_PATH, mono=False)
+    dataset_bitas = BaseDataset(ENHANCED_DATASET_PATH_BTN, CLEAN_DATASET_PATH, mono=False)
     # dataset_dcctn_mmse = BaseDataset(ENHANCED_DATASET_PATH_MMSE, CLEAN_DATASET_PATH, mono=False)
     
     # dataloader = torch.utils.data.DataLoader(
@@ -113,12 +113,12 @@ for i in range (len(SNRfolders)):
     #     pin_memory=True,
     #     drop_last=False)
     
-    # dataloader_bitas = torch.utils.data.DataLoader(
-    #     dataset_bitas,
-    #     batch_size=1,
-    #     shuffle=False,
-    #     pin_memory=True,
-    #     drop_last=False)
+    dataloader_bitas = torch.utils.data.DataLoader(
+        dataset_bitas,
+        batch_size=1,
+        shuffle=False,
+        pin_memory=True,
+        drop_last=False)
     
     # dataloader_bsobm = torch.utils.data.DataLoader(
     #     dataset_bsobm,
@@ -142,7 +142,7 @@ for i in range (len(SNRfolders)):
     # dataloader_bsobm = iter(dataloader_bsobm)
     # dataloader_dcctn_sisdr =  iter(dataloader_dcctn_sisdr)
     dataloader_dcctn_snr =  iter(dataloader_dcctn_snr)
-    # dataloader_bitas=  iter(dataloader_bitas)
+    dataloader_bitas=  iter(dataloader_bitas)
     # dataloader_dcctn_mmse = iter(dataloader_dcctn_mmse)
     
     # mie_dcctn_pl_sisdr = torch.zeros((375,fbins))
@@ -170,7 +170,7 @@ for i in range (len(SNRfolders)):
             batch_dcctn_pl_sisnr = next(dataloader_dcctn_pl_sisnr)
             # batch_dcctn_sisdr = next(dataloader_dcctn_sisdr)
             # batch_bsobm = next(dataloader_bsobm)
-            # batch_bitas = next(dataloader_bitas)
+            batch_bitas = next(dataloader_bitas)
             batch_dcctn_snr = next(dataloader_dcctn_snr)
             # batch_dcctn_mmse = next(dataloader_dcctn_mmse)
             
@@ -187,7 +187,7 @@ for i in range (len(SNRfolders)):
         # dcctn_sisdr = (batch_dcctn_sisdr[0][0])
         dcctn_snr = (batch_dcctn_snr[0])[0]
         # dcctn_mmse = (batch_dcctn_mmse[0])[0]
-        # bitas = (batch_bitas[0])[0]
+        bitas = (batch_bitas[0])[0]
         # bsobm = (batch_bsobm[0])[0]
         
         clean_samples=(clean_samples)/(torch.max(clean_samples))
@@ -213,8 +213,8 @@ for i in range (len(SNRfolders)):
         # dcctn_mmse_stft_l = stft(dcctn_mmse[0,:])
         # dcctn_mmse_stft_r = stft(dcctn_mmse[1,:])
         
-        # bitas_stft_l = stft(bitas[0,:])
-        # bitas_stft_r = stft(bitas[1,:])
+        bitas_stft_l = stft(bitas[0,:])
+        bitas_stft_r = stft(bitas[1,:])
         
         # bsobm_stft_l = stft(bsobm[0,:])
         # bsobm_stft_r = stft(bsobm[1,:])
@@ -231,7 +231,7 @@ for i in range (len(SNRfolders)):
         dcctn_pl_sisnr_ild = ild_db(dcctn_pl_sisnr_stft_l.abs(), dcctn_pl_sisnr_stft_r.abs())
         # dcctn_sisdr_ild = ild_db(dcctn_sisdr_stft_l.abs(), dcctn_sisdr_stft_r.abs())
         dcctn_snr_ild = ild_db(dcctn_snr_stft_l.abs(), dcctn_snr_stft_r.abs())
-        # bitas_ild = ild_db(bitas_stft_l.abs(), bitas_stft_r.abs())
+        bitas_ild = ild_db(bitas_stft_l.abs(), bitas_stft_r.abs())
         # bsobm_ild = ild_db(bsobm_stft_l.abs(), bsobm_stft_r.abs())
         # dcctn_mmse_ild = ild_db(dcctn_mmse_stft_l.abs(), dcctn_mmse_stft_r.abs())
         
@@ -240,7 +240,7 @@ for i in range (len(SNRfolders)):
         dcctn_pl_sisnr_ild_error = (target_ild_16k - dcctn_pl_sisnr_ild).abs()
         # dcctn_sisdr_ild_error = (target_ild_16k - dcctn_sisdr_ild).abs()
         dcctn_snr_ild_error = (target_ild_16k - dcctn_snr_ild).abs()
-        # bitas_ild_error = (target_ild_16k - bitas_ild).abs()
+        bitas_ild_error = (target_ild_16k - bitas_ild).abs()
         # bsobm_ild_error = (target_ild_10k - bsobm_ild).abs()
         # dcctn_mmse_ild_error = (target_ild_16k - dcctn_mmse_ild).abs()
         
@@ -253,6 +253,7 @@ for i in range (len(SNRfolders)):
         
         dcctn_pl_sisnr_ild_error = dcctn_pl_sisnr_ild_error[50:,:]
         dcctn_snr_ild_error = dcctn_snr_ild_error[50:,:]
+        bitas_ild_error = bitas_ild_error[50:,:]
         
         #  [:,50:,:]
         
@@ -264,7 +265,7 @@ for i in range (len(SNRfolders)):
         mie_dcctn_pl_sisnr[j,:] = (dcctn_pl_sisnr_ild_error*mask).sum(dim=1)/mask_sum
         # mie_dcctn_sisdr[j,:] = (dcctn_sisdr_ild_error*mask).sum(dim=1)/mask_sum
         mie_dcctn_snr[j,:] = (dcctn_snr_ild_error*mask).sum(dim=1)/mask_sum
-        # mie_bitas[j,:] = (bitas_ild_error*mask).sum(dim=1)/mask_sum
+        mie_bitas[j,:] = (bitas_ild_error*mask).sum(dim=1)/mask_sum
         # mie_bsobm[j,:] = (bsobm_ild_error*mask_sobm).sum(dim=1)/mask_sum_sobm
         # mie_dcctn_mmse[j,:] = (dcctn_mmse_ild_error*mask).sum(dim=1)/mask_sum
         
@@ -276,7 +277,7 @@ for i in range (len(SNRfolders)):
         dcctn_pl_sisnr_ipd = ipd_rad(dcctn_pl_sisnr_stft_l, dcctn_pl_sisnr_stft_r)
         # dcctn_sisdr_ild = ipd_rad(dcctn_sisdr_stft_l.abs(), dcctn_sisdr_stft_r.abs())
         dcctn_snr_ipd = ipd_rad(dcctn_snr_stft_l, dcctn_snr_stft_r)
-        # bitas_ipd = ipd_rad(bitas_stft_l, bitas_stft_r)
+        bitas_ipd = ipd_rad(bitas_stft_l, bitas_stft_r)
         # bsobm_ipd = ipd_rad(bsobm_stft_l, bsobm_stft_r)
         # dcctn_mmse_ipd = ipd_rad(dcctn_mmse_stft_l, dcctn_mmse_stft_r)
         # breakpoint()
@@ -288,7 +289,7 @@ for i in range (len(SNRfolders)):
         # dcctn_sisdr_ild_error = (target_ild_16k - dcctn_sisdr_ild).abs()
         dcctn_snr_ipd_error = (target_ipd_16k - dcctn_snr_ipd)
         dcctn_snr_ipd_error = (torch.remainder(dcctn_snr_ipd_error + torch.pi, 2 * torch.pi) - torch.pi).abs()*180/torch.pi
-        # bitas_ipd_error = (target_ipd_16k - bitas_ipd).abs()*180/np.pi
+        bitas_ipd_error = (target_ipd_16k - bitas_ipd).abs()*180/np.pi
         # bsobm_ipd_error = (target_ipd_10k - bsobm_ipd).abs()*180/np.pi
         # dcctn_mmse_ipd_error = (target_ipd_16k - dcctn_mmse_ipd).abs()*180/np.pi
         
@@ -301,6 +302,7 @@ for i in range (len(SNRfolders)):
         
         dcctn_pl_sisnr_ipd_error = dcctn_pl_sisnr_ipd_error[:fbins_ipd,:]
         dcctn_snr_ipd_error = dcctn_snr_ipd_error[:fbins_ipd,:]
+        bitas_ipd_error = bitas_ipd_error[:fbins_ipd,:]
         mask_sum=mask.sum(dim=1)
         mask_sum[mask_sum==0]=1
         
@@ -311,7 +313,7 @@ for i in range (len(SNRfolders)):
         mpe_dcctn_pl_sisnr[j,:] = (dcctn_pl_sisnr_ipd_error*mask).sum(dim=1)/mask_sum
         # mie_dcctn_sisdr[j,:] = (dcctn_sisdr_ild_error*mask).sum(dim=1)/mask_sum
         mpe_dcctn_snr[j,:] = (dcctn_snr_ipd_error*mask).sum(dim=1)/mask_sum
-        # mpe_bitas[j,:] = (bitas_ipd_error*mask).sum(dim=1)/mask_sum
+        mpe_bitas[j,:] = (bitas_ipd_error*mask).sum(dim=1)/mask_sum
         # mpe_bsobm[j,:] = (bsobm_ipd_error*mask_sobm).sum(dim=1)/mask_sum_sobm
         # mpe_dcctn_mmse[j,:] = (dcctn_mmse_ipd_error*mask).sum(dim=1)/mask_sum
         
@@ -321,7 +323,7 @@ for i in range (len(SNRfolders)):
     writeMatFile(mie_dcctn_pl_sisnr, folPath=SNRfolders[i], method='bccrn_pl_'+ SNRnames[i])  
     # writeMatFile(mie_dcctn_sisdr, folPath=SNRfolders[i], method='sisdr_'+ SNRnam8es[i])
     writeMatFile(mie_dcctn_snr, folPath=SNRfolders[i], method='bccrn_snr_'+ SNRnames[i])
-    # writeMatFile(mie_bitas, folPath=SNRfolders[i], method='bitas_'+ SNRnames[i] )
+    writeMatFile(mie_bitas, folPath=SNRfolders[i], method='bitas_'+ SNRnames[i] )
     # writeMatFile(mie_bsobm, folPath=SNRfolders[i], method='bsobm_'+ SNRnames[i])
     # writeMatFile(mie_dcctn_mmse, folPath=SNRfolders[i], method='mmse_'+ SNRnames[i])
     
@@ -330,7 +332,7 @@ for i in range (len(SNRfolders)):
     writeMatFileIPD(mpe_dcctn_pl_sisnr, folPath=SNRfolders[i], method='bccrn_pl_'+ SNRnames[i])  
     # writeMatFile(mie_dcctn_sisdr, folPath=SNRfolders[i], method='sisdr_'+ SNRnam8es[i])
     writeMatFileIPD(mpe_dcctn_snr, folPath=SNRfolders[i], method='bccrn_snr_'+ SNRnames[i])
-    # writeMatFileIPD(mpe_bitas, folPath=SNRfolders[i], method='bitas_'+ SNRnames[i])
+    writeMatFileIPD(mpe_bitas, folPath=SNRfolders[i], method='bitas_'+ SNRnames[i])
     # writeMatFileIPD(mpe_bsobm, folPath=SNRfolders[i], method='bsobm_'+ SNRnames[i])
     # writeMatFileIPD(mpe_dcctn_mmse, folPath=SNRfolders[i], method='mmse_'+ SNRnames[i])
         

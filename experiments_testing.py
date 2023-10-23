@@ -70,9 +70,9 @@ GlobalHydra.instance().clear()
 initialize(config_path="./config")
 config = compose("config")
 
-test_name = 'SNR_ASLM'
+test_name = 'PL_ASLM_RVRB'
 evalMet = evalFunction.EvalMetrics()
-MODEL_CHECKPOINT_PATH = "/Users/vtokala/Documents/Research/di_nn/DCNN/checkpoints/BCCRN_8RNN_SNR.ckpt"
+MODEL_CHECKPOINT_PATH = "/Users/vtokala/Documents/Research/di_nn/DCNN/checkpoints/BCCRN_8RNN.ckpt"
 # MODEL_CHECKPOINT_PATH = "/kaggle/input/lss-resources/code/se/demo/last.ckpt"
 model = DCNNLightningModule(config)
 model.eval()
@@ -82,8 +82,8 @@ checkpoint = torch.load(MODEL_CHECKPOINT_PATH, map_location=device)
 # checkpoint = torch.load(MODEL_CHECKPOINT_PATH)
 model.load_state_dict(checkpoint["state_dict"], strict=False)
 
-paths=glob("/Users/vtokala/Documents/Research/Databases/Dataset_Binaural_2S/ICASSP_Testset/audio_files/*/", recursive = True)
-pathsEn=glob("/Users/vtokala/Documents/Research/Databases/Dataset_Binaural_2S/ICASSP_Testset/audio_files/*/", recursive = True)
+paths=glob("/Users/vtokala/Documents/Research/Databases/Dataset_Binaural_2S/ICASSP_Testset/audio_files_rb/*/", recursive = True)
+pathsEn=glob("/Users/vtokala/Documents/Research/Databases/Dataset_Binaural_2S/ICASSP_Testset/audio_files_rb/*/", recursive = True)
 
 
 
@@ -91,7 +91,7 @@ for j in range(len(paths)):
     
     paths = sorted(paths)
     pathsEn = sorted(pathsEn)
-    NOISY_DATASET_PATH = os.path.join(paths[j],"Noisy_testset/")
+    NOISY_DATASET_PATH = os.path.join(paths[j],"Noisy_testset_rb/")
     print(NOISY_DATASET_PATH)
     CLEAN_DATASET_PATH = os.path.join(paths[j],"Clean_testset/")
     ENHANCED_DATASET_PATH = os.path.join(pathsEn[j],"BCCRN_"+test_name+"/")
