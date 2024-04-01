@@ -70,7 +70,7 @@ GlobalHydra.instance().clear()
 initialize(config_path="./config")
 config = compose("config")
 
-test_name = 'SNR_ASLM_RVRB'
+test_name = 'BSS'
 evalMet = evalFunction.EvalMetrics()
 MODEL_CHECKPOINT_PATH = "/Users/vtokala/Documents/Research/di_nn/DCNN/checkpoints/BCCRN_4RNN.ckpt"
 # MODEL_CHECKPOINT_PATH = "/kaggle/input/lss-resources/code/se/demo/last.ckpt"

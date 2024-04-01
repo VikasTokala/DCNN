@@ -177,7 +177,7 @@ for i in range (len(SNRfolders)):
         except StopIteration:
             break
         
-        
+    
         # noisy_samples = (batch[0])[0]
         # noisy_bsobm = (batch_bsobm_noisy[0])[0]
         clean_samples = (batch_dcctn_pl_sisnr[1])[0]
