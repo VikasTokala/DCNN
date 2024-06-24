@@ -72,7 +72,8 @@ class BinauralLoss(Module):
             sisnr_loss = - (sisnr_l + sisnr_r)/2
             # snr_loss = - snr_cat
             bin_sisnr_loss = self.si_snr_weight*sisnr_loss
-            
+            if torch.isnan(bin_sisnr_loss):
+                bin_sisnr_loss = 0
             print('\n SI-SNR Loss = ', bin_sisnr_loss)
             loss += bin_sisnr_loss
         
@@ -89,7 +90,8 @@ class BinauralLoss(Module):
             snr_loss = - (snr_l + snr_r)/2
             # snr_loss = - snr_cat
             bin_snr_loss = self.snr_weight*snr_loss
-            bin_snr_loss
+            if torch.isnan(bin_snr_loss):
+                bin_snr_loss = 0
             print('\n SNR Loss = ', bin_snr_loss)
             loss += bin_snr_loss
         
@@ -134,6 +136,8 @@ class BinauralLoss(Module):
             stoi_loss = (stoi_l+stoi_r)/2
             bin_stoi_loss = self.stoi_weight*stoi_loss.mean()
             # bin_stoi_loss.detach()
+            if torch.isnan(bin_stoi_loss):
+                bin_stoi_loss = 0.5
             print('\n STOI Loss = ', bin_stoi_loss)
             loss += bin_stoi_loss
 
@@ -144,6 +148,8 @@ class BinauralLoss(Module):
             #                        model_target_stft_l.abs(), model_target_stft_r.abs(), avg_mode=self.avg_mode)
             bin_ild_loss = self.ild_weight*ild_loss
             # bin_ild_loss.detach()
+            if torch.isnan(bin_ild_loss):
+                bin_ild_loss = 1
             print('\n ILD Loss = ', bin_ild_loss)
             loss += bin_ild_loss
 
@@ -154,6 +160,8 @@ class BinauralLoss(Module):
             #                          model_target_stft_l, model_target_stft_r, avg_mode=self.avg_mode)
             bin_ipd_loss = self.ipd_weight*ipd_loss
             # bin_ild_loss.detach()
+            if torch.isnan(bin_ipd_loss):
+                bin_ipd_loss = 0.15
             print('\n IPD Loss = ', bin_ipd_loss)
             loss += bin_ipd_loss
         

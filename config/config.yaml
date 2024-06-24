@@ -14,7 +14,7 @@ model:
   avg_mode: time
   comp_loss_weight: 0
   ild_weight: 1
-  ipd_weight: 10
+  ipd_weight: 1
   kurt_weight: 0
   msc_weight: 0
   mse_weight: 0
