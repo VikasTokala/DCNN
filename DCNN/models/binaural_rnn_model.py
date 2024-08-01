@@ -48,17 +48,17 @@ class BinauralDCRNN(DCNN):
        
         out_wav_r = self.istft(out_spec_r)
 
-        plot_averaged_magnitude(librosa.amplitude_to_db(encoder_out_l[0][0][0].abs().detach().numpy()),title='Encoder Output - Layer 1',clabel='Magnitude[dB]',
+        plot_averaged_magnitude((encoder_out_l[0][0][0].abs().detach().numpy()),title='Encoder Output - Layer 1',clabel='Magnitude',
                             fig_name='Encoder1.pdf',ylab='Frequency dimension', xlab='Time dimension')
-        plot_averaged_magnitude(librosa.amplitude_to_db(encoder_out_l[1][0][0].abs().detach().numpy()),title='Encoder Output - Layer 2',clabel='Magnitude[dB]',
+        plot_averaged_magnitude((encoder_out_l[1][0][0].abs().detach().numpy()),title='Encoder Output - Layer 2',clabel='Magnitude',
                             fig_name='Encoder2.pdf',ylab='Frequency dimension', xlab='Time dimension')
-        plot_averaged_magnitude(librosa.amplitude_to_db(encoder_out_l[2][0][0].abs().detach().numpy()),title='Encoder Output - Layer 3',clabel='Magnitude[dB]',
+        plot_averaged_magnitude((encoder_out_l[2][0][0].abs().detach().numpy()),title='Encoder Output - Layer 3',clabel='Magnitude',
                             fig_name='Encoder3.pdf',ylab='Frequency dimension', xlab='Time dimension')
-        plot_averaged_magnitude(librosa.amplitude_to_db(encoder_out_l[3][0][0].abs().detach().numpy()),title='Encoder Output - Layer 4',clabel='Magnitude[dB]',
+        plot_averaged_magnitude((encoder_out_l[3][0][0].abs().detach().numpy()),title='Encoder Output - Layer 4',clabel='Magnitude',
                             fig_name='Encoder4.pdf',ylab='Frequency dimension', xlab='Time dimension')
-        plot_averaged_magnitude(librosa.amplitude_to_db(encoder_out_l[4][0][0].abs().detach().numpy()),title='Encoder Output - Layer 5',clabel='Magnitude[dB]',
+        plot_averaged_magnitude((encoder_out_l[4][0][0].abs().detach().numpy()),title='Encoder Output - Layer 5',clabel='Magnitude',
                             fig_name='Encoder5.pdf',ylab='Frequency dimension', xlab='Time dimension')
-        plot_averaged_magnitude(librosa.amplitude_to_db(encoder_out_l[5][0][0].abs().detach().numpy()),title='Encoder Output - Layer 6',clabel='Magnitude[dB]',
+        plot_averaged_magnitude((encoder_out_l[5][0][0].abs().detach().numpy()),title='Encoder Output - Layer 6',clabel='Magnitude',
                             fig_name='Encoder6.pdf',ylab='Frequency dimension', xlab='Time dimension')
         
         

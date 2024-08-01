@@ -188,7 +188,7 @@ class Decoder(nn.Module):
             x = self.model[idx](x)
             # breakpoint()
             
-            plot_averaged_magnitude(librosa.amplitude_to_db(x[0][0].abs().detach().numpy()),title='Decoder Output - Layer ' + str(idx+1),clabel='Magnitude[dB]',fig_name='Decoder' + str(idx)+'.pdf',ylab='Frequency dimension', xlab='Time dimension')
+            plot_averaged_magnitude((x[0][0].abs().detach().numpy()),title='Decoder Output - Layer ' + str(idx+1),clabel='Magnitude',fig_name='Decoder' + str(idx)+'.pdf',ylab='Frequency dimension', xlab='Time dimension')
             #x = x[..., 1:]
 
         return x
@@ -223,6 +223,7 @@ class RnnBlock(nn.Module):
         x = x.unflatten(-1, (channels, freqs))
         x = x.movedim(1, -1)
         # breakpoint()
+        plot_averaged_magnitude((x[0][0].abs().detach().numpy()),title='RNN layer output',clabel='Magnitude',fig_name='RNN_output.pdf',ylab='Frequency dimension', xlab='Time dimension')
 
         return x
 
