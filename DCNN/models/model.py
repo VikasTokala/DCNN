@@ -183,12 +183,12 @@ class Decoder(nn.Module):
         for idx in range(len(self.model)):
             #x = complex_cat([x, encoder_out[-1 - idx]], 1)
             x = torch.cat([x, encoder_out[-1 - idx]], 1)
-            breakpoint()
-            print(idx)
-            print(len(self.model))
+            # print(idx)
+            # print(len(self.model))
             x = self.model[idx](x)
+            # breakpoint()
             
-            # plot_averaged_magnitude(librosa.amplitude_to_db(x[0][0].abs().detach().numpy()),title='Decoder Output - Layer 1',clabel='Magnitude[dB]',fig_name='Decoder1.pdf',ylab='Frequency dimension', xlab='Time dimension')
+            plot_averaged_magnitude(librosa.amplitude_to_db(x[0][0].abs().detach().numpy()),title='Decoder Output - Layer ' + str(idx+1),clabel='Magnitude[dB]',fig_name='Decoder' + str(idx)+'.pdf',ylab='Frequency dimension', xlab='Time dimension')
             #x = x[..., 1:]
 
         return x
