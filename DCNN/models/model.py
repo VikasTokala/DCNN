@@ -1,12 +1,14 @@
 import torch
 import torch.nn as nn
 from DCNN.feature_extractors import IStft, Stft
-
+import librosa.display
+import matplotlib
 import DCNN.utils.complexPyTorch.complexLayers as torch_complex
 from DCNN.utils.show import show_params, show_model
 
 from DCNN.utils.apply_mask import apply_mask
-
+from DCNN.feature_extractors import Stft,IStft
+from DCNN.feature_maps import plot_averaged_magnitude
 
 
 class DCNN(nn.Module):
@@ -16,9 +18,9 @@ class DCNN(nn.Module):
             win_len=400, win_inc=100, fft_len=512, win_type='hann',
             masking_mode='E', use_clstm=False,
             kernel_size=5, 
-            # kernel_num=[16, 32, 64, 128, 256,256], 
-            kernel_num = [ 8, 16, 32, 64, 128,128],
-            bidirectional=False, embed_dim=512, num_heads=32, **kwargs
+            kernel_num=[16, 32, 64, 128, 256,256], 
+            # kernel_num = [ 8, 16, 32, 64, 128,128],
+            bidirectional=False, embed_dim=1024, num_heads=32, **kwargs
     ):
         ''' 
             rnn_layers: the number of lstm layers in the crn,
@@ -48,11 +50,11 @@ class DCNN(nn.Module):
         self.num_heads = num_heads
         self.embed_dim = embed_dim
         hidden_dim = self.fft_len // (2 ** (len(self.kernel_num) + 1))
-        self.mattn = MultiAttnBlock(input_size=512,
+        self.mattn = MultiAttnBlock(input_size=1024, 
                                     hidden_size=self.rnn_units,
                                     embed_dim=self.embed_dim,
                                     num_heads=self.num_heads,
-                                    batch_first=True)
+                                    batch_first=True) #1024 for big model
 
         self.encoder = Encoder(self.kernel_num, kernel_size)
         # self._create_rnn(rnn_layers)
@@ -183,10 +185,14 @@ class Decoder(nn.Module):
     def forward(self, x, encoder_out):
         for idx in range(len(self.model)):
             #x = complex_cat([x, encoder_out[-1 - idx]], 1)
+            
+            
             x = torch.cat([x, encoder_out[-1 - idx]], 1)
             x = self.model[idx](x)
+            # breakpoint()
             #x = x[..., 1:]
-
+            # plot_averaged_magnitude((x[0][0].abs().detach().numpy()),title='Decoder Output - Layer 1',clabel='Magnitude[dB]', fig_name='Decoder1.pdf',ylab='Frequency dimension', xlab='Time dimension')
+           
         return x
 
 
@@ -247,5 +253,5 @@ class MultiAttnBlock(nn.Module):
         x = self.transform(x)
         x = x.unflatten(-1, (channels, freqs))
         x = x.movedim(1, -1)
-
+        breakpoint()
         return x
