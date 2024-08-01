@@ -6,6 +6,9 @@ import DCNN.utils.complexPyTorch.complexLayers as torch_complex
 from DCNN.utils.show import show_params, show_model
 
 from DCNN.utils.apply_mask import apply_mask
+from DCNN.feature_extractors import Stft,IStft
+from DCNN.feature_maps import plot_averaged_magnitude
+import librosa
 
 
 
@@ -180,7 +183,12 @@ class Decoder(nn.Module):
         for idx in range(len(self.model)):
             #x = complex_cat([x, encoder_out[-1 - idx]], 1)
             x = torch.cat([x, encoder_out[-1 - idx]], 1)
+            breakpoint()
+            print(idx)
+            print(len(self.model))
             x = self.model[idx](x)
+            
+            # plot_averaged_magnitude(librosa.amplitude_to_db(x[0][0].abs().detach().numpy()),title='Decoder Output - Layer 1',clabel='Magnitude[dB]',fig_name='Decoder1.pdf',ylab='Frequency dimension', xlab='Time dimension')
             #x = x[..., 1:]
 
         return x
@@ -214,6 +222,7 @@ class RnnBlock(nn.Module):
         # breakpoint()
         x = x.unflatten(-1, (channels, freqs))
         x = x.movedim(1, -1)
+        # breakpoint()
 
         return x
 
