@@ -84,9 +84,9 @@ model.load_state_dict(checkpoint["state_dict"], strict=False)
 paths=glob("/Users/vtokala/Documents/Research/Databases/Dataset_Binaural_2S/ICASSP_Testset/audio_files/*/", recursive = True)
 pathsEn=glob("/Users/vtokala/Documents/Research/Databases/Dataset_Binaural_2S/ICASSP_Testset/audio_files/*/", recursive = True)
 
-j=7
+j=5
 
-for j in range(3,len(paths)):
+for j in range(5,len(paths)):
     
     paths = sorted(paths)
     pathsEn = sorted(pathsEn)
@@ -182,7 +182,7 @@ for j in range(3,len(paths)):
     # #     torchaudio.save(path, waveform, sample_rate)
     #     sf.write(ENHANCED_DATASET_PATH + os.path.basename(batch[2][0])[:len(os.path.basename(batch[2][0]))-4] + "_" + test_name + ".wav", model_output.numpy().transpose(), 16000) 
     #     sf.write(CLEAN_DATASET_PATH + os.path.basename(batch[2][0])[:len(os.path.basename(batch[2][0]))-4] + "_" + test_name + ".wav", model_output.numpy().transpose(), 16000) 
-        sf.write(ENHANCED_DATASET_PATH + os.path.basename(batch[2][0]), model_output.numpy().transpose(), 16000) 
-        sf.write(CLEAN_EN_DATASET_PATH + os.path.basename(batch[2][0]), clean_samples.numpy().transpose(), 16000) 
+        # sf.write(ENHANCED_DATASET_PATH + os.path.basename(batch[2][0]), model_output.numpy().transpose(), 16000) 
+        # sf.write(CLEAN_EN_DATASET_PATH + os.path.basename(batch[2][0]), clean_samples.numpy().transpose(), 16000) 
         # print(ENHANCED_DATASET_PATH + os.path.basename(batch[2][0])[:len(os.path.basename(batch[2][0]))-4] + "_DCCTN.wav")
         print(f"===== Computing Signal {i+1} of ", len(dataloader),"=====")

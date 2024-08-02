@@ -3,7 +3,7 @@ import numpy as np
 import librosa
 
 def plot_averaged_magnitude(encoder_output_magnitude,title='Encoder Output - Layer 1',clabel='Magnitude[dB]',
-                            fig_name='Encoder1.pdf',xlab='Frequency dimension', ylab='Time dimension'):
+                            fig_name='Encoder1.pdf',xlab='Frequency dimension', ylab='Time dimension',clim=(-30,40)):
     """
     Plots the averaged magnitude of the complex-valued encoder output.
     
@@ -22,9 +22,10 @@ def plot_averaged_magnitude(encoder_output_magnitude,title='Encoder Output - Lay
     
     # Plot the averaged magnitude
     plt.figure(figsize=(6, 5))
-    plt.imshow((average_magnitude), aspect='auto', cmap='magma',origin='lower')
+    plt.imshow((average_magnitude), aspect='auto', cmap='jet',origin='lower')
     plt.title(title,fontname="Times New Roman",fontweight='bold',fontsize='18')
     plt.colorbar(label=clabel)
+    # plt.clim(clim)
     plt.xlabel(xlab,fontname="Times New Roman",fontweight='bold',fontsize='16')
     plt.ylabel(ylab,fontname="Times New Roman",fontweight='bold',fontsize='16')
     # plt.show()
