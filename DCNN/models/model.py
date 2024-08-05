@@ -188,7 +188,7 @@ class Decoder(nn.Module):
             x = self.model[idx](x)
             # breakpoint()
             
-            plot_averaged_magnitude((x[0][0].abs().detach().numpy()),title='Decoder Output - Layer ' + str(idx+1),clabel='Magnitude',fig_name='Decoder' + str(idx)+'.pdf',ylab='Frequency dimension', xlab='Time dimension')
+            # plot_averaged_magnitude((x[0][0].abs().detach().numpy()),title='Decoder Output - Layer ' + str(idx+1),clabel='Magnitude',fig_name='Decoder' + str(idx)+'.pdf',ylab='Frequency dimension', xlab='Time dimension')
             #x = x[..., 1:]
 
         return x

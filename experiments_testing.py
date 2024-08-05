@@ -158,6 +158,5 @@ for j in range(5,len(paths)):
 
         # breakpoint()
     #     torchaudio.save(path, waveform, sample_rate)
-        # sf.write(ENHANCED_DATASET_PATH + os.path.basename(batch[2][0])[:len(os.path.basename(batch[2][0]))-4] + "_" + test_name + ".wav", model_output.numpy().transpose(), 16000) 
-        # print(ENHANCED_DATASET_PATH + os.path.basename(batch[2][0])[:len(os.path.basename(batch[2][0]))-4] + "_DCCTN.wav")
+        # sf.write(ENHANCED_DATASET_PATH + os.path.basename(batch[2][0])[:len(os.path.basename(batch[2][0]))-4] + "_" + test_name + ".wav", model_output.numpy().transpose(), 16000)         # print(ENHANCED_DATASET_PATH + os.path.basename(batch[2][0])[:len(os.path.basename(batch[2][0]))-4] + "_DCCTN.wav")
         print(f"===== Computing Signal {i+1} of ", len(dataloader),"=====")
