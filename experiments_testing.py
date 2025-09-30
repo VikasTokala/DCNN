@@ -81,12 +81,12 @@ checkpoint = torch.load(MODEL_CHECKPOINT_PATH, map_location=device)
 # checkpoint = torch.load(MODEL_CHECKPOINT_PATH)
 model.load_state_dict(checkpoint["state_dict"], strict=False)
 
-paths=glob("/Users/vtokala/Documents/Research/Databases/Dataset_Binaural_2S/ICASSP_Testset/audio_files/*/", recursive = True)
-pathsEn=glob("/Users/vtokala/Documents/Research/Databases/Dataset_Binaural_2S/ICASSP_Testset/audio_files/*/", recursive = True)
+paths=glob("/Users/vtokala/Documents/Research/Databases/Dataset_Binaural_2S/BSS/Evaluation_dataset_Anechoic_ICASSP_NoEN/*/", recursive = True)
+pathsEn=glob("/Users/vtokala/Documents/Research/Databases/Dataset_Binaural_2S/BSS/BCCTN_evalset_Anechoic/*/", recursive = True)
 
-j=5
+# j=5
 
-for j in range(5,len(paths)):
+for j in range(len(paths)):
     
     paths = sorted(paths)
     pathsEn = sorted(pathsEn)
@@ -94,61 +94,61 @@ for j in range(5,len(paths)):
     print(NOISY_DATASET_PATH)
     CLEAN_DATASET_PATH = os.path.join(paths[j],"Clean_testset/")
     
-    ENHANCED_DATASET_PATH = os.path.join(pathsEn[j],"Noisy_testset/")
+    ENHANCED_DATASET_PATH = os.path.join(pathsEn[j],"Noisy_testset_NoEN/")
     CLEAN_EN_DATASET_PATH = os.path.join(pathsEn[j],"Clean_testset/")
     dataset = BaseDataset(NOISY_DATASET_PATH, CLEAN_DATASET_PATH, mono=False)
     
-    # if os.path.isdir(ENHANCED_DATASET_PATH):
-    #     print("Folder for Enhanced Signals Exists!")
+    if os.path.isdir(ENHANCED_DATASET_PATH):
+        print("Folder for Enhanced Signals Exists!")
         
-    #     if os.path.exists(ENHANCED_DATASET_PATH):
-    # # Get a list of files and subdirectories in the folder
-    #         contents = os.listdir(ENHANCED_DATASET_PATH)
+        if os.path.exists(ENHANCED_DATASET_PATH):
+    # Get a list of files and subdirectories in the folder
+            contents = os.listdir(ENHANCED_DATASET_PATH)
           
-    #     # Iterate over the contents and delete files or subdirectories
-    #     for item in contents:
-    #         item_path = os.path.join(ENHANCED_DATASET_PATH, item)
-    #         if os.path.isfile(item_path):
-    #             os.remove(item_path)  # Delete files
-    #         elif os.path.isdir(item_path):
-    #             # Delete subdirectories' contents recursively
-    #             for root, dirs, files in os.walk(item_path, topdown=False):
-    #                 for file in files:
-    #                     os.remove(os.path.join(root, file))
-    #                 for dir in dirs:
-    #                     os.rmdir(os.path.join(root, dir))
-    #             # Remove the empty subdirectory
-    #             os.rmdir(item_path)
+        # Iterate over the contents and delete files or subdirectories
+        for item in contents:
+            item_path = os.path.join(ENHANCED_DATASET_PATH, item)
+            if os.path.isfile(item_path):
+                os.remove(item_path)  # Delete files
+            elif os.path.isdir(item_path):
+                # Delete subdirectories' contents recursively
+                for root, dirs, files in os.walk(item_path, topdown=False):
+                    for file in files:
+                        os.remove(os.path.join(root, file))
+                    for dir in dirs:
+                        os.rmdir(os.path.join(root, dir))
+                # Remove the empty subdirectory
+                os.rmdir(item_path)
 
-    #         print(f"Contents of folder '{ENHANCED_DATASET_PATH}' have been deleted.")
-    # else:
-    #     print("Folder for Enhanced Signals does not exist! - Creating Folder!!")
-    #     os.mkdir(ENHANCED_DATASET_PATH)
+            print(f"Contents of folder '{ENHANCED_DATASET_PATH}' have been deleted.")
+    else:
+        print("Folder for Enhanced Signals does not exist! - Creating Folder!!")
+        os.mkdir(ENHANCED_DATASET_PATH)
     
-    # if os.path.isdir(CLEAN_EN_DATASET_PATH):
-    #     print("Folder for Clean Signals Exists!")
+    if os.path.isdir(CLEAN_EN_DATASET_PATH):
+        print("Folder for Clean Signals Exists!")
         
-    #     if os.path.exists(CLEAN_EN_DATASET_PATH):
-    # # Get a list of files and subdirectories in the folder
-    #         contents = os.listdir(CLEAN_EN_DATASET_PATH)
-    #     for item in contents:
-    #         item_path = os.path.join(CLEAN_EN_DATASET_PATH, item)
-    #         if os.path.isfile(item_path):
-    #             os.remove(item_path)  # Delete files
-    #         elif os.path.isdir(item_path):
-    #             # Delete subdirectories' contents recursively
-    #             for root, dirs, files in os.walk(item_path, topdown=False):
-    #                 for file in files:
-    #                     os.remove(os.path.join(root, file))
-    #                 for dir in dirs:
-    #                     os.rmdir(os.path.join(root, dir))
-    #             # Remove the empty subdirectory
-    #             os.rmdir(item_path)
+        if os.path.exists(CLEAN_EN_DATASET_PATH):
+    # Get a list of files and subdirectories in the folder
+            contents = os.listdir(CLEAN_EN_DATASET_PATH)
+        for item in contents:
+            item_path = os.path.join(CLEAN_EN_DATASET_PATH, item)
+            if os.path.isfile(item_path):
+                os.remove(item_path)  # Delete files
+            elif os.path.isdir(item_path):
+                # Delete subdirectories' contents recursively
+                for root, dirs, files in os.walk(item_path, topdown=False):
+                    for file in files:
+                        os.remove(os.path.join(root, file))
+                    for dir in dirs:
+                        os.rmdir(os.path.join(root, dir))
+                # Remove the empty subdirectory
+                os.rmdir(item_path)
 
-    #         print(f"Contents of folder '{CLEAN_EN_DATASET_PATH}' have been deleted.")
-    # else:
-    #     print("Folder for Enhanced Signals does not exist! - Creating Folder!!")
-    #     os.mkdir(CLEAN_EN_DATASET_PATH)  
+            print(f"Contents of folder '{CLEAN_EN_DATASET_PATH}' have been deleted.")
+    else:
+        print("Folder for Enhanced Signals does not exist! - Creating Folder!!")
+        os.mkdir(CLEAN_EN_DATASET_PATH)  
     
     dataloader = torch.utils.data.DataLoader(
         dataset,
@@ -182,7 +182,7 @@ for j in range(5,len(paths)):
     # #     torchaudio.save(path, waveform, sample_rate)
     #     sf.write(ENHANCED_DATASET_PATH + os.path.basename(batch[2][0])[:len(os.path.basename(batch[2][0]))-4] + "_" + test_name + ".wav", model_output.numpy().transpose(), 16000) 
     #     sf.write(CLEAN_DATASET_PATH + os.path.basename(batch[2][0])[:len(os.path.basename(batch[2][0]))-4] + "_" + test_name + ".wav", model_output.numpy().transpose(), 16000) 
-        # sf.write(ENHANCED_DATASET_PATH + os.path.basename(batch[2][0]), model_output.numpy().transpose(), 16000) 
-        # sf.write(CLEAN_EN_DATASET_PATH + os.path.basename(batch[2][0]), clean_samples.numpy().transpose(), 16000) 
+        sf.write(ENHANCED_DATASET_PATH + os.path.basename(batch[2][0]), model_output.numpy().transpose(), 16000) 
+        sf.write(CLEAN_EN_DATASET_PATH + os.path.basename(batch[2][0]), clean_samples.numpy().transpose(), 16000) 
         # print(ENHANCED_DATASET_PATH + os.path.basename(batch[2][0])[:len(os.path.basename(batch[2][0]))-4] + "_DCCTN.wav")
         print(f"===== Computing Signal {i+1} of ", len(dataloader),"=====")

@@ -93,33 +93,33 @@ class BinauralAttentionDCNN(DCNN):
         out_spec_r = apply_mask(x_r[:, 0], cspecs_r, self.masking_mode)
         # breakpoint()
         
-        plot_averaged_magnitude((encoder_out_l[0][0][0].abs().detach().numpy()),title='Encoder Output - Layer 1',clabel='Magnitude',
-                            fig_name='Encoder1.pdf',ylab='Frequency dimension', xlab='Time dimension')
-        plot_averaged_magnitude((encoder_out_l[1][0][0].abs().detach().numpy()),title='Encoder Output - Layer 2',clabel='Magnitude',
-                            fig_name='Encoder2.pdf',ylab='Frequency dimension', xlab='Time dimension')
-        plot_averaged_magnitude((encoder_out_l[2][0][0].abs().detach().numpy()),title='Encoder Output - Layer 3',clabel='Magnitude',
-                            fig_name='Encoder3.pdf',ylab='Frequency dimension', xlab='Time dimension')
-        plot_averaged_magnitude((encoder_out_l[3][0][0].abs().detach().numpy()),title='Encoder Output - Layer 4',clabel='Magnitude',
-                            fig_name='Encoder4.pdf',ylab='Frequency dimension', xlab='Time dimension')
-        plot_averaged_magnitude((encoder_out_l[4][0][0].abs().detach().numpy()),title='Encoder Output - Layer 5',clabel='Magnitude',
-                            fig_name='Encoder5.pdf',ylab='Frequency dimension', xlab='Time dimension')
-        plot_averaged_magnitude((encoder_out_l[5][0][0].abs().detach().numpy()),title='Encoder Output - Layer 6',clabel='Magnitude',
-                            fig_name='Encoder6.pdf',ylab='Frequency dimension', xlab='Time dimension')
+        # plot_averaged_magnitude((encoder_out_l[0][0][0].abs().detach().numpy()),title='Encoder Output - Layer 1',clabel='Magnitude',
+        #                     fig_name='Encoder1.pdf',ylab='Frequency dimension', xlab='Time dimension')
+        # plot_averaged_magnitude((encoder_out_l[1][0][0].abs().detach().numpy()),title='Encoder Output - Layer 2',clabel='Magnitude',
+        #                     fig_name='Encoder2.pdf',ylab='Frequency dimension', xlab='Time dimension')
+        # plot_averaged_magnitude((encoder_out_l[2][0][0].abs().detach().numpy()),title='Encoder Output - Layer 3',clabel='Magnitude',
+        #                     fig_name='Encoder3.pdf',ylab='Frequency dimension', xlab='Time dimension')
+        # plot_averaged_magnitude((encoder_out_l[3][0][0].abs().detach().numpy()),title='Encoder Output - Layer 4',clabel='Magnitude',
+        #                     fig_name='Encoder4.pdf',ylab='Frequency dimension', xlab='Time dimension')
+        # plot_averaged_magnitude((encoder_out_l[4][0][0].abs().detach().numpy()),title='Encoder Output - Layer 5',clabel='Magnitude',
+        #                     fig_name='Encoder5.pdf',ylab='Frequency dimension', xlab='Time dimension')
+        # plot_averaged_magnitude((encoder_out_l[5][0][0].abs().detach().numpy()),title='Encoder Output - Layer 6',clabel='Magnitude',
+        #                     fig_name='Encoder6.pdf',ylab='Frequency dimension', xlab='Time dimension')
         
         
-        plot_averaged_magnitude(x_l[0][0].abs().detach().numpy(),title='Estimated CRM - Decoder output',clabel='Magnitude',
-                            fig_name='Decoder.pdf',ylab='Frequency dimension', xlab='Time dimension')
+        # plot_averaged_magnitude(x_l[0][0].abs().detach().numpy(),title='Estimated CRM - Decoder output',clabel='Magnitude',
+        #                     fig_name='Decoder.pdf',ylab='Frequency dimension', xlab='Time dimension')
         
-        plot_averaged_magnitude(librosa.amplitude_to_db(out_spec_l[0].abs().detach().numpy()),title='Enhanced Signal',clabel='Magnitude[dB]',
-                            fig_name='EnhanSig.pdf',ylab='Frequency dimension', xlab='Time dimension')
-        plot_averaged_magnitude(librosa.amplitude_to_db(cspecs_l[0].abs().detach().numpy()),title='Noisy Signal',clabel='Magnitude[dB]',
-                            fig_name='NoisySig.pdf',ylab='Frequency dimension', xlab='Time dimension')
+        # plot_averaged_magnitude(librosa.amplitude_to_db(out_spec_l[0].abs().detach().numpy()),title='Enhanced Signal',clabel='Magnitude[dB]',
+        #                     fig_name='EnhanSig.pdf',ylab='Frequency dimension', xlab='Time dimension')
+        # plot_averaged_magnitude(librosa.amplitude_to_db(cspecs_l[0].abs().detach().numpy()),title='Noisy Signal',clabel='Magnitude[dB]',
+        #                     fig_name='NoisySig.pdf',ylab='Frequency dimension', xlab='Time dimension')
         
         # plot_averaged_magnitude(librosa.amplitude_to_db(encoder_out_l[0][0][0].abs().detach().numpy()))
         # plot_averaged_magnitude(x_l[0][0].abs().detach().numpy())
         # plot_averaged_magnitude(librosa.amplitude_to_db(out_spec_l[0].abs().detach().numpy()))
         
-        breakpoint()
+        # breakpoint()
         # 5. Invert STFT
         out_wav_l = self.istft(out_spec_l)
         # breakpoint()

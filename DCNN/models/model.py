@@ -192,7 +192,7 @@ class Decoder(nn.Module):
             # breakpoint()
             #x = x[..., 1:]
             # plot_averaged_magnitude((x[0][0].abs().detach().numpy()),title='Decoder Output - Layer 1',clabel='Magnitude[dB]', fig_name='Decoder1.pdf',ylab='Frequency dimension', xlab='Time dimension')
-            plot_averaged_magnitude((x[0][0].abs().detach().numpy()),title='Decoder Output - Layer ' + str(idx+1),clabel='Magnitude',fig_name='Decoder' + str(idx)+'.pdf',ylab='Frequency dimension', xlab='Time dimension')
+            # plot_averaged_magnitude((x[0][0].abs().detach().numpy()),title='Decoder Output - Layer ' + str(idx+1),clabel='Magnitude',fig_name='Decoder' + str(idx)+'.pdf',ylab='Frequency dimension', xlab='Time dimension')
         return x
 
 
@@ -253,6 +253,6 @@ class MultiAttnBlock(nn.Module):
         x = self.transform(x)
         x = x.unflatten(-1, (channels, freqs))
         x = x.movedim(1, -1)
-        plot_averaged_magnitude((x[0][0].abs().detach().numpy()),title='Transformer layer output',clabel='Magnitude',fig_name='Transformer_output.pdf',ylab='Frequency dimension', xlab='Time dimension')
+        # plot_averaged_magnitude((x[0][0].abs().detach().numpy()),title='Transformer layer output',clabel='Magnitude',fig_name='Transformer_output.pdf',ylab='Frequency dimension', xlab='Time dimension')
         # breakpoint()
         return x
